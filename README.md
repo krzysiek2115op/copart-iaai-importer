@@ -1,8 +1,11 @@
 # Importer aukcji Copart / IAAI → nowa baza (wtyczka WordPress)
 
-Projekt: wtyczka WordPress importująca dane i zdjęcia pojazdów z **copart.com** i
-**iaai.com** do nowej, wspólnej bazy danych, z zasilaniem danymi **live** i
-prezentacją na stronie klienta.
+Projekt: import danych i zdjęć pojazdów z **iaai.com** do nowej bazy danych,
+z zasilaniem danymi **live** i prezentacją na stronie klienta przez wtyczkę WordPress.
+
+> **Zmiana zakresu (v0.2):** Copart **usunięty z planu** — cała domena jest za
+> Imperva Incapsula (brak legalnego, anonimowego dostępu). Skupiamy się na IAAI.
+> Architektura: [docs/architecture.md](docs/architecture.md).
 
 ## Status: krok 1 — analiza źródeł danych (v0.1.0)
 
