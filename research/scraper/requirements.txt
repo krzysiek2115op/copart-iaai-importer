@@ -1,0 +1,3 @@
+playwright>=1.44
+requests>=2.31
+# po instalacji: playwright install chromium
