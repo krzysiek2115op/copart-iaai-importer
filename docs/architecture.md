@@ -52,12 +52,10 @@ Nowa baza jest zasilana **dwojako**:
 
 Dział **pobieranie** ma więc dwa tryby: `full` (backfill) i `live`/`incremental`.
 
-> ⚠️ Uwaga o „historii" w IAAI: publiczna strona IAAI udostępnia głównie
-> **aktualną, aktywną ofertę** (bieżące loty), a nie głębokie archiwum sprzedanych
-> pojazdów. Realnie „backfill" = zaciąg **całej bieżącej oferty** z wyszukiwarki.
-> **Głęboka historia sprzedaży** (lata wstecz, po VIN) nie jest dostępna publicznie —
-> dostarczają ją licencjonowane API third-party (apiauctions.io, carstat.dev itd.).
-> Do ustalenia, czy „historia" = pełna bieżąca oferta, czy też archiwum sprzedaży.
+**Ustalono:** „historia" = **cała bieżąca oferta IAAI** — backfill (`full`) zaciąga
+WSZYSTKIE aktualnie wystawione loty z publicznej wyszukiwarki, a potem `live`
+dokłada nowe na bieżąco. **Bez płatnych API third-party.** (Głębokie archiwum
+sprzedanych aut sprzed lat — świadomie poza zakresem; nie jest publiczne.)
 
 ## Otwarte pytania do doprecyzowania
 - **„Działy"** — w jakiej technologii? (osobny serwis/backend automatyzacji, czy warstwa w obrębie WP?). Pełnią rolę warstwy pośredniej między IAAI/bazą a pluginem.
