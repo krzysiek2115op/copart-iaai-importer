@@ -45,6 +45,20 @@ Z **nową bazą** połączone są **DZIAŁY**.
 
 Szczegóły i próbki: [`../research/report.md`](../research/report.md).
 
+## Zakres zasilania nowej bazy (decyzja)
+Nowa baza jest zasilana **dwojako**:
+1. **Backfill (historia)** — jednorazowy zaciąg istniejących aukcji z IAAI na starcie.
+2. **Live** — ciągłe łapanie nowych pojazdów pojawiających się na bieżąco.
+
+Dział **pobieranie** ma więc dwa tryby: `full` (backfill) i `live`/`incremental`.
+
+> ⚠️ Uwaga o „historii" w IAAI: publiczna strona IAAI udostępnia głównie
+> **aktualną, aktywną ofertę** (bieżące loty), a nie głębokie archiwum sprzedanych
+> pojazdów. Realnie „backfill" = zaciąg **całej bieżącej oferty** z wyszukiwarki.
+> **Głęboka historia sprzedaży** (lata wstecz, po VIN) nie jest dostępna publicznie —
+> dostarczają ją licencjonowane API third-party (apiauctions.io, carstat.dev itd.).
+> Do ustalenia, czy „historia" = pełna bieżąca oferta, czy też archiwum sprzedaży.
+
 ## Otwarte pytania do doprecyzowania
 - **„Działy"** — w jakiej technologii? (osobny serwis/backend automatyzacji, czy warstwa w obrębie WP?). Pełnią rolę warstwy pośredniej między IAAI/bazą a pluginem.
 - Silnik **nowej bazy** — MySQL (natywny dla WP) czy osobna baza?
