@@ -1,53 +1,42 @@
-# Mapowanie pól: IAAI → nowa baza
+# Mapowanie: rekord IAAI → nowa baza (wierna kopia)
 
-Źródła danych (z kroku 1, patrz [../research/report.md](../research/report.md)):
-- **`#ProductDetailsVM.inventory`** (osadzony JSON w `VehicleDetail/{salvageId}~US`)
-- **`vis.iaai.com/dimensions?imageKeys={salvageId}~SID`** → `keys[]` (zdjęcia)
+Nowa baza odwzorowuje **rekord/kartę listingu IAAI 1:1**. Agenci łapią każdy nowy
+pojazd pojawiający się live i wpisują dane + zdjęcia.
 
-## `iaai_vehicles` ← `inventory`
-| Kolumna | Pole źródłowe |
+## Źródła (z analizy live, krok 1 + 3)
+- **Wyniki wyszukiwania** `https://www.iaai.com/Search?...` — karty listingów renderowane
+  server-side (~106 pojazdów/stronę). To realny punkt łapania **nowych live** listingów
+  (strona szczegółów doładowuje dane skryptem — surowy HTML jest pusty).
+- **Zdjęcia:** `https://vis.iaai.com/dimensions?imageKeys={salvageId}~SID` → `keys[]`;
+  pełny obraz: `https://vis.iaai.com/resizer?imageKeys={K}&width=&height=`.
+
+## `iaai_vehicles` ← karta/rekord IAAI
+| Kolumna | Pole IAAI |
 |---|---|
-| salvage_id | `salvageId` |
-| item_id | `itemId` |
-| stock_number | `stockNumber` |
-| vin | `vin` |
-| year / make / model / series | `year` / `make` / `model` / `series` |
-| body_style | `bodyStyleName` |
-| engine_info / engine_size | `engineInfo` / `engineSize` |
-| cylinders | `cylinders` |
-| fuel_type | `fuelTypeDesc` |
-| transmission | `transmissionDesc` |
-| drive_line | `driveLineTypeDesc` |
-| drives | `drives` |
-| color / interior_color | `colorDesc` / `interiorColor` |
-| odometer_value / _uom / _brand | `odoValue` / `odoUoM` / `odoBrand` |
-| primary_damage / secondary_damage | `primaryDamageDesc` / `secondaryDamageDesc` |
-| loss_type | `lossTypeDesc` |
-| title_brand / title_state | `titleBrand` / `certState` |
-| keys_present / key_fob | `keys` / `keyFOB` |
-| airbags_count / airbag_state | `noOfAirbags` / `airbagState` |
-| branch_id | `branchId` |
-| src_created_at / src_modified_at | `createdDateTime` / `modifiedDateTime` |
-| src_version_id | `versionId` |
-
-## `iaai_branches` ← `inventory` (pola lokalizacji)
-`branchId, branchNumber, locName/name, address, city, state, zip, phone, locLatitude, locLongitude, isOffsite`
+| salvage_id | ID lotu (`/VehicleDetail/{id}~US`) |
+| stock_number / item_id / vin | Stock # / Item # / VIN |
+| year / make / model / series | nagłówek (np. „2010 BMW 335I") |
+| vehicle_type / body_style | Vehicle Type / Body Style |
+| engine / cylinders / fuel_type / transmission / drive_line / color | Engine / Cylinders / Fuel Type / Transmission / napęd / Color |
+| odometer / odometer_uom / odometer_brand | Odometer (np. „169,594 mi (Not Required/Exempt)") |
+| primary_damage / secondary_damage / loss / title | Primary Damage / Secondary Damage / Loss / Title |
+| run_and_drive | Run & Drive |
+| key_available | Key |
+| selling_branch / branch_id | Selling Branch |
+| sale_date / lane / aisle | Sale Date / Lane / Aisle |
+| buy_now / current_bid | Buy Now / Current Bid |
+| detail_url | URL listingu |
 
 ## `iaai_vehicle_images` ← `dimensions.keys[]`
 | Kolumna | Pole |
 |---|---|
 | image_key | `K` |
-| seq | `IN` |
-| width / height | `W` / `H` |
-| is_360 | z `Image360Ind` / `Videos` |
+| seq / width / height | `IN` / `W` / `H` |
+| url | zbudowany z `resizer?imageKeys={K}` |
 
-Pełny obraz pobierany na żądanie: `https://vis.iaai.com/resizer?imageKeys={K}&width=&height=`.
+## Klucze (anty-duplikacja)
+- **salvage_id** — pojazd już w bazie? sprawdź ten klucz.
+- **image_key** (UNIQUE) — zdjęcie już pobrane? nie dubluj.
 
-## `iaai_auctions` ← `inventory` + live (SignalR `/timedauctionhub`)
-`auctionId, timedAuctionIndicator, timedAuctionCloseDateTime, buyNowIndicator, buyNowSold` + `current_bid`/`bid_count` aktualizowane live.
-
-## Uwagi
-- `raw_hash` = SHA1 całego `#ProductDetailsVM` — wykrywanie zmian (dział **synchronizacja**) bez porównywania pól.
-- `iaai_raw_payloads` trzyma surowy JSON — pozwala działowi **audyt** wykryć błędy mapowania i ponownie przetworzyć dane bez ponownego pobierania z IAAI.
-- `status` (active/sold/removed) ustawiany przez dział **synchronizacja** na podstawie obecności lotu w kolejnych pobraniach.
-- Wiele pól w teście kroku 1 było `null` (lot zamknięty) — przy aktywnym locie są wypełnione; typy kolumn to uwzględniają (NULL-able).
+To jedyne dodatki ponad „surową" strukturę IAAI; reszta pól = jak u nich.
+`captured_at` służy tylko do wykrywania, co jest nowe.
