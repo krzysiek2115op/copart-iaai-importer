@@ -43,6 +43,31 @@ Do podglądu wizualnego bez phpMyAdmin: **DBeaver** (https://dbeaver.io) — ł�
 
 ---
 
+## Wariant D — przenośna instancja (GOTOWA, postawiona bez sudo)
+W `~/iaai-mariadb` stoi przenośna **MariaDB 11.4.4** z załadowanym `schema.sql`
+i przykładowym rekordem. Nie wymaga sudo ani instalacji systemowej.
+
+**Dane połączenia (GUI / DBeaver / aplikacja):**
+| | |
+|---|---|
+| Host | `127.0.0.1` |
+| Port | `3307` |
+| Baza | `iaai` |
+| User / hasło | `iaai` / `iaai` |
+
+**Sterowanie (skrypty w `~/iaai-mariadb/`):**
+```bash
+~/iaai-mariadb/start-db.sh      # uruchom serwer (po restarcie komputera)
+~/iaai-mariadb/stop-db.sh       # zatrzymaj
+~/iaai-mariadb/connect-db.sh    # klient SQL prosto do bazy iaai
+# np.: ~/iaai-mariadb/connect-db.sh -e "SELECT * FROM iaai_vehicles\G"
+```
+W DBeaver: *New Connection → MariaDB* → host `127.0.0.1`, port `3307`,
+baza `iaai`, user `iaai`, hasło `iaai` → **Finish** → klikasz po tabelach.
+
+> Uwaga: to instancja deweloperska. Docelowo w produkcji baza żyje w MySQL
+> WordPressa (Warianty A–C), a tabele zakłada wtyczka przez `dbDelta()`.
+
 ## Szybki test z przykładowym rekordem
 Po założeniu tabel możesz wrzucić jeden „złapany" listing, żeby zobaczyć dane:
 ```sql
