@@ -62,7 +62,9 @@ CREATE TABLE IF NOT EXISTS `iaai_vehicles` (
 
   `detail_url`        VARCHAR(255) NULL,          -- pełny URL listingu
 
-  -- metadane przechwytywania (potrzebne do łapania "nowych live")
+  -- metadane przechwytywania / synchronizacji
+  `raw_hash`          CHAR(40) NULL,               -- SHA1 pól danych (dział synchronizacja: wykrywanie zmian)
+  `status`            ENUM('active','sold','removed') NOT NULL DEFAULT 'active',
   `captured_at`       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                         ON UPDATE CURRENT_TIMESTAMP,
@@ -71,6 +73,7 @@ CREATE TABLE IF NOT EXISTS `iaai_vehicles` (
   KEY `idx_vin` (`vin`),
   KEY `idx_make_model` (`make`, `model`),
   KEY `idx_sale_date` (`sale_date`),
+  KEY `idx_status` (`status`),
   KEY `idx_captured` (`captured_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

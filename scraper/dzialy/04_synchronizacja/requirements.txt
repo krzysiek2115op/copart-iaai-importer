@@ -1,0 +1,2 @@
+pymysql>=1.1    # sterownik bazy (MySQL/MariaDB) — agenci diff i json
+# konfiguracja połączenia przez env: IAAI_DB_HOST/PORT/USER/PASS/NAME (patrz common.py)
