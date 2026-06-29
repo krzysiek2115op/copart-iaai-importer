@@ -22,5 +22,5 @@ define( 'IAAI_IMPORTER_VERSION', '0.12.0' );
 define( 'IAAI_IMPORTER_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once IAAI_IMPORTER_DIR . 'includes/security.php';     // Dział 6
-// require_once IAAI_IMPORTER_DIR . 'includes/publikacja.php'; // Dział 8 (dodany później)
+require_once IAAI_IMPORTER_DIR . 'includes/publikacja.php';   // Dział 8
 // require_once IAAI_IMPORTER_DIR . 'includes/front.php';      // Dział 9 (dodany później)
