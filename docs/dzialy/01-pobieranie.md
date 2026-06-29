@@ -13,10 +13,16 @@ Cel: zaciągnąć z IAAI **całą bieżącą ofertę** (`full`) i potem **nowe p
   `full` = cała oferta, `live` = tylko nowe od ostatniego przejścia. Wynik: kolejka ID + upsert pól.
 - **Krytyk:** paginacja doszła do końca, brak luk i duplikatów ID; brakujące strony → ponów.
 
-### 🔵 `szczegóły` → 🔴 `kompletność-pól`
-- **Agent:** dla każdego `salvage_id` pobiera pełne pola i uzupełnia `iaai_vehicles`.
-  ⚠️ Surowy HTML `/VehicleDetail` jest pusty (dane doładowywane JS) → render przeglądarką.
-- **Krytyk:** wymagane pola niepuste (VIN, make, model, year, odometer, damage, title); braki → ponów.
+### 🔵 `szczegóły` → 🔴 `kompletność-pól`  ✅ zaimplementowany
+Kod: [`scraper/dzialy/01_pobieranie/szczegoly.py`](../../scraper/dzialy/01_pobieranie/szczegoly.py).
+- **Agent:** renderuje `/VehicleDetail/{id}` przez **Playwright** (surowy HTML pusty — dane
+  wstrzykiwane JS w DOM) i czyta bloki `.data-list__item` (etykiety: „VIN (Status)",
+  „Odometer", „Start Code", „Drive Line Type"…). Daje **bogatszy** zestaw niż karta:
+  m.in. `secondary_damage`, `odometer_brand` („Actual"), `drive_line`, pełny `engine`, `loss`.
+  Zweryfikowane na żywo (lot 45574140 → 2011 BMW 335I XDRIVE, 18+ pól).
+- **Krytyk `kompletność-pól`:** wymagane pola niepuste (year, make, model, odometer,
+  primary_damage, title, selling_branch); osobno flaguje **VIN zamaskowany** (anonimowo
+  IAAI zwraca `...******`; pełny VIN wymaga konta).
 
 ### 🔵 `zdjęcia` → 🔴 `kompletność-zdjęć`
 - **Agent:** `GET vis.iaai.com/dimensions?imageKeys={id}~SID` → `keys[]`; zapis do
