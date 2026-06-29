@@ -43,9 +43,9 @@ parsowaniu zwraca string oryginalny (`… or out["sale_date"]`), a `DATA_COLS` z
 przy aukcjach `auction_close`/sale jest pusty.
 → *Fix:* dodać mapowanie daty (z karty/szczegółów) jeśli potrzebne biznesowo.
 
-**M3. Status `sold`/`removed` niewykryty.** `diff` ustawia zawsze `active`; brak przebiegu
-„feed-complete" oznaczającego loty nieobecne w nowym pobraniu jako sprzedane/usunięte.
-→ *Fix:* po pełnym backfillu oznaczyć brakujące `salvage_id` jako `removed`.
+**M3. Status `sold`/`removed`. ✅ NAPRAWIONE (v0.19.0)** `json --reconcile` (po pełnym feedzie)
+oznacza loty `active` nieobecne w feedzie jako `removed` (temp table + LEFT JOIN; guard na puste
+wejście). Zweryfikowane: lot poza feedem → `removed`.
 
 **M4. Brak orkiestracji.** Działy uruchamiane ręcznie; brak jednego runnera/crona spinającego
 1→…→9 oraz mostka Python→WP (publikacja po imporcie).

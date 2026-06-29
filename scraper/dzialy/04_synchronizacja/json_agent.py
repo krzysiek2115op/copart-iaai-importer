@@ -68,6 +68,9 @@ def main():
                     help="JSONL pojazdów (najlepiej po audycie — pole _audit_ok)")
     ap.add_argument("--images", type=Path, help="JSONL zdjęć z agenta `zdjecia` (H1)")
     ap.add_argument("--all", action="store_true", help="zapisz też 'unchanged' (domyślnie pomijane)")
+    ap.add_argument("--reconcile", action="store_true",
+                    help="M3: po PEŁNYM feedzie oznacz brakujące aktywne loty jako 'removed' "
+                         "(używać TYLKO przy full backfill — nie przy live/incremental!)")
     args = ap.parse_args()
 
     records = [json.loads(l) for l in args.infile.read_text().splitlines() if l.strip()]
@@ -101,10 +104,28 @@ def main():
                     img_ins += 1
                 except Exception:
                     img_fail += 1      # np. brak pojazdu (FK) — pojazd odrzucony/niezapisany
+        # M3: reconcile — loty active nieobecne w bieżącym (pełnym) feedzie -> removed
+        removed = None
+        if args.reconcile:
+            current = [r["salvage_id"] for r in records
+                       if r.get("_audit_ok") is not False and r.get("salvage_id")]
+            if not current:
+                print("[json] reconcile POMINIĘTY — puste wejście (zabezpieczenie)")
+            else:
+                cur.execute("CREATE TEMPORARY TABLE _iaai_seen (salvage_id BIGINT UNSIGNED PRIMARY KEY)")
+                cur.executemany("INSERT IGNORE INTO _iaai_seen (salvage_id) VALUES (%s)",
+                                [(i,) for i in current])
+                cur.execute(
+                    "UPDATE iaai_vehicles v LEFT JOIN _iaai_seen s ON v.salvage_id = s.salvage_id "
+                    "SET v.status = 'removed' WHERE v.status = 'active' AND s.salvage_id IS NULL")
+                removed = cur.rowcount
+                cur.execute("DROP TEMPORARY TABLE _iaai_seen")
     conn.close()
 
     print(f"[json] wstawiono={inserted} zaktualizowano={updated} "
           f"pominięto(unchanged)={skipped} odrzucono(audyt)={rejected}")
+    if removed is not None:
+        print(f"[json] reconcile: oznaczono removed={removed}")
     if args.images:
         print(f"[json] zdjęcia: zapisano={img_ins} pominięto(FK/błąd)={img_fail}")
     if all_issues:

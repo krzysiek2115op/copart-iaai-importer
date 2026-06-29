@@ -29,6 +29,9 @@ Kod: [`json_agent.py`](../../scraper/dzialy/04_synchronizacja/json_agent.py).
     `iaai_vehicle_images` (klucz `image_key`). Zweryfikowane: 37 zdjęć w bazie.
   - **H2 (naprawione):** pomija rekordy `_audit_ok=false` (audyt odsiewa PRZED zapisem).
     Zalecana kolejność: `diff → walidacja(audyt) → json`.
+  - **M3 (naprawione):** `--reconcile` (TYLKO przy `full` feedzie) oznacza loty `active`
+    nieobecne w bieżącym feedzie jako `removed` (zeszły z aukcji/sprzedane). Wydajnie
+    przez temp table + LEFT JOIN; zabezpieczenie przed pustym wejściem. Zweryfikowane.
 - **Krytyk `poprawność-json`:** **odczyt zwrotny** — po zapisie czyta wiersz i sprawdza,
   że `raw_hash` i kluczowe pola w bazie zgadzają się z intencją.
 - Zweryfikowane: rekord 45574140 (2011 BMW 335I XDRIVE) zapisany i odczytany zgodnie.
