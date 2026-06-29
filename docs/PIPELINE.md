@@ -38,6 +38,24 @@ WordPress <─ [9 front i media] <─ [8 publikacja CPT] <─ [6 bezpieczeństwo
   importuje zdjęcia, renderuje na stronie. **Plugin nie łączy się z bazą bezpośrednio na
   froncie** — działy (CPT/meta/front) pośredniczą; odwiedzający widzi gotowe wpisy WP.
 
+## Uruchomienie (orkiestrator — M4)
+Cały łańcuch Pythona jedną komendą (`scraper/run_pipeline.py`):
+```bash
+# pełny backfill (cała oferta + reconcile sold/removed):
+python scraper/run_pipeline.py --mode full --base "https://www.iaai.com/Search"
+# bieżące nowe (live):
+python scraper/run_pipeline.py --mode live --base "https://www.iaai.com/Search"
+# test/partia: --limit N (ogranicza szczegóły/zdjęcia; reconcile wtedy pomijany)
+```
+Runner: zgodność(robots) → listingi → szczegóły → **merge karta+szczegóły** → zdjęcia →
+VIN → jednostki → match → diff → audyt → json (upsert pojazdów+zdjęć [+reconcile dla full]).
+Zatrzymuje się, gdy krytyk działu zgłosi problem (chyba że `--keep-going`).
+
+Krok WordPress (osobno, w instalacji WP — PHP):
+```bash
+wp eval 'iaai_publish_all_active();'      # publikuje pojazdy z bazy jako CPT + media
+```
+
 ## Tryby zasilania
 - **Backfill (`full`)** — cała bieżąca oferta IAAI (dział 1 przechodzi wszystkie strony).
 - **Live (`incremental`)** — nowe pojazdy na bieżąco; dział 4 wykrywa zmiany i dokłada.

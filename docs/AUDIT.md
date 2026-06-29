@@ -47,9 +47,11 @@ przy aukcjach `auction_close`/sale jest pusty.
 oznacza loty `active` nieobecne w feedzie jako `removed` (temp table + LEFT JOIN; guard na puste
 wejście). Zweryfikowane: lot poza feedem → `removed`.
 
-**M4. Brak orkiestracji.** Działy uruchamiane ręcznie; brak jednego runnera/crona spinającego
-1→…→9 oraz mostka Python→WP (publikacja po imporcie).
-→ *Fix:* runner pipeline + harmonogram (to część „spraw technicznych").
+**M4. Orkiestracja. ✅ NAPRAWIONE (v0.20.0)** `scraper/run_pipeline.py` spina cały łańcuch
+Pythona jedną komendą (z merge karta+szczegóły, full/live, reconcile dla full, stop na krytyku).
+Most do WP udokumentowany: `wp eval 'iaai_publish_all_active();'` (PHP w instalacji WP).
+Zweryfikowane end-to-end (3 Ferrari → baza, 55 zdjęć, wszyscy krytycy OK).
+→ *Pozostaje:* harmonogram (cron/wp-cron) — drobne.
 
 ## 🟡 Niskie
 
