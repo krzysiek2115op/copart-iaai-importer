@@ -23,6 +23,12 @@ stronie klienta. **Bez ingerencji operatora.** Ręczne `run_pipeline.py` to tylk
 testowy/backfill — docelowo pipeline `live` chodzi w pętli jako **usługa/harmonogram**
 (daemon / systemd / cron / wp-cron). To jest warunek spełnienia celu, nie opcja.
 
+**MODEL WDROŻENIA (ustalony):** wszystko na **jednym VPS klienta**, tam gdzie hostuje stronę:
+WordPress + MySQL już są; **scraper Python** chodzi jako usługa na tym samym serwerze i pisze do
+**TEJ SAMEJ bazy MySQL** co WordPress (`IAAI_DB_*` = baza WP klienta, połączenie lokalne).
+Harmonogram: **systemd timer / cron** odpala `live` w pętli; publikacja do CPT przez **WP-CLI**
+(`wp eval 'iaai_publish_all_active();'`) lub bezpośrednio z bazy. Brak osobnego hostingu na scraper.
+
 ## 2. JAK TO DZIAŁA (architektura)
 Pipeline **wieloagentowy**: 9 działów, w każdym **agenci** (🔵 wykonują) i **krytyk** (🔴 sprawdza).
 Zasada: **1 agent : 1 krytyk**. Każdy dział ma **jedną oryginalną dokumentację** (w `docs/refs/`).
@@ -108,7 +114,8 @@ Raport: [docs/AUDIT.md](docs/AUDIT.md). Test integracyjny E2E przeszedł (realne
 3. **Aktywacja wtyczki + `dbDelta()`** — dopisać hook aktywacji tworzący tabele z prefiksem WP
    (`{$wpdb->prefix}iaai_*`) na podstawie `db/schema.sql`. (Obecnie schemat ładowany ręcznie.)
 4. **Konfiguracja połączenia z bazą** — wtyczka domyślnie używa bazy WordPressa; agenci Python
-   muszą pisać do TEJ SAMEJ bazy (ustawić `IAAI_DB_*` na bazę WP klienta).
+   muszą pisać do TEJ SAMEJ bazy (ustawić `IAAI_DB_*` na bazę WP klienta). Połączenie lokalne
+   na VPS (scraper i WP na tym samym serwerze) — patrz model wdrożenia w sekcji 1.
 5. **Most Python → WP w pełni** — wyzwalanie publikacji po imporcie (WP-CLI/wp-cron), spięte z pkt 1.
 
 ### B. Średni priorytet (poprawność/skala produkcyjna)
