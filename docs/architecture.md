@@ -45,6 +45,22 @@ Z **nową bazą** połączone są **DZIAŁY**.
 
 Szczegóły i próbki: [`../research/report.md`](../research/report.md).
 
+## Przepływ: baza → strona WordPress (cel końcowy)
+Po wpięciu wtyczki dane z bazy mają być widoczne na stronie klienta:
+
+```
+Agenci → wpis do bazy (wp_iaai_vehicles + wp_iaai_vehicle_images)
+  → dział publikacja: rekord = wpis WordPressa (CPT „Pojazd")
+    → dział front i media: szablon listy + szablon pojazdu + galeria (vis.iaai.com)
+      → odwiedzający widzi auta na stronie (lista + szczegóły + filtry)
+```
+
+- **Lista pojazdów** — kafelki: zdjęcie + rok/marka/model, przebieg, Run & Drive, Buy Now.
+- **Szczegóły pojazdu** — galeria zdjęć (URL z `vis.iaai.com/resizer`) + wszystkie pola.
+- **Nowe auto live** → po przejściu działów pojawia się na stronie **automatycznie**.
+- Spójnie z architekturą: **plugin łączy się z działami i stroną WP** (nie z bazą wprost);
+  działy czytają bazę i podają pluginowi gotowe dane (JSON), plugin renderuje.
+
 ## Zakres zasilania nowej bazy (decyzja)
 Nowa baza jest zasilana **dwojako**:
 1. **Backfill (historia)** — jednorazowy zaciąg istniejących aukcji z IAAI na starcie.
