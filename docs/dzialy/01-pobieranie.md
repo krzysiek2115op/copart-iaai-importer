@@ -31,10 +31,16 @@ Kod: [`scraper/dzialy/01_pobieranie/listingi.py`](../../scraper/dzialy/01_pobier
 - ⚠️ **VIN jest MASKOWANY anonimowo** (`WBABD33454P******`, „Please log in as a buyer").
   Pełny VIN wymaga **konta IAAI** — przy obecnej decyzji (anonimowo) listingi dają VIN
   częściowy. Flaga `vin_masked`. Do decyzji: czy pełny VIN jest wymagany (→ konto), czy OK.
-- ⚠️ **Paginacja do dopracowania:** `&page=N` z `Keyword` w teście nie przesuwał wyników
-  niezawodnie (strona 2 = te same loty). Dla „całego IAAI" potrzebny pewny mechanizm
-  paginacji/zakresu (właściwy URL wyszukiwarki lub iteracja filtrów). **Krytyk
-  `kompletność-listy` to wychwytuje** (flaguje pełną ostatnią stronę / brak przesuwania).
+- ✅ **Paginacja ROZWIĄZANA (Playwright).** Wyszukiwarka IAAI to Knockout.js — strony
+  ładowane przez POST `/Search` (nie `&page=N`). Agent steruje paginacją przeglądarką:
+  liczy liczbę stron z ukrytego `ResultCount` (np. 7877 → 79 stron), klika numer strony
+  (`#PageNumber{n}`) / „Next", czeka aż lista się zmieni. Zweryfikowane: 4 strony =
+  400 unikalnych lotów, bez zapętleń (`str.1/79 → str.4/79`).
+- 🔴 Krytyk `kompletność-listy` porównuje zebrane `total` z `ResultCount` IAAI i flaguje
+  braki/luki/zapętlenia. (W teście z `--max-pages 4` słusznie zgłasza niekompletność.)
+- ⚠️ Otwarte dla „całego IAAI": pojedyncze zapytanie zwraca tyle, ile `ResultCount` dla
+  tego zapytania; jeśli IAAI ma twardy limit stron na zapytanie, pełne pokrycie wymaga
+  iteracji po filtrach (np. po stanach/markach). Paginacja w obrębie zapytania — pewna.
 
 ## Źródła techniczne (wewnętrzne, z krok 1)
 Endpointy i zachowanie IAAI: patrz [`research/report.md`](../../research/report.md) i

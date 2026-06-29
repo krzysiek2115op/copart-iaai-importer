@@ -1,3 +1,4 @@
-requests>=2.31
 beautifulsoup4>=4.12
-# agent `szczegóły` dodatkowo: playwright>=1.61  (+ playwright install chromium)
+playwright>=1.61
+# po instalacji:  playwright install chromium
+# (paginacja IAAI wymaga przeglądarki — wyszukiwarka to Knockout.js / POST /Search)
