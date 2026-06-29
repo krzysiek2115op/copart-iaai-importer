@@ -65,9 +65,13 @@ def normalize(rec: dict) -> dict:
     for f in ("buy_now", "current_bid"):
         if f in out:
             out[f] = parse_price(out[f])
-    # data sprzedaży
+    # data sprzedaży — ZAWSZE ISO albo None (M1: nie wpuszczaj surowego stringa do DATETIME)
     if out.get("sale_date"):
-        out["sale_date"] = parse_sale_date(out["sale_date"]) or out["sale_date"]
+        raw = out["sale_date"]
+        parsed = parse_sale_date(raw)
+        out["sale_date"] = parsed                 # None gdy nie da się sparsować
+        if parsed is None:
+            out["sale_date_raw"] = raw            # zachowaj oryginał do diagnozy (nie idzie do bazy)
     # tytuł
     if out.get("title"):
         out["title_brand"], out["title_state"] = split_title(out["title"])
