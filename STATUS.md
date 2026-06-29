@@ -1,0 +1,144 @@
+# STATUS PROJEKTU — Importer IAAI → WordPress
+
+Master-dokument: cel, jak działa, co mamy, czego brakuje. Stan: **2026-06-29, v0.20.0**.
+(Szczegóły techniczne: [docs/PIPELINE.md](docs/PIPELINE.md), [docs/AUDIT.md](docs/AUDIT.md),
+[docs/dzialy/](docs/dzialy/), [docs/refs/](docs/refs/).)
+
+---
+
+## 1. CEL PROJEKTU
+Wtyczka **WordPress**, która automatycznie pobiera dane i zdjęcia pojazdów z **iaai.com**
+do **nowej bazy danych** i wyświetla je na stronie klienta.
+- **Backfill** — zaciąga całą bieżącą ofertę IAAI.
+- **Live** — dokłada nowe pojazdy na bieżąco.
+- Klient po otrzymaniu wtyczki (ZIP) wpina ją do swojego WordPressa; tabele zakładają się
+  same (`dbDelta`), a pojazdy pojawiają się na stronie jako wpisy typu „Pojazd".
+- **Copart usunięty z zakresu** (cała domena za Imperva Incapsula — brak legalnego, anonimowego
+  dostępu). Projekt = **tylko IAAI**.
+
+## 2. JAK TO DZIAŁA (architektura)
+Pipeline **wieloagentowy**: 9 działów, w każdym **agenci** (🔵 wykonują) i **krytyk** (🔴 sprawdza).
+Zasada: **1 agent : 1 krytyk**. Każdy dział ma **jedną oryginalną dokumentację** (w `docs/refs/`).
+
+Dwie technologie:
+- **Python (działy 1–5, 7)** — scraping + ETL → zapis do nowej bazy.
+- **Wtyczka WordPress / PHP (działy 6, 8, 9)** — czyta bazę i renderuje na stronie.
+
+```
+IAAI ─> [1 pobieranie] ─> [2 normalizacja] ─> [3 deduplikacja] ─> [4a diff] ─> [5 audyt]
+        ─> [4b json: upsert pojazdów+zdjęć (+reconcile)] ─> NOWA BAZA (MySQL/MariaDB)
+   ▲ (7 zgodność: robots/rate-limit)
+WordPress <─ [9 front i media] <─ [8 publikacja CPT] <─ [6 bezpieczeństwo] <─ NOWA BAZA
+(klient widzi auta)
+```
+
+## 3. NOWA BAZA DANYCH
+Wierna kopia rekordu IAAI. Schemat: [db/schema.sql](db/schema.sql) (MySQL 5.7+/MariaDB 10.3+, utf8mb4).
+- `iaai_vehicles` — pola 1:1 jak listing IAAI (salvage_id PK, VIN, year/make/model, odometer+brand,
+  damage, title, run&drive, key, branch, lane/aisle, buy_now/current_bid, …) + metadane sync
+  (`raw_hash`, `status` active/sold/removed, `captured_at`, `updated_at`).
+- `iaai_vehicle_images` — zdjęcia (image_key UNIQUE, seq, W/H, url).
+- Mapowanie pól: [db/mapping.md](db/mapping.md). Uruchomienie/podgląd: [db/SETUP.md](db/SETUP.md).
+- **Instancja deweloperska** (postawiona): przenośna MariaDB 11.4.4 w `~/iaai-mariadb`,
+  `127.0.0.1:3307`, baza `iaai`, user `iaai/iaai`. Sterowanie: `~/iaai-mariadb/{start,stop,connect}-db.sh`.
+
+---
+
+## 4. CO JUŻ MAMY (gotowe)
+
+### Wszystkie 9 działów zaimplementowane
+| # | Dział | Agenci → krytyk | Oryginał (refs) | Tech | Stan |
+|---|-------|-----------------|-----------------|------|------|
+| 1 | pobieranie | listingi, szczegóły, zdjęcia → kompletność | playwright-python.md | Python | ✅ testowany na żywo |
+| 2 | normalizacja | VIN, jednostki → poprawność-VIN, jakość | vin-nhtsa.md | Python | ✅ testowany |
+| 3 | deduplikacja | match → fałszywe-trafienia | (logika własna) | Python | ✅ testowany |
+| 4 | synchronizacja | diff, json → spójność, poprawność-json | mysql-upsert.md | Python+DB | ✅ testowany na żywej bazie |
+| 5 | audyt | walidacja → poprawność | json-schema.md | Python | ✅ testowany |
+| 6 | bezpieczeństwo | sanityzacja, nonce → podatności | wordpress-security.md | PHP/WP | ⚠️ statycznie |
+| 7 | zgodność | zgody → blokady | robots-rfc9309.md | Python | ✅ testowany |
+| 8 | publikacja | CPT, meta → poprawność | wordpress-cpt.md | PHP/WP | ⚠️ statycznie |
+| 9 | front i media | front, media → render | wordpress-media.md | PHP/WP | ⚠️ statycznie |
+
+Kod Python: [scraper/dzialy/](scraper/dzialy/) · Wtyczka WP: [wp-plugin/iaai-importer/](wp-plugin/iaai-importer/).
+
+### Orkiestrator (jedna komenda)
+[scraper/run_pipeline.py](scraper/run_pipeline.py) — spina cały łańcuch Pythona end-to-end:
+```bash
+python scraper/run_pipeline.py --mode full --base "https://www.iaai.com/Search"   # backfill
+python scraper/run_pipeline.py --mode live --base "https://www.iaai.com/Search"   # nowe
+# --limit N do testów (ogranicza szczegóły/zdjęcia; reconcile wtedy pomijany)
+```
+Krok WP (osobno, w WordPressie): `wp eval 'iaai_publish_all_active();'`.
+
+### Audyt + naprawy (zrobione)
+Raport: [docs/AUDIT.md](docs/AUDIT.md). Test integracyjny E2E przeszedł (realne Ferrari → baza).
+- ✅ **H1** — zdjęcia trafiają do bazy (`json --images`).
+- ✅ **H2** — audyt odsiewa przed zapisem (`json` pomija `_audit_ok=false`); kolejność diff→audyt→json.
+- ✅ **M1** — bezpieczna `sale_date` (nieparsowalna → None).
+- ✅ **M3** — wykrywanie `sold/removed` (`json --reconcile` po pełnym feedzie).
+- ✅ **M4** — orkiestrator + udokumentowany most do WP.
+
+### Infrastruktura
+- Repo prywatne **krzysiek2115op/copart-iaai-importer** (GitHub). Wersjonowanie: auto commit+push+tag
+  po każdej zmianie (v0.1.0 → **v0.20.0**, releasy na GitHub).
+- Folder projektu: `~/zlecenie plugin 1 ` (UWAGA: spacja na końcu nazwy).
+- Token w `~/.git-credentials` (fine-grained, scope: to repo). NIE w repo.
+
+---
+
+## 5. CO JESZCZE DO ZROBIENIA
+
+### A. Wysoki priorytet (do działającej całości u klienta)
+1. **Runtime wtyczki w prawdziwym WordPressie** — wpiąć `wp-plugin/iaai-importer/` do instalacji WP
+   (Local/XAMPP), przetestować: zakładanie tabel (`dbDelta`), CPT, meta, import zdjęć, front.
+   (Działy 6/8/9 były dotąd tylko weryfikowane statycznie — brak PHP/WP w środowisku dev.)
+2. **Aktywacja wtyczki + `dbDelta()`** — dopisać hook aktywacji tworzący tabele z prefiksem WP
+   (`{$wpdb->prefix}iaai_*`) na podstawie `db/schema.sql`. (Obecnie schemat ładowany ręcznie.)
+3. **Konfiguracja połączenia z bazą** — wtyczka domyślnie używa bazy WordPressa; agenci Python
+   muszą pisać do TEJ SAMEJ bazy (ustawić `IAAI_DB_*` na bazę WP klienta).
+4. **Most Python → WP w pełni** — wyzwalanie publikacji po imporcie (WP-CLI/wp-cron).
+
+### B. Średni priorytet (poprawność/skala produkcyjna)
+5. **Pełne pokrycie „całego IAAI"** — pojedyncze zapytanie wyszukiwarki ma limit wyników;
+   backfill całości wymaga iteracji po filtrach (np. po stanach/markach). Paginacja w obrębie
+   zapytania już działa (Playwright).
+6. **Konto IAAI (pełny VIN)** — anonimowo VIN jest maskowany (`…******`). Pełny VIN wymaga
+   zalogowanego konta. Decyzja: czy potrzebny pełny VIN (marka/model/rok mamy z vPIC mimo maski).
+7. **Harmonogram (cron/wp-cron)** — automatyczne odpalanie `full` (rzadko) i `live` (często).
+8. **Strategia zdjęć** — ustalono „pobierać do nas" (lazy, ~1024px). Doprecyzować: gdzie trzymać
+   przy skali całego IAAI (miejsce na dysku), retencja, czyszczenie dla `removed`.
+9. **M2** — mapowanie `sale_date` (data sprzedaży/aukcji) — źródło pola na stronie do ustalenia.
+
+### C. Niski priorytet (dopięcia — z audytu L1–L5)
+10. `vin_status` bywa null (niski wpływ).
+11. `branch_id` + tabela `iaai_branches` nieużywane (mamy `selling_branch` tekstem).
+12. Niespójne wartości `key_available` („Present" vs „Available") — `key_present` normalizuje.
+13. `parse_sale_date` zakłada bieżący rok przy braku roku.
+14. Testy automatyczne (unit/integration) jako stały zestaw.
+
+### D. Dostawa dla klienta
+15. **Paczka ZIP wtyczki** — spakować `wp-plugin/iaai-importer/` jako instalowalny plugin WP
+    (z `readme.txt`, nagłówkiem, aktywacją). Część Python (scraper) jako osobny moduł/usługa
+    zasilająca bazę. Do ustalenia model wdrożenia u klienta (gdzie działa scraper).
+
+---
+
+## 6. KLUCZOWE USTALENIA I OGRANICZENIA
+- **IAAI = jedyne źródło** (Copart za Incapsula — poza zakresem).
+- **Wyszukiwarka IAAI = Knockout.js**, paginacja przez POST `/Search` → sterowana Playwright
+  (nie `&page=`). Strona szczegółów renderuje dane JS-em (surowy HTTP pusty) → też Playwright.
+- **VIN maskowany anonimowo**; NHTSA vPIC dekoduje markę/model/rok nawet z maski.
+- **`/Search` zabronione w robots.txt** IAAI — krytyk `blokady` to zgłasza; decyzja o scrapingu
+  jest **biznesowo-prawna (ToS)** i należy do właściciela projektu, nie do kodu. `/VehicleDetail/` dozwolone.
+- **PHP/WP nieuruchamiane lokalnie** — działy 6/8/9 zweryfikowane standardami; runtime po wpięciu do WP.
+- Bezpieczeństwo: brak sekretów w repo; sanityzacja/escaping/`$wpdb->prepare`; token poza repo.
+
+## 7. SZYBKI START (dev)
+```bash
+# baza dev:
+~/iaai-mariadb/start-db.sh
+# pipeline (test, 3 loty):
+python "scraper/run_pipeline.py" --mode full --base "https://www.iaai.com/Search?Keyword=Ferrari" --limit 3
+# podgląd bazy:
+~/iaai-mariadb/connect-db.sh -e "SELECT salvage_id,year,make,model,status FROM iaai_vehicles;"
+```

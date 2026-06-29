@@ -7,7 +7,10 @@ z zasilaniem danymi **live** i prezentacją na stronie klienta przez wtyczkę Wo
 > Imperva Incapsula (brak legalnego, anonimowego dostępu). Skupiamy się na IAAI.
 > Architektura: [docs/architecture.md](docs/architecture.md).
 
-## Status: wszystkie 9 działów zbudowane (v0.15.0)
+## 📋 Pełny status projektu: [STATUS.md](STATUS.md)
+Cel, architektura, co gotowe, co do zrobienia, ustalenia — wszystko w jednym miejscu.
+
+## Status: wszystkie 9 działów zbudowane + audyt/naprawy (v0.20.0)
 
 Cały pipeline IAAI → WordPress rozpisany i zaimplementowany. Jak działa całość:
 **[docs/PIPELINE.md](docs/PIPELINE.md)**. Działy: [docs/dzialy/](docs/dzialy/) ·
