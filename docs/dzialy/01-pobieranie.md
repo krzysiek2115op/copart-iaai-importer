@@ -23,6 +23,19 @@ Cel: zaciągnąć z IAAI **całą bieżącą ofertę** (`full`) i potem **nowe p
   `iaai_vehicle_images` (`image_key` UNIQUE), `url` = resizer.
 - **Krytyk:** liczba zdjęć = `len(keys[])`; próbka URL-i → HTTP 200 `image/jpeg`; brak duplikatów.
 
+## Stan implementacji agenta `listingi` (zweryfikowany na żywym IAAI)
+Kod: [`scraper/dzialy/01_pobieranie/listingi.py`](../../scraper/dzialy/01_pobieranie/listingi.py).
+- **Parser działa** (potwierdzone na realnym HTML): listing = wiersz `.table-row-border`
+  z `h4.heading-7 > a[name=salvage_id]`; pola w `.data-list__item`, gdzie etykieta jest
+  w atrybucie `title="Etykieta: wartość"`. Poprawnie wyciąga ~25 pól/lot.
+- ⚠️ **VIN jest MASKOWANY anonimowo** (`WBABD33454P******`, „Please log in as a buyer").
+  Pełny VIN wymaga **konta IAAI** — przy obecnej decyzji (anonimowo) listingi dają VIN
+  częściowy. Flaga `vin_masked`. Do decyzji: czy pełny VIN jest wymagany (→ konto), czy OK.
+- ⚠️ **Paginacja do dopracowania:** `&page=N` z `Keyword` w teście nie przesuwał wyników
+  niezawodnie (strona 2 = te same loty). Dla „całego IAAI" potrzebny pewny mechanizm
+  paginacji/zakresu (właściwy URL wyszukiwarki lub iteracja filtrów). **Krytyk
+  `kompletność-listy` to wychwytuje** (flaguje pełną ostatnią stronę / brak przesuwania).
+
 ## Źródła techniczne (wewnętrzne, z krok 1)
 Endpointy i zachowanie IAAI: patrz [`research/report.md`](../../research/report.md) i
 [`db/mapping.md`](../../db/mapping.md). IAAI **nie ma** oficjalnej dokumentacji API.
