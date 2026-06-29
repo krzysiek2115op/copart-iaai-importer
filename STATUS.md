@@ -16,6 +16,13 @@ do **nowej bazy danych** i wyświetla je na stronie klienta.
 - **Copart usunięty z zakresu** (cała domena za Imperva Incapsula — brak legalnego, anonimowego
   dostępu). Projekt = **tylko IAAI**.
 
+### ⚙️ WYMÓG NADRZĘDNY: automatyzacja ciągła (always-on)
+System ma **działać cały czas sam**, nie po ręcznym odpaleniu komendy. Gdy na IAAI pojawia się
+nowe auto → agenci **same je wyłapują** → dane + zdjęcia trafiają do bazy → auto pokazuje się na
+stronie klienta. **Bez ingerencji operatora.** Ręczne `run_pipeline.py` to tylko tryb
+testowy/backfill — docelowo pipeline `live` chodzi w pętli jako **usługa/harmonogram**
+(daemon / systemd / cron / wp-cron). To jest warunek spełnienia celu, nie opcja.
+
 ## 2. JAK TO DZIAŁA (architektura)
 Pipeline **wieloagentowy**: 9 działów, w każdym **agenci** (🔵 wykonują) i **krytyk** (🔴 sprawdza).
 Zasada: **1 agent : 1 krytyk**. Każdy dział ma **jedną oryginalną dokumentację** (w `docs/refs/`).
@@ -89,22 +96,27 @@ Raport: [docs/AUDIT.md](docs/AUDIT.md). Test integracyjny E2E przeszedł (realne
 ## 5. CO JESZCZE DO ZROBIENIA
 
 ### A. Wysoki priorytet (do działającej całości u klienta)
-1. **Runtime wtyczki w prawdziwym WordPressie** — wpiąć `wp-plugin/iaai-importer/` do instalacji WP
+1. **🔴 Automatyzacja ciągła (always-on) — RDZEŃ projektu.** Pipeline `live` ma chodzić sam w pętli
+   jako usługa, nie z ręki. Wyłapywanie nowych aut na bieżąco bez operatora. Do zrobienia:
+   - pętla/serwis `live` (daemon lub systemd lub cron co X min lub wp-cron),
+   - inkrementalne wykrywanie nowości (już mamy `diff` po `raw_hash` + `reconcile` sold/removed),
+   - rozsądny interwał + rate-limit (dział 7) + odporność na restart maszyny/serwera,
+   - automatyczne odpalenie publikacji do WP po każdym cyklu importu.
+2. **Runtime wtyczki w prawdziwym WordPressie** — wpiąć `wp-plugin/iaai-importer/` do instalacji WP
    (Local/XAMPP), przetestować: zakładanie tabel (`dbDelta`), CPT, meta, import zdjęć, front.
    (Działy 6/8/9 były dotąd tylko weryfikowane statycznie — brak PHP/WP w środowisku dev.)
-2. **Aktywacja wtyczki + `dbDelta()`** — dopisać hook aktywacji tworzący tabele z prefiksem WP
+3. **Aktywacja wtyczki + `dbDelta()`** — dopisać hook aktywacji tworzący tabele z prefiksem WP
    (`{$wpdb->prefix}iaai_*`) na podstawie `db/schema.sql`. (Obecnie schemat ładowany ręcznie.)
-3. **Konfiguracja połączenia z bazą** — wtyczka domyślnie używa bazy WordPressa; agenci Python
+4. **Konfiguracja połączenia z bazą** — wtyczka domyślnie używa bazy WordPressa; agenci Python
    muszą pisać do TEJ SAMEJ bazy (ustawić `IAAI_DB_*` na bazę WP klienta).
-4. **Most Python → WP w pełni** — wyzwalanie publikacji po imporcie (WP-CLI/wp-cron).
+5. **Most Python → WP w pełni** — wyzwalanie publikacji po imporcie (WP-CLI/wp-cron), spięte z pkt 1.
 
 ### B. Średni priorytet (poprawność/skala produkcyjna)
-5. **Pełne pokrycie „całego IAAI"** — pojedyncze zapytanie wyszukiwarki ma limit wyników;
+6. **Pełne pokrycie „całego IAAI"** — pojedyncze zapytanie wyszukiwarki ma limit wyników;
    backfill całości wymaga iteracji po filtrach (np. po stanach/markach). Paginacja w obrębie
    zapytania już działa (Playwright).
-6. **Konto IAAI (pełny VIN)** — anonimowo VIN jest maskowany (`…******`). Pełny VIN wymaga
+7. **Konto IAAI (pełny VIN)** — anonimowo VIN jest maskowany (`…******`). Pełny VIN wymaga
    zalogowanego konta. Decyzja: czy potrzebny pełny VIN (marka/model/rok mamy z vPIC mimo maski).
-7. **Harmonogram (cron/wp-cron)** — automatyczne odpalanie `full` (rzadko) i `live` (często).
 8. **Strategia zdjęć** — ustalono „pobierać do nas" (lazy, ~1024px). Doprecyzować: gdzie trzymać
    przy skali całego IAAI (miejsce na dysku), retencja, czyszczenie dla `removed`.
 9. **M2** — mapowanie `sale_date` (data sprzedaży/aukcji) — źródło pola na stronie do ustalenia.
