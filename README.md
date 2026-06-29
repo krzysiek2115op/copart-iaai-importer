@@ -7,7 +7,13 @@ z zasilaniem danymi **live** i prezentacją na stronie klienta przez wtyczkę Wo
 > Imperva Incapsula (brak legalnego, anonimowego dostępu). Skupiamy się na IAAI.
 > Architektura: [docs/architecture.md](docs/architecture.md).
 
-## Status: krok 1 — analiza źródeł danych (v0.1.0)
+## Status: wszystkie 9 działów zbudowane (v0.15.0)
+
+Cały pipeline IAAI → WordPress rozpisany i zaimplementowany. Jak działa całość:
+**[docs/PIPELINE.md](docs/PIPELINE.md)**. Działy: [docs/dzialy/](docs/dzialy/) ·
+oryginalne dokumentacje: [docs/refs/](docs/refs/) · wtyczka WP: [wp-plugin/iaai-importer/](wp-plugin/iaai-importer/).
+
+### (historyczne) krok 1 — analiza źródeł danych (v0.1.0)
 
 Wykonano rozpoznanie API/źródeł danych obu serwisów. Pełne wyniki:
 - [research/report.md](research/report.md) — dokumentacja: endpointy, zabezpieczenia, ocena prawna, szacunki rekordów
