@@ -8,13 +8,14 @@ Dwie technologie:
 - **Działy 6, 8, 9 = wtyczka WordPress (PHP)** (`wp-plugin/iaai-importer/`) — czyta bazę i renderuje.
 
 ```
-IAAI.com ──scrape──> [1 pobieranie] ─> [2 normalizacja] ─> [3 deduplikacja] ─> [4 synchronizacja] ─> NOWA BAZA (MySQL/MariaDB)
-   ▲  (7 zgodność pilnuje robots/rate-limit przy pobieraniu)              │
-   │                                                          [5 audyt danych] (bramka jakości)
-   │                                                                       │
-WordPress <─ [9 front i media] <─ [8 publikacja CPT] <─ [6 bezpieczeństwo] <┘
+IAAI ─> [1 pobieranie] ─> [2 normalizacja] ─> [3 deduplikacja] ─> [4a diff] ─> [5 audyt] ─> [4b json: upsert pojazdów+zdjęć] ─> NOWA BAZA
+   ▲ (7 zgodność: robots/rate-limit przy pobieraniu)
+   │
+WordPress <─ [9 front i media] <─ [8 publikacja CPT] <─ [6 bezpieczeństwo] <─ NOWA BAZA (MySQL/MariaDB)
 (odwiedzający)        (wtyczka PHP czyta NOWĄ BAZĘ i wyświetla pojazdy)
 ```
+> Kolejność zapisu (po audycie v0.18): `diff` liczy status → **`audyt` odsiewa** niepoprawne
+> → `json` zapisuje do bazy **tylko `_audit_ok≠false`** (pojazdy **oraz zdjęcia**, `--images`).
 
 ## Przepływ krok po kroku
 

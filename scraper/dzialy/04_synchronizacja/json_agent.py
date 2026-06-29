@@ -30,6 +30,21 @@ def upsert(rec: dict, cur) -> int:
     return cur.rowcount      # 1=insert, 2=update, 0=bez zmian
 
 
+# ---- H1: upsert ZDJĘĆ do iaai_vehicle_images (klucz: image_key UNIQUE) -----
+_IMG_COLS = ["salvage_id", "image_key", "seq", "width", "height", "url"]
+_IMG_UPD = ["seq", "width", "height", "url"]
+_IMG_INSERT = (f"INSERT INTO iaai_vehicle_images ({','.join('`'+c+'`' for c in _IMG_COLS)}) "
+               f"VALUES ({','.join(['%s'] * len(_IMG_COLS))}) "
+               f"ON DUPLICATE KEY UPDATE {','.join('`'+c+'`=%s' for c in _IMG_UPD)}")
+
+
+def upsert_image(rec: dict, cur) -> int:
+    ins = [rec.get(c) for c in _IMG_COLS]
+    upd = [rec.get(c) for c in _IMG_UPD]
+    cur.execute(_IMG_INSERT, ins + upd)
+    return cur.rowcount
+
+
 # ---- 🔴 KRYTYK: poprawność-json -------------------------------------------
 def krytyk_poprawnosc_json(rec: dict, cur) -> list[str]:
     """Odczyt zwrotny: czy zapis odpowiada intencji (raw_hash + kluczowe pola)."""
@@ -49,16 +64,22 @@ def krytyk_poprawnosc_json(rec: dict, cur) -> list[str]:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--in", dest="infile", type=Path, required=True)
+    ap.add_argument("--in", dest="infile", type=Path, required=True,
+                    help="JSONL pojazdów (najlepiej po audycie — pole _audit_ok)")
+    ap.add_argument("--images", type=Path, help="JSONL zdjęć z agenta `zdjecia` (H1)")
     ap.add_argument("--all", action="store_true", help="zapisz też 'unchanged' (domyślnie pomijane)")
     args = ap.parse_args()
 
     records = [json.loads(l) for l in args.infile.read_text().splitlines() if l.strip()]
     conn = connect()
-    inserted = updated = skipped = 0
+    inserted = updated = skipped = rejected = 0
     all_issues = []
     with conn.cursor() as cur:
         for rec in records:
+            # H2: nie zapisuj rekordów odrzuconych przez audyt
+            if rec.get("_audit_ok") is False:
+                rejected += 1
+                continue
             if rec.get("_sync_status") == "unchanged" and not args.all:
                 skipped += 1
                 continue
@@ -68,9 +89,24 @@ def main():
             elif n == 2:
                 updated += 1
             all_issues += krytyk_poprawnosc_json(rec, cur)
+
+        # H1: zdjęcia -> iaai_vehicle_images (po pojazdach, bo FK)
+        img_ins = img_fail = 0
+        if args.images and args.images.exists():
+            for line in args.images.read_text().splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    upsert_image(json.loads(line), cur)
+                    img_ins += 1
+                except Exception:
+                    img_fail += 1      # np. brak pojazdu (FK) — pojazd odrzucony/niezapisany
     conn.close()
 
-    print(f"[json] wstawiono={inserted} zaktualizowano={updated} pominięto(unchanged)={skipped}")
+    print(f"[json] wstawiono={inserted} zaktualizowano={updated} "
+          f"pominięto(unchanged)={skipped} odrzucono(audyt)={rejected}")
+    if args.images:
+        print(f"[json] zdjęcia: zapisano={img_ins} pominięto(FK/błąd)={img_fail}")
     if all_issues:
         print("[krytyk:poprawność-json] ZASTRZEŻENIA:")
         for i in all_issues[:20]:

@@ -25,6 +25,10 @@ Kod: [`json_agent.py`](../../scraper/dzialy/04_synchronizacja/json_agent.py).
 - **Agent:** upsert do `iaai_vehicles` przez `INSERT … ON DUPLICATE KEY UPDATE`
   (wersja **przenośna** — parametry podawane dwukrotnie; działa na MySQL i MariaDB).
   Zapisuje `raw_hash`, `status='active'`. Pomija `unchanged` (chyba że `--all`).
+  - **H1 (naprawione):** `--images plik.jsonl` (z agenta `zdjecia`) → upsert do
+    `iaai_vehicle_images` (klucz `image_key`). Zweryfikowane: 37 zdjęć w bazie.
+  - **H2 (naprawione):** pomija rekordy `_audit_ok=false` (audyt odsiewa PRZED zapisem).
+    Zalecana kolejność: `diff → walidacja(audyt) → json`.
 - **Krytyk `poprawność-json`:** **odczyt zwrotny** — po zapisie czyta wiersz i sprawdza,
   że `raw_hash` i kluczowe pola w bazie zgadzają się z intencją.
 - Zweryfikowane: rekord 45574140 (2011 BMW 335I XDRIVE) zapisany i odczytany zgodnie.

@@ -12,7 +12,11 @@ Przepuszczono realne loty Ferrari przez **cały łańcuch Pythona**:
 - **Zero `KeyError`** → nazwy pól są spójne między działami; `DATA_COLS` == kolumny `schema.sql`.
 - Upsert idempotentny, wykrywanie zmian (`raw_hash`) działa (zweryfikowane wcześniej).
 
-## 🔴 Wysokie (do naprawy przed produkcją)
+## 🔴 Wysokie — ✅ NAPRAWIONE (v0.18.0)
+
+> **H1 ✅** `json --images` upsertuje zdjęcia do `iaai_vehicle_images` (zweryfikowane: 37 szt.).
+> **H2 ✅** `json` pomija `_audit_ok=false` (rekord odrzucony nie trafia do bazy — zweryfikowane).
+> Kolejność zapisu: `diff → audyt → json`. Szczegóły niżej (kontekst pierwotny).
 
 **H1. Zdjęcia nie trafiają do bazy.** Agent `zdjecia` produkuje rekordy (JSONL/pliki), ale
 **żaden agent Pythona nie zapisuje do `iaai_vehicle_images`**; agent `json` (dział 4)
