@@ -5,6 +5,10 @@
 Cel: zaciągnąć z IAAI **całą bieżącą ofertę** (`full`) i potem **nowe pojazdy live**
 (`live`) — dane + zdjęcia — i zapisać do nowej bazy (`iaai_vehicles`, `iaai_vehicle_images`).
 
+**Stan działu: KOMPLETNY** ✅ — wszystkie 3 agenty + 3 krytyki zaimplementowane i
+zweryfikowane na żywo. Otwarte technikalia (świadomie na potem): podpięcie do bazy
+(teraz zapis do JSONL), pełny VIN (konto), strategia pełnego pokrycia „całego IAAI".
+
 ## Agenci i krytycy
 
 ### 🔵 `listingi` → 🔴 `kompletność-listy`
@@ -24,10 +28,15 @@ Kod: [`scraper/dzialy/01_pobieranie/szczegoly.py`](../../scraper/dzialy/01_pobie
   primary_damage, title, selling_branch); osobno flaguje **VIN zamaskowany** (anonimowo
   IAAI zwraca `...******`; pełny VIN wymaga konta).
 
-### 🔵 `zdjęcia` → 🔴 `kompletność-zdjęć`
-- **Agent:** `GET vis.iaai.com/dimensions?imageKeys={id}~SID` → `keys[]`; zapis do
-  `iaai_vehicle_images` (`image_key` UNIQUE), `url` = resizer.
-- **Krytyk:** liczba zdjęć = `len(keys[])`; próbka URL-i → HTTP 200 `image/jpeg`; brak duplikatów.
+### 🔵 `zdjęcia` → 🔴 `kompletność-zdjęć`  ✅ zaimplementowany
+Kod: [`scraper/dzialy/01_pobieranie/zdjecia.py`](../../scraper/dzialy/01_pobieranie/zdjecia.py).
+- **Agent:** `GET vis.iaai.com/dimensions?imageKeys={id}~SID` → `keys[]`; buduje rekordy do
+  `iaai_vehicle_images` (`image_key` UNIQUE, `seq`, `W/H`, `url` = resizer 1024px).
+  Pobieranie plików opcjonalne (`--download`) — domyślnie lazy (URL gotowy, plik na żądanie).
+  Zwykły `requests` (vis.iaai.com to bezpośrednie API, bez przeglądarki).
+  Zweryfikowane: lot 45574140 → **17 zdjęć + 360°**.
+- **Krytyk `kompletność-zdjęć`:** liczba zapisanych = `len(keys[])`; próbka URL → obraz
+  (HTTP 200 `image/*`); brak duplikatów `image_key`.
 
 ## Stan implementacji agenta `listingi` (zweryfikowany na żywym IAAI)
 Kod: [`scraper/dzialy/01_pobieranie/listingi.py`](../../scraper/dzialy/01_pobieranie/listingi.py).

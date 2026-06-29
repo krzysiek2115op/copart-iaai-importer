@@ -1,4 +1,4 @@
-beautifulsoup4>=4.12
-playwright>=1.61
+requests>=2.31          # agent zdjęcia (vis.iaai.com)
+beautifulsoup4>=4.12    # parsowanie HTML (listingi, szczegóły)
+playwright>=1.61        # paginacja IAAI + render strony szczegółów
 # po instalacji:  playwright install chromium
-# (paginacja IAAI wymaga przeglądarki — wyszukiwarka to Knockout.js / POST /Search)
