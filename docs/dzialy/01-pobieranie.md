@@ -35,10 +35,11 @@ Wszyscy trzej agenci to **agenci scrapujący** — wspólny silnik techniczny to
 **Playwright** (sterowanie przeglądarką: nawigacja, paginacja, render `#ProductDetailsVM`,
 przechwyt sieci). To jest **ta jedna oryginalna dokumentacja**, na której opieramy dział:
 
-- **Oficjalna dokumentacja Playwright (Python):** https://playwright.dev/python/docs/intro
+- **Oficjalna dokumentacja Playwright (Python)** — pobrana i zapisana jako referencja:
+  [`docs/refs/playwright-python.md`](../refs/playwright-python.md)
+  (wersja **1.61.0**, źródło playwright.dev, stan 2026-06-29).
 
-Daj mi **oryginał tej dokumentacji** (albo potwierdź, że mam pobrać oficjalną wersję
-sam), a zbuduję na niej kod agentów zgodnie z aktualnym, poprawnym API Playwright.
+Kod agentów `listingi/szczegóły/zdjęcia` budujemy na tej referencji (sync API).
 
 > Osobno (decyzje biznesowe, nie „dokumentacja"): zakres oferty (całe IAAI vs filtry),
 > konto IAAI (anon/login), lista wymaganych pól, wymagania co do zdjęć. To ustalenia,
