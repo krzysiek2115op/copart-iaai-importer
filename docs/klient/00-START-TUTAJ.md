@@ -43,5 +43,8 @@ IAAI.com  ──►  [Twój serwer: program zbierający]  ──►  [Baza danyc
 | **4** | Sprawdzasz, że działa + obsługa na co dzień | [04-jak-dziala-i-obsluga.md](04-jak-dziala-i-obsluga.md) | informacyjne |
 | **—** | Problemy i pytania (FAQ) + słowniczek | [05-problemy-i-pytania.md](05-problemy-i-pytania.md) | na wszelki wypadek |
 
+> 🗺️ Chcesz najpierw zobaczyć, **jak to działa na obrazku**? →
+> [diagram-systemu.md](diagram-systemu.md)
+
 **Na co dzień nie musisz robić nic** — po Etapie 3 wszystko dzieje się samo.
 Zacznij od **[Etapu 1 →](01-instalacja-wtyczki.md)**.
