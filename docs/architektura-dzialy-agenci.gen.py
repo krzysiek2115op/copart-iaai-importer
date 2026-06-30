@@ -62,8 +62,9 @@ sec1 = DZIALY[:6]
 sec2 = DZIALY[6:]
 def section_height(cards):
     return sum(card_h(c)+GAP for c in cards)
-SEC_HDR=46; BAND=70; SRC=58; CAP=26
-total = (TOP + SEC_HDR + SRC + GAP + section_height(sec1) + BAND + CAP + GAP
+SEC_HDR=46; BAND=70; CAP=26
+SBOX=50; SRCBLK = SBOX + GAP + SBOX     # baza IAAI -> (AJAX) -> strona IAAI
+total = (TOP + SEC_HDR + SRCBLK + GAP + section_height(sec1) + BAND + CAP + GAP
          + SEC_HDR + section_height(sec2) + BAND + 60)
 
 add(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {total}" width="{W}" height="{total}" font-family="DejaVu Sans, Arial, sans-serif">')
@@ -119,12 +120,17 @@ def arrow(y, label=None):
 # Sekcja 1
 add(f'<text x="48" y="{y+30}" font-size="18" font-weight="bold" fill="#333">▼ CZĘŚĆ 1 — SCRAPER (Python): zbiera dane z IAAI i zapisuje do bazy</text>')
 y += SEC_HDR
-# Źródło: IAAI.com  (to jest dawna „stara baza" — pobieramy scrapingiem, nie łączymy się do bazy IAAI)
-add(f'<rect x="200" y="{y}" width="{W-400}" height="{SRC}" rx="10" fill="#eceff1" stroke="#607d8b" stroke-width="2"/>')
-add(f'<text x="{W/2}" y="{y+25}" text-anchor="middle" font-size="16" font-weight="bold" fill="#37474f">IAAI.com — źródło (aukcje aut)</text>')
-add(f'<text x="{W/2}" y="{y+45}" text-anchor="middle" font-size="11.5" fill="#607d8b">to dawna „stara baza": dane IAAI; strona = aplikacja JS (Knockout) — pobieramy je scrapingiem</text>')
-y += SRC
-arrow(y, "AJAX · Playwright  (renderuje stronę i czyta dane)"); y += GAP
+# Źródło — rozdzielone: BAZA IAAI (ich, niedostępna) --AJAX--> STRONA IAAI --Playwright--> scraper
+add(f'<rect x="200" y="{y}" width="{W-400}" height="{SBOX}" rx="10" fill="#e0e0e0" stroke="#757575" stroke-width="2" stroke-dasharray="6 4"/>')
+add(f'<text x="{W/2}" y="{y+23}" text-anchor="middle" font-size="15" font-weight="bold" fill="#424242">BAZA IAAI  (ich serwer — dawna „stara baza")</text>')
+add(f'<text x="{W/2}" y="{y+41}" text-anchor="middle" font-size="11" fill="#757575">NIE mamy do niej dostępu — nie łączymy się do bazy IAAI</text>')
+y += SBOX
+arrow(y, "AJAX  (strona IAAI sama pobiera dane z ich bazy)"); y += GAP
+add(f'<rect x="200" y="{y}" width="{W-400}" height="{SBOX}" rx="10" fill="#eceff1" stroke="#607d8b" stroke-width="2"/>')
+add(f'<text x="{W/2}" y="{y+23}" text-anchor="middle" font-size="15" font-weight="bold" fill="#37474f">Strona IAAI w przeglądarce  (aplikacja JS / Knockout)</text>')
+add(f'<text x="{W/2}" y="{y+41}" text-anchor="middle" font-size="11" fill="#607d8b">to widzimy publicznie — tu zaczyna się nasz system</text>')
+y += SBOX
+arrow(y, "Playwright  (czytamy wyrenderowaną stronę)"); y += GAP
 for i,d in enumerate(sec1):
     h = draw_card(d, y)
     y += h
