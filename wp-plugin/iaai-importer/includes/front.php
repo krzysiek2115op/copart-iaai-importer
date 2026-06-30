@@ -43,6 +43,25 @@ function iaai_get_image_urls( int $salvage_id, int $limit = 0 ) : array {
 }
 
 /**
+ * F3 — czytelny przebieg z jednostką + przeliczeniem na km (baza pozostaje wierną
+ * kopią IAAI: km liczymy przy wyświetlaniu, nie zapisujemy własnej kolumny).
+ * "169594" + "mi" -> "169 594 km (105 380 mi)". Gdy uom=km, pokazujemy km bez przeliczeń.
+ * @return string już bezpieczny (esc_html w środku) tekst HTML.
+ */
+function iaai_format_odometer( $value, string $uom = 'mi' ) : string {
+	$value = (int) $value;
+	if ( $value <= 0 ) {
+		return '';
+	}
+	$uom = strtolower( $uom ?: 'mi' );
+	if ( 'km' === $uom ) {
+		return esc_html( number_format_i18n( $value ) . ' km' );
+	}
+	$km = (int) round( $value * 1.609344 );          // mi -> km
+	return esc_html( number_format_i18n( $km ) . ' km (' . number_format_i18n( $value ) . ' mi)' );
+}
+
+/**
  * Sideloaduje zdjęcia pojazdu do mediów WP (lazy — tylko raz). Pierwsze zdjęcie =
  * miniatura (featured), reszta = galeria (meta iaai_gallery).
  * @return int liczba zaimportowanych załączników.
@@ -97,7 +116,10 @@ function iaai_render_list( $atts ) : string {
 	while ( $q->have_posts() ) {
 		$q->the_post();
 		$id    = get_the_ID();
-		$odo   = (int) get_post_meta( $id, 'iaai_odometer', true );
+		$odo   = iaai_format_odometer(
+			get_post_meta( $id, 'iaai_odometer', true ),
+			(string) get_post_meta( $id, 'iaai_odometer_uom', true )
+		);
 		$dmg   = get_post_meta( $id, 'iaai_primary_damage', true );
 		// Miniatura: hotlink (1. zdjęcie z bazy) albo — w trybie download — miniatura WP.
 		if ( 'hotlink' === iaai_image_mode() ) {
@@ -113,7 +135,7 @@ function iaai_render_list( $atts ) : string {
 		$out  .= '<li class="iaai-card"><a href="' . esc_url( get_permalink( $id ) ) . '">'
 			. $thumb
 			. '<h3>' . esc_html( get_the_title() ) . '</h3>'
-			. '<span class="odo">' . esc_html( number_format( $odo ) ) . ' mi</span> '
+			. ( $odo ? '<span class="odo">' . $odo . '</span> ' : '' )
 			. '<span class="dmg">' . esc_html( $dmg ) . '</span>'
 			. '</a></li>';
 	}
@@ -136,9 +158,16 @@ function iaai_render_single( string $content ) : string {
 	$rows = '';
 	foreach ( $fields as $key => $label ) {
 		$val = get_post_meta( $id, 'iaai_' . $key, true );
-		if ( $val !== '' ) {
-			$rows .= '<tr><th>' . esc_html( $label ) . '</th><td>' . esc_html( $val ) . '</td></tr>';
+		if ( $val === '' ) {
+			continue;
 		}
+		// F3: przebieg z przeliczeniem na km (już zescapowany); reszta przez esc_html.
+		if ( 'odometer' === $key ) {
+			$cell = iaai_format_odometer( $val, (string) get_post_meta( $id, 'iaai_odometer_uom', true ) );
+		} else {
+			$cell = esc_html( $val );
+		}
+		$rows .= '<tr><th>' . esc_html( $label ) . '</th><td>' . $cell . '</td></tr>';
 	}
 	// Galeria: hotlink (URL-e z bazy, vis.iaai.com) albo załączniki WP (tryb download).
 	$imgs = '';

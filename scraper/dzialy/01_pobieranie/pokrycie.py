@@ -73,7 +73,8 @@ def collect(segments: list[dict], out_path: Path, mode: str, max_pages: int,
             rc = res.get("result_count")
             seg_meta.append({"label": seg["label"], "url": seg["url"],
                              "collected": collected, "result_count": rc,
-                             "new": collected - dups, "dups": dups})
+                             "new": collected - dups, "dups": dups,
+                             "blocked": res.get("blocked")})    # F2: propaguj blokadę segmentu
             print(f"[pokrycie]   zebrano {collected}"
                   + (f"/{rc}" if rc else "") + f", nowych {collected - dups}, dubli {dups}"
                   + f" | unikalnych łącznie {len(seen)}")
@@ -89,6 +90,8 @@ def krytyk_kompletnosc_pokrycia(result: dict, page_size: int = PAGE_SIZE) -> lis
     3) zerowy wynik segmentu (zły filtr / brak aut)."""
     issues = []
     for m in result["segments"]:
+        if m.get("blocked"):                          # F2: blokada w segmencie
+            issues.append(f"segment '{m['label']}': BLOKADA ({m['blocked']}) — zwolnij/odpuść")
         rc, got = m.get("result_count"), m["collected"]
         if rc and got < rc:
             issues.append(f"segment '{m['label']}': zebrano {got}/{rc} — URWANY "

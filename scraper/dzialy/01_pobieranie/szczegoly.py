@@ -16,12 +16,12 @@ Użycie:   python szczegoly.py 45574140
           python szczegoly.py --in out/listingi.jsonl --out out/szczegoly.jsonl
 """
 from __future__ import annotations
-import argparse, json, re, sys, time
+import argparse, json, re, sys
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-from listingi import parse_title, parse_odometer  # ten sam pakiet
+from listingi import parse_title, parse_odometer, ZGODY  # ten sam pakiet (F2: dział 7)
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
@@ -91,7 +91,11 @@ def fetch_detail(salvage_id, browser) -> dict:
                   wait_until="domcontentloaded", timeout=60_000)
         page.wait_for_selector(".data-list__item", timeout=30_000, state="attached")
         page.wait_for_timeout(1500)
-        rec = parse_detail(page.content())
+        html = page.content()
+        reason = ZGODY.detect_block(200, html)              # F2: detekcja blokady
+        if reason:
+            return {"salvage_id": int(salvage_id), "_blocked": reason}
+        rec = parse_detail(html)
         # rok/marka/model z nagłówka strony
         heading = ""
         for sel in ("h1", "h2.heading-2", "title"):
@@ -134,18 +138,27 @@ def main():
         ap.error("podaj salvage_id albo --in plik.jsonl")
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
+    limiter = ZGODY.RateLimiter(min_interval=args.delay)    # F2: rate-limit (dotąd --delay był ignorowany)
+    blocked = False
     with sync_playwright() as p, args.out.open("w", encoding="utf-8") as fh:
         browser = p.chromium.launch()
         for sid in ids:
+            limiter.wait()
             rec = fetch_detail(sid, browser)
+            if rec.get("_blocked"):                         # F2: blokada -> przerwij, nie młóć
+                blocked = rec["_blocked"]
+                print(f"  ⚠️ BLOKADA ({blocked}) przy {sid} — przerywam (backoff).")
+                break
             fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
             issues = krytyk_kompletnosc_pol(rec)
             status = "OK ✅" if not issues else "ZASTRZEŻENIA: " + "; ".join(issues)
             print(f"  {sid}: {rec.get('year')} {rec.get('make')} {rec.get('model')} "
                   f"| odo={rec.get('odometer')} {rec.get('odometer_brand')} | [{status}]")
-            time.sleep(args.delay)
         browser.close()
     print(f"[szczegóły] zapisano -> {args.out}")
+    if blocked:                                         # F2: zgłoś blokadę orkiestratorowi
+        print(f"[krytyk:blokady] BLOKADA ({blocked}) — pobieranie przerwane.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

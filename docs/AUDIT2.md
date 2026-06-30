@@ -20,26 +20,35 @@ parytet danych, wpięcia, cykl życia rekordu. Wynik: rdzeń spójny; znaleziono
 
 ## 2. USTALENIA (F1–F7) — do decyzji
 
-### 🟠 F1 (średnie) — znikłe auta zostają opublikowane na stronie
+> **STATUS NAPRAW (v0.28.0):** F1 ✅, F2 ✅, F3 ✅ (zrobione). F4–F7 pozostają wg opisu niżej.
+
+### ✅ F1 (NAPRAWIONE) — znikłe auta zostają opublikowane na stronie
 `iaai_publish_all_active()` publikuje **tylko** rekordy `status='active'`. Gdy reconcile oznaczy
 lot jako `sold`/`removed`, jego wpis WP **nie jest cofany** (zostaje „publish"). Efekt: strona
 pokazuje auta, których już nie ma w ofercie.
-**Opcje:** dopisać przejście `removed/sold → draft/trash` (lub baner „sprzedane”) w publikacji.
+**Zrobione:** `iaai_unpublish_inactive()` (wołane z `iaai_publish_all_active()`) przestawia wpisy
+sold/removed na `draft` (nie kasuje — historia zostaje) i zapisuje meta `iaai_status`. Re-list
+wraca na `publish`. Wtyczka v0.15.0.
 
-### 🟠 F2 (średnie) — dział 7 (rate-limit + detekcja blokad) nie wpięty w orkiestrator
+### ✅ F2 (NAPRAWIONE) — dział 7 (rate-limit + detekcja blokad) nie wpięty w orkiestrator
 `run_pipeline.py` robi tylko jednorazowy `compliance_note()` (sprawdzenie robots). Właściwy
 `RateLimiter`/`detect_block()` z `07_zgodnosc/zgody.py` **nie jest** używany w przebiegu. Jedyny
 throttle to `--delay` (1 s/stronę) w `listingi`. Przy always-on + pełnym pokryciu (wiele segmentów)
 to ryzyko blokady IAAI.
-**Opcje:** wpiąć rate-limiter i wykrywanie blokad do pętli pobierania (segmenty/strony).
+**Zrobione:** `listingi` i `szczegóły` importują dział 7 (`zgody.py`): `RateLimiter` (odstęp między
+żądaniami — w `szczegóły` `--delay` był wcześniej **ignorowany**) + `detect_block()` (Incapsula/
+CAPTCHA/403/429) → przy blokadzie pobieranie przerywa się (backoff), krytyk/exit code to zgłasza.
+Flaga `blocked` propagowana też przez `pokrycie` do krytyka. (`zdjęcia` = requests do CDN
+vis.iaai.com, niższe ryzyko — poza zakresem F2.)
 
-### 🟡 F3 (niskie–średnie) — pola WYLICZANE, ale niezapisywane
+### ✅ F3 (NAPRAWIONE) — pola WYLICZANE, ale niezapisywane
 `odometer_km`, `key_present`, `title_brand`, `title_state`, `vin_status` są liczone w normalizacji,
-ale `to_db_row()` bierze tylko `DATA_COLS` → **nie trafiają do bazy**. Skutki:
-- przeliczenie na **km nigdy nie dociera** do bazy/strony; front pokazuje na sztywno `mi`,
-- `title_brand/state`, `key_present` (czysty bool), `vin_status` istnieją tylko w logach/krytykach.
-**Opcje:** (a) dodać wybrane kolumny do schematu+DATA_COLS+dbDelta i je zapisywać, albo
-(b) świadomie zostawić jako diagnostyczne (front liczy/etykietuje sam).
+ale `to_db_row()` bierze tylko `DATA_COLS` → nie trafiają do bazy.
+**Decyzja + zrobione:** baza MA POZOSTAĆ **wierną kopią rekordu IAAI** — nie dodajemy własnych
+kolumn. Realny skutek dla klienta (km nie docierał, front na sztywno „mi") naprawiony w warstwie
+WYŚWIETLANIA: `iaai_format_odometer()` liczy km przy renderze i honoruje `odometer_uom`
+(„169 594 km (105 380 mi)"). Pozostałe pola wyliczane zostają **diagnostyczne** (logi/krytycy),
+zgodnie z zasadą wiernej kopii.
 
 ### 🟡 F4 (niskie) — meta WP nie wystawia `item_id` ani `branch_id`
 W bazie są (zapisywane), ale `iaai_meta_keys()` ich nie publikuje (30 z 32 pól). `branch_id` i tak

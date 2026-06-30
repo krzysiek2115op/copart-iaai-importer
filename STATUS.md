@@ -1,6 +1,7 @@
 # STATUS PROJEKTU — Importer IAAI → WordPress
 
-Master-dokument: cel, jak działa, co mamy, czego brakuje. Stan: **2026-06-30, v0.24.0** (blok A: kod gotowy).
+Master-dokument: cel, jak działa, co mamy, czego brakuje. Stan: **2026-06-30, v0.28.0**
+(bloki A/B/C: kod gotowy; audyt A–Z + naprawy F1–F3 — [docs/AUDIT2.md](docs/AUDIT2.md)).
 (Szczegóły techniczne: [docs/PIPELINE.md](docs/PIPELINE.md), [docs/AUDIT.md](docs/AUDIT.md),
 [docs/dzialy/](docs/dzialy/), [docs/refs/](docs/refs/).)
 

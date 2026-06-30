@@ -18,11 +18,23 @@ Użycie:    python listingi.py --base "https://www.iaai.com/Search?Keyword=BMW" 
            python listingi.py --mode full --max-pages 80 --out out/listingi.jsonl
 """
 from __future__ import annotations
-import argparse, json, math, re, sys, time
+import argparse, importlib.util, json, math, re, sys
 from pathlib import Path
 
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
+
+
+def _load_zgody():
+    """F2: wpięcie działu 7 (RateLimiter + detect_block) bez duplikowania logiki."""
+    p = Path(__file__).resolve().parents[1] / "07_zgodnosc" / "zgody.py"
+    spec = importlib.util.spec_from_file_location("zgody", p)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+ZGODY = _load_zgody()
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
@@ -138,7 +150,8 @@ def _go_next(page, page_no, old_first_id) -> bool:
 
 def run(base_url: str, mode: str, out_path: Path, max_pages: int, delay: float, headless: bool = True):
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    seen, pages_meta, result_count = set(), [], None
+    seen, pages_meta, result_count, blocked = set(), [], None, None
+    limiter = ZGODY.RateLimiter(min_interval=delay)     # F2: rate-limit działu 7
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=headless)
         page = browser.new_context(user_agent=UA, locale="en-US").new_page()
@@ -155,7 +168,14 @@ def run(base_url: str, mode: str, out_path: Path, max_pages: int, delay: float, 
 
         with out_path.open("w", encoding="utf-8") as fh:
             for page_no in range(1, max_pages + 1):
-                recs = parse_listings(page.content())
+                html = page.content()
+                # F2: wykryj blokadę/Incapsula/CAPTCHA -> przerwij, NIE młóć dalej
+                reason = ZGODY.detect_block(200, html)
+                if reason:
+                    blocked = f"strona {page_no}: {reason}"
+                    print(f"  ⚠️ BLOKADA ({reason}) — przerywam pobieranie (backoff).")
+                    break
+                recs = parse_listings(html)
                 new = [x for x in recs if x["salvage_id"] not in seen]
                 pages_meta.append({"page": page_no, "count": len(recs), "new": len(new)})
                 for x in new:
@@ -176,14 +196,17 @@ def run(base_url: str, mode: str, out_path: Path, max_pages: int, delay: float, 
                 old = _first_id(page)
                 if not _go_next(page, page_no, old):
                     print("  (następna strona nie załadowała się — stop)"); break
-                time.sleep(delay)
+                limiter.wait()                      # F2: odstęp między żądaniami (rate-limit)
         browser.close()
-    return {"total": len(seen), "result_count": result_count, "pages": pages_meta}
+    return {"total": len(seen), "result_count": result_count, "pages": pages_meta,
+            "blocked": blocked}
 
 
 # ---- 🔴 KRYTYK: kompletność-listy ----------------------------------------
 def krytyk_kompletnosc_listy(result: dict, page_size: int = 100) -> list[str]:
     issues = []
+    if result.get("blocked"):                         # F2: blokada = poważne zastrzeżenie
+        issues.append(f"BLOKADA wykryta ({result['blocked']}) — pobieranie przerwane, zwolnij/odpuść")
     rc, total, pages = result.get("result_count"), result["total"], result["pages"]
     # 1) zebrano tyle, ile deklaruje IAAI
     if rc and total < rc:

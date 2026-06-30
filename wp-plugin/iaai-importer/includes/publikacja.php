@@ -104,10 +104,12 @@ function iaai_publish_vehicle( int $salvage_id ) : int {
 			update_post_meta( $post_id, 'iaai_' . $key, $row[ $key ] );
 		}
 	}
+	update_post_meta( $post_id, 'iaai_status', 'active' );   // F1: spójny status (re-list wraca na publish)
 	return (int) $post_id;
 }
 
-/** Publikuje wszystkie aktywne pojazdy (np. z crona po imporcie). */
+/** Publikuje wszystkie aktywne pojazdy, a znikłe (sold/removed) cofa z publikacji (F1).
+ *  Wołane po imporcie (WP-CLI/cron): `wp eval 'iaai_publish_all_active();'`. */
 function iaai_publish_all_active() : int {
 	global $wpdb;
 	$table = $wpdb->prefix . 'iaai_vehicles';
@@ -117,6 +119,35 @@ function iaai_publish_all_active() : int {
 	$n = 0;
 	foreach ( $ids as $sid ) {
 		if ( iaai_publish_vehicle( (int) $sid ) ) {
+			$n++;
+		}
+	}
+	iaai_unpublish_inactive();                   // F1: zdejmij ze strony auta, których już nie ma
+	return $n;
+}
+
+/**
+ * F1 — pojazdy o statusie sold/removed: ich wpis CPT przechodzi w 'draft'
+ * (znika ze strony, nie jest kasowany — historia zostaje). Zapisuje też meta
+ * `iaai_status`, by szablon mógł np. pokazać „sprzedane” zamiast ukrywać.
+ * @return int liczba zdjętych wpisów.
+ */
+function iaai_unpublish_inactive() : int {
+	global $wpdb;
+	$table = $wpdb->prefix . 'iaai_vehicles';
+	$rows  = $wpdb->get_results(
+		$wpdb->prepare( "SELECT salvage_id, status FROM {$table} WHERE status <> %s", 'active' ),
+		ARRAY_A
+	);
+	$n = 0;
+	foreach ( $rows as $r ) {
+		$post_id = iaai_find_post_by_salvage( (int) $r['salvage_id'] );
+		if ( ! $post_id ) {
+			continue;
+		}
+		update_post_meta( $post_id, 'iaai_status', sanitize_text_field( $r['status'] ) );
+		if ( get_post_status( $post_id ) === 'publish' ) {
+			wp_update_post( array( 'ID' => $post_id, 'post_status' => 'draft' ) );
 			$n++;
 		}
 	}
