@@ -48,8 +48,11 @@ function iaai_register_pojazd_meta() : void {
 			'type'              => in_array( $key, $num, true ) ? 'integer'
 				: ( in_array( $key, array( 'buy_now', 'current_bid' ), true ) ? 'number' : 'string' ),
 			'single'            => true,
-			'show_in_rest'      => true,
+			'show_in_rest'      => true,                      // odczyt publiczny (dane ogłoszenia)
 			'sanitize_callback' => in_array( $key, $num, true ) ? 'absint' : 'sanitize_text_field',
+			'auth_callback'     => static function () {       // ZAPIS przez REST tylko dla edytorów
+				return current_user_can( 'edit_posts' );
+			},
 		) );
 	}
 }
@@ -108,21 +111,62 @@ function iaai_publish_vehicle( int $salvage_id ) : int {
 	return (int) $post_id;
 }
 
-/** Publikuje wszystkie aktywne pojazdy, a znikłe (sold/removed) cofa z publikacji (F1).
- *  Wołane po imporcie (WP-CLI/cron): `wp eval 'iaai_publish_all_active();'`. */
-function iaai_publish_all_active() : int {
-	global $wpdb;
-	$table = $wpdb->prefix . 'iaai_vehicles';
-	$ids   = $wpdb->get_col(
-		$wpdb->prepare( "SELECT salvage_id FROM {$table} WHERE status = %s", 'active' )
-	);
-	$n = 0;
-	foreach ( $ids as $sid ) {
-		if ( iaai_publish_vehicle( (int) $sid ) ) {
-			$n++;
-		}
+/**
+ * Publikuje wszystkie aktywne pojazdy, a znikłe (sold/removed) cofa z publikacji (F1).
+ * Wołane po imporcie (WP-CLI/cron): `wp eval 'iaai_publish_all_active();'`.
+ *
+ * Utwardzenie: MUTEX (GET_LOCK) — dwa przebiegi nie ruszą równolegle (race/double-run);
+ * BATCH — przetwarza partiami (pamięć przy całym IAAI); LOG — czas/liczba/pamięć (nie do usera).
+ *
+ * @param int $batch rozmiar partii.
+ * @return int liczba opublikowanych (lub -1 gdy lock zajęty).
+ */
+function iaai_publish_all_active( int $batch = 200 ) : int {
+	if ( ! iaai_db_lock( 'publish', 0 ) ) {
+		iaai_log( 'publish: pominięto — trwa już inny import (lock zajęty)', 'warn' );
+		return -1;
 	}
-	iaai_unpublish_inactive();                   // F1: zdejmij ze strony auta, których już nie ma
+	global $wpdb;
+	$table  = $wpdb->prefix . 'iaai_vehicles';
+	$batch  = max( 20, min( 1000, $batch ) );
+	$start  = microtime( true );
+	$n      = 0;
+	$offset = 0;
+
+	wp_suspend_cache_addition( true );           // ogranicz narastanie cache (pamięć)
+	try {
+		do {
+			$ids = $wpdb->get_col( $wpdb->prepare(
+				"SELECT salvage_id FROM {$table} WHERE status = %s ORDER BY salvage_id ASC LIMIT %d OFFSET %d",
+				'active',
+				$batch,
+				$offset
+			) );
+			foreach ( $ids as $sid ) {
+				if ( iaai_publish_vehicle( (int) $sid ) ) {
+					$n++;
+				}
+			}
+			$offset += $batch;
+		} while ( count( $ids ) === $batch );
+
+		iaai_unpublish_inactive();               // F1: zdejmij ze strony auta, których już nie ma
+	} catch ( \Throwable $e ) {
+		iaai_log( 'publish: wyjątek — ' . $e->getMessage(), 'error' );
+	} finally {
+		wp_suspend_cache_addition( false );
+		iaai_db_unlock( 'publish' );
+	}
+
+	if ( function_exists( 'iaai_flush_list_cache' ) ) {
+		iaai_flush_list_cache();                 // odśwież cache list po zmianach
+	}
+	iaai_log( sprintf(
+		'publish: opublikowano=%d czas=%.1fs pamięć=%s',
+		$n,
+		microtime( true ) - $start,
+		size_format( memory_get_peak_usage( true ) )
+	), 'info' );
 	return $n;
 }
 
@@ -132,25 +176,35 @@ function iaai_publish_all_active() : int {
  * `iaai_status`, by szablon mógł np. pokazać „sprzedane” zamiast ukrywać.
  * @return int liczba zdjętych wpisów.
  */
-function iaai_unpublish_inactive() : int {
+function iaai_unpublish_inactive( int $batch = 200 ) : int {
 	global $wpdb;
-	$table = $wpdb->prefix . 'iaai_vehicles';
-	$rows  = $wpdb->get_results(
-		$wpdb->prepare( "SELECT salvage_id, status FROM {$table} WHERE status <> %s", 'active' ),
-		ARRAY_A
-	);
-	$n = 0;
-	foreach ( $rows as $r ) {
-		$post_id = iaai_find_post_by_salvage( (int) $r['salvage_id'] );
-		if ( ! $post_id ) {
-			continue;
+	$table  = $wpdb->prefix . 'iaai_vehicles';
+	$batch  = max( 20, min( 1000, $batch ) );
+	$n      = 0;
+	$offset = 0;
+	do {
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT salvage_id, status FROM {$table} WHERE status <> %s ORDER BY salvage_id ASC LIMIT %d OFFSET %d",
+				'active',
+				$batch,
+				$offset
+			),
+			ARRAY_A
+		);
+		foreach ( $rows as $r ) {
+			$post_id = iaai_find_post_by_salvage( (int) $r['salvage_id'] );
+			if ( ! $post_id ) {
+				continue;
+			}
+			update_post_meta( $post_id, 'iaai_status', sanitize_text_field( $r['status'] ) );
+			if ( get_post_status( $post_id ) === 'publish' ) {
+				wp_update_post( array( 'ID' => $post_id, 'post_status' => 'draft' ) );
+				$n++;
+			}
 		}
-		update_post_meta( $post_id, 'iaai_status', sanitize_text_field( $r['status'] ) );
-		if ( get_post_status( $post_id ) === 'publish' ) {
-			wp_update_post( array( 'ID' => $post_id, 'post_status' => 'draft' ) );
-			$n++;
-		}
-	}
+		$offset += $batch;
+	} while ( count( $rows ) === $batch );
 	return $n;
 }
 

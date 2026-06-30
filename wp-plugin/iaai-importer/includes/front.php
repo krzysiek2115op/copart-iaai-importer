@@ -27,19 +27,31 @@ function iaai_image_mode() : string {
 	return in_array( $mode, array( 'hotlink', 'download' ), true ) ? $mode : 'hotlink';
 }
 
+/** Górny limit zdjęć renderowanych na pojazd (ochrona przed nadmiarem / DoS). */
+const IAAI_MAX_IMAGES = 40;
+
 /**
  * Adresy zdjęć pojazdu prosto z nowej bazy (hotlink z vis.iaai.com).
- * @return string[] URL-e w kolejności seq (już przez esc_url_raw).
+ * Każdy URL przechodzi przez allowlist hosta IAAI (SSRF / podstawione URL-e odrzucone).
+ * @return string[] bezpieczne URL-e w kolejności seq.
  */
 function iaai_get_image_urls( int $salvage_id, int $limit = 0 ) : array {
 	global $wpdb;
 	$table = $wpdb->prefix . 'iaai_vehicle_images';
-	$sql   = "SELECT url FROM {$table} WHERE salvage_id = %d AND url IS NOT NULL ORDER BY seq ASC";
-	if ( $limit > 0 ) {
-		$sql .= ' LIMIT ' . absint( $limit );
+	$cap   = $limit > 0 ? min( absint( $limit ), IAAI_MAX_IMAGES ) : IAAI_MAX_IMAGES;
+	$urls  = $wpdb->get_col( $wpdb->prepare(
+		"SELECT url FROM {$table} WHERE salvage_id = %d AND url IS NOT NULL ORDER BY seq ASC LIMIT %d",
+		$salvage_id,
+		$cap
+	) );
+	$safe = array();
+	foreach ( (array) $urls as $u ) {
+		$s = iaai_safe_image_url( (string) $u );   // dział 6: tylko host IAAI, https/http
+		if ( '' !== $s ) {
+			$safe[] = $s;
+		}
 	}
-	$urls = $wpdb->get_col( $wpdb->prepare( $sql, $salvage_id ) );
-	return array_map( 'esc_url_raw', (array) $urls );
+	return $safe;
 }
 
 /**
@@ -77,17 +89,32 @@ function iaai_import_images( int $salvage_id, int $post_id ) : int {
 	global $wpdb;
 	$table = $wpdb->prefix . 'iaai_vehicle_images';
 	$rows  = $wpdb->get_results(
-		$wpdb->prepare( "SELECT url FROM {$table} WHERE salvage_id = %d ORDER BY seq ASC", $salvage_id ),
+		$wpdb->prepare(
+			"SELECT url FROM {$table} WHERE salvage_id = %d AND url IS NOT NULL ORDER BY seq ASC LIMIT %d",
+			$salvage_id,
+			IAAI_MAX_IMAGES
+		),
 		ARRAY_A
 	);
 	$gallery = array();
 	foreach ( $rows as $i => $r ) {
-		$att = media_sideload_image( esc_url_raw( $r['url'] ), $post_id, null, 'id' );
-		if ( is_wp_error( $att ) ) {
+		$src = iaai_safe_image_url( (string) $r['url'] );   // SSRF: tylko host IAAI
+		if ( '' === $src ) {
+			iaai_log( 'media: pominięto niedozwolony URL zdjęcia dla lotu ' . $salvage_id, 'warn' );
 			continue;
 		}
-		if ( $i === 0 ) {
-			set_post_thumbnail( $post_id, $att );   // miniatura = pierwsze zdjęcie
+		$att = media_sideload_image( $src, $post_id, null, 'id' );
+		if ( is_wp_error( $att ) ) {
+			iaai_log( 'media: sideload nieudany (' . $att->get_error_code() . ') lot ' . $salvage_id, 'warn' );
+			continue;
+		}
+		// Upewnij się, że pobrany załącznik to OBRAZ (blokuje podmianę na inny typ pliku).
+		if ( 0 !== strpos( (string) get_post_mime_type( $att ), 'image/' ) ) {
+			wp_delete_attachment( (int) $att, true );
+			continue;
+		}
+		if ( empty( $gallery ) ) {
+			set_post_thumbnail( $post_id, $att );   // miniatura = pierwsze poprawne zdjęcie
 		}
 		$gallery[] = (int) $att;
 	}
@@ -100,17 +127,31 @@ function iaai_import_images( int $salvage_id, int $post_id ) : int {
  * 🔵 AGENT `front` — render listy i strony pojazdu (escapowane!)
  * ==================================================================== */
 
-/** [iaai_pojazdy ile="12"] — siatka pojazdów. */
+/** [iaai_pojazdy ile="12"] — siatka pojazdów. Wynik cache'owany (Transient API). */
 add_shortcode( 'iaai_pojazdy', 'iaai_render_list' );
 function iaai_render_list( $atts ) : string {
-	$a = shortcode_atts( array( 'ile' => 12 ), $atts );
+	$a   = shortcode_atts( array( 'ile' => 12 ), $atts, 'iaai_pojazdy' );
+	// Clamp 1..48 — ochrona przed [iaai_pojazdy ile="999999"] (DoS / ciężkie zapytanie).
+	$ile = max( 1, min( 48, absint( $a['ile'] ) ) );
+
+	// Cache na 5 min — odciąża bazę przy ruchu (DoS/throttling). Unieważniany przy publikacji.
+	$cache_key = 'iaai_list_' . $ile;
+	$cached    = get_transient( $cache_key );
+	if ( false !== $cached ) {
+		return $cached;
+	}
+
 	$q = new WP_Query( array(
-		'post_type'      => IAAI_CPT,
-		'posts_per_page' => absint( $a['ile'] ),
-		'post_status'    => 'publish',
+		'post_type'           => IAAI_CPT,
+		'posts_per_page'      => $ile,
+		'post_status'         => 'publish',
+		'no_found_rows'       => true,
+		'ignore_sticky_posts' => true,
 	) );
 	if ( ! $q->have_posts() ) {
-		return '<p>' . esc_html__( 'Brak pojazdów.', 'iaai-importer' ) . '</p>';
+		$empty = '<p>' . esc_html__( 'Brak pojazdów.', 'iaai-importer' ) . '</p>';
+		set_transient( $cache_key, $empty, 5 * MINUTE_IN_SECONDS );
+		return $empty;
 	}
 	$out = '<ul class="iaai-pojazdy-grid">';
 	while ( $q->have_posts() ) {
@@ -140,7 +181,16 @@ function iaai_render_list( $atts ) : string {
 			. '</a></li>';
 	}
 	wp_reset_postdata();
-	return $out . '</ul>';
+	$out .= '</ul>';
+	set_transient( $cache_key, $out, 5 * MINUTE_IN_SECONDS );
+	return $out;
+}
+
+/** Czyści cache list po publikacji/zmianach (woła to dział 8). */
+function iaai_flush_list_cache() : void {
+	for ( $i = 1; $i <= 48; $i++ ) {
+		delete_transient( 'iaai_list_' . $i );
+	}
 }
 
 /** Strona pojedynczego pojazdu: dokleja tabelę danych + galerię do treści. */

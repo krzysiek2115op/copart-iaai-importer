@@ -73,6 +73,96 @@ function iaai_escape_vehicle_for_output( array $v ) : array {
 }
 
 /* =====================================================================
+ * SSRF / host-allowlist dla zdjęć (vis.iaai.com)
+ * ===================================================================== */
+
+/** Dozwolone hosty zdjęć — tylko domena IAAI (blokuje SSRF / podstawione URL-e). */
+function iaai_allowed_image_host( string $url ) : bool {
+	$host = wp_parse_url( $url, PHP_URL_HOST );
+	if ( ! is_string( $host ) || '' === $host ) {
+		return false;
+	}
+	$host    = strtolower( $host );
+	$allowed = apply_filters( 'iaai_allowed_image_hosts', array( 'iaai.com', 'vis.iaai.com' ) );
+	foreach ( (array) $allowed as $a ) {
+		$a = strtolower( (string) $a );
+		if ( $host === $a || ( strlen( $host ) > strlen( $a ) && substr( $host, - ( strlen( $a ) + 1 ) ) === '.' . $a ) ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * Zwraca BEZPIECZNY URL zdjęcia do wyświetlenia (https + host IAAI), albo '' gdy niedozwolony.
+ * Blokuje inne schematy (javascript:, data:), inne hosty (SSRF/hotlink na obce serwery).
+ */
+function iaai_safe_image_url( string $url ) : string {
+	$url = esc_url_raw( $url, array( 'https', 'http' ) );
+	if ( '' === $url || ! iaai_allowed_image_host( $url ) ) {
+		return '';
+	}
+	return $url;
+}
+
+/* =====================================================================
+ * Logowanie (nigdy do użytkownika końcowego) + lock importu (mutex)
+ * ===================================================================== */
+
+/** Log do dziennika serwera (error_log). NIE trafia do przeglądarki użytkownika. */
+function iaai_log( string $message, string $level = 'info' ) : void {
+	$line = '[iaai-importer][' . sanitize_key( $level ) . '] ' . $message;
+	if ( defined( 'IAAI_LOG_FILE' ) && IAAI_LOG_FILE ) {
+		error_log( gmdate( 'c' ) . ' ' . $line . "\n", 3, IAAI_LOG_FILE );
+	} else {
+		error_log( $line );
+	}
+}
+
+/**
+ * Mutex oparty na MySQL GET_LOCK (atomowy, per-połączenie) — chroni przed równoległym
+ * importem/publikacją (double-run, race condition, cron + WP-CLI naraz).
+ * @return bool true gdy zdobyto blokadę.
+ */
+function iaai_db_lock( string $name, int $timeout = 0 ) : bool {
+	global $wpdb;
+	$got = $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', 'iaai_' . $name, $timeout ) );
+	return '1' === (string) $got;
+}
+
+/** Zwolnienie blokady GET_LOCK. */
+function iaai_db_unlock( string $name ) : void {
+	global $wpdb;
+	$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', 'iaai_' . $name ) );
+}
+
+/* =====================================================================
+ * Nagłówki bezpieczeństwa (na stronach pojazdów) — bezpieczny podzbiór
+ * ===================================================================== */
+
+/**
+ * Wysyła zachowawcze nagłówki na stronach CPT „pojazd”. CSP/HSTS celowo NIE są
+ * wymuszane z wtyczki (HSTS musi być globalny na serwerze, CSP wymaga strojenia
+ * pod motyw) — to rekomendacja serwerowa (patrz raport bezpieczeństwa).
+ * Wyłączalne: add_filter('iaai_send_security_headers','__return_false').
+ */
+add_action( 'template_redirect', 'iaai_maybe_send_security_headers' );
+function iaai_maybe_send_security_headers() : void {
+	if ( headers_sent() || ! apply_filters( 'iaai_send_security_headers', true ) ) {
+		return;
+	}
+	if ( ! function_exists( 'is_singular' ) || ! defined( 'IAAI_CPT' ) ) {
+		return;
+	}
+	if ( is_singular( IAAI_CPT ) || is_post_type_archive( IAAI_CPT ) ) {
+		header( 'X-Content-Type-Options: nosniff' );
+		header( 'X-Frame-Options: SAMEORIGIN' );
+		header( 'Referrer-Policy: strict-origin-when-cross-origin' );
+		header( 'Permissions-Policy: geolocation=(), microphone=(), camera=()' );
+	}
+}
+
+/* =====================================================================
  * 🔵 AGENT `nonce` — chroni akcje admina (CSRF)
  * ===================================================================== */
 
@@ -99,4 +189,7 @@ function iaai_verify_admin_action( string $action = 'iaai_action', string $cap =
  *       $wpdb->get_results( $wpdb->prepare(
  *           "SELECT * FROM {$wpdb->prefix}iaai_vehicles WHERE salvage_id = %d", $id ) );
  * 4. Wejście do bazy zawsze przez iaai_sanitize_vehicle().
+ * 5. URL-e zdjęć WYŁĄCZNIE przez iaai_safe_image_url() (SSRF / host-allowlist IAAI).
+ * 6. Import/publikacja pod MUTEX-em (iaai_db_lock) — brak równoległych przebiegów.
+ * 7. Błędy logujemy (iaai_log) — NIGDY nie pokazujemy użytkownikowi końcowemu.
  * Egzekwowanie: te funkcje są DOMYŚLNĄ ścieżką; brak ich użycia = błąd w code review. */
