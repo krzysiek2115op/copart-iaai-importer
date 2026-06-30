@@ -1,7 +1,15 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(cd \"/home/krzysiek/zlecenie plugin 1 \" && grep -rn \"iaai_vehicles\\\\|iaai_vehicle_images\\\\|FROM \\\\|INTO \\\\|UPDATE \\\\|connect\\(\" scraper/dzialy/04_synchronizacja/diff.py)",
+      "Read(//home/krzysiek/zlecenie plugin 1 /scraper/dzialy/04_synchronizacja/**)"
+    ],
     "additionalDirectories": [
-      "/home/krzysiek/zlecenie plugin 1 "
+      "/home/krzysiek/zlecenie plugin 1 ",
+      "/home/krzysiek/zlecenie plugin 1 /scraper/dzialy/04_synchronizacja",
+      "/home/krzysiek/zlecenie plugin 1 /wp-plugin/iaai-importer/includes",
+      "/home/krzysiek/zlecenie plugin 1 /wp-plugin/iaai-importer",
+      "/home/krzysiek/zlecenie plugin 1 /deploy"
     ]
   }
 }

@@ -1,0 +1,20 @@
+# /etc/systemd/system/iaai-importer-live.service
+# Jeden cykl trybu LIVE (nowe auta -> baza WP -> publikacja). Odpalany przez .timer.
+[Unit]
+Description=IAAI Importer — cykl live (scraping nowych aut + publikacja do WP)
+Wants=network-online.target
+After=network-online.target mysql.service mariadb.service
+
+[Service]
+Type=oneshot
+# Użytkownik strony (dostęp do WP-CLI i bazy). Dostosuj do hostingu klienta.
+User=www-data
+Group=www-data
+# Wartości środowiska (ścieżki) — patrz deploy/iaai-importer.env.example
+EnvironmentFile=-/etc/iaai-importer.env
+Environment=IAAI_MODE=live
+# Dostosuj bezwzględną ścieżkę do repo na VPS:
+ExecStart=/opt/iaai-importer/deploy/iaai-live-cycle.sh
+# Nie kładź serwera, gdy IAAI chwilowo blokuje/sieć pada:
+TimeoutStartSec=1800
+Nice=10

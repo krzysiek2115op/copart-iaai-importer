@@ -22,6 +22,17 @@ DATA_COLS = [
 ]
 
 
+def tbl(name: str) -> str:
+    """Nazwa tabeli z prefiksem WordPressa.
+
+    DEV (przenośna MariaDB): IAAI_DB_TABLE_PREFIX puste -> `iaai_vehicles`.
+    VPS klienta (ta sama baza co WP): IAAI_DB_TABLE_PREFIX=wp_ -> `wp_iaai_vehicles`,
+    żeby Python pisał do TYCH SAMYCH tabel, które czyta wtyczka ({$wpdb->prefix}iaai_*).
+    Wartość pochodzi z konfiguracji (nie od użytkownika) — bezpieczna w f-stringu SQL.
+    """
+    return os.environ.get("IAAI_DB_TABLE_PREFIX", "") + name
+
+
 def connect():
     return pymysql.connect(
         host=os.environ.get("IAAI_DB_HOST", "127.0.0.1"),

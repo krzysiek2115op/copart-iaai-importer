@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       IAAI Importer
  * Description:        Import danych i zdjęć pojazdów z IAAI do WordPressa (CPT „Pojazd").
- * Version:           0.12.0
+ * Version:           0.13.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            (projekt importer Copart/IAAI)
@@ -18,9 +18,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // brak bezpośredniego dostępu
 }
 
-define( 'IAAI_IMPORTER_VERSION', '0.12.0' );
+define( 'IAAI_IMPORTER_VERSION', '0.13.0' );
 define( 'IAAI_IMPORTER_DIR', plugin_dir_path( __FILE__ ) );
 
+require_once IAAI_IMPORTER_DIR . 'includes/activation.php';   // Aktywacja + dbDelta (blok A)
 require_once IAAI_IMPORTER_DIR . 'includes/security.php';     // Dział 6
 require_once IAAI_IMPORTER_DIR . 'includes/publikacja.php';   // Dział 8
 require_once IAAI_IMPORTER_DIR . 'includes/front.php';        // Dział 9
+
+// Tabele nowej bazy zakładają się przy włączeniu wtyczki (idempotentne dbDelta).
+register_activation_hook( __FILE__, 'iaai_activate' );

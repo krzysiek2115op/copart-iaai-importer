@@ -12,11 +12,15 @@ from __future__ import annotations
 import argparse, json, sys
 from pathlib import Path
 
-from common import connect, DATA_COLS, to_db_row, compute_hash
+from common import connect, DATA_COLS, to_db_row, compute_hash, tbl
+
+# Tabele z prefiksem WP (na VPS: wp_iaai_*; dev: iaai_*). Patrz common.tbl().
+_T_VEH = tbl("iaai_vehicles")
+_T_IMG = tbl("iaai_vehicle_images")
 
 ALL_COLS = ["salvage_id"] + DATA_COLS + ["raw_hash", "status"]
 UPD_COLS = DATA_COLS + ["raw_hash", "status"]
-_INSERT = (f"INSERT INTO iaai_vehicles ({','.join('`'+c+'`' for c in ALL_COLS)}) "
+_INSERT = (f"INSERT INTO {_T_VEH} ({','.join('`'+c+'`' for c in ALL_COLS)}) "
            f"VALUES ({','.join(['%s'] * len(ALL_COLS))}) "
            f"ON DUPLICATE KEY UPDATE {','.join('`'+c+'`=%s' for c in UPD_COLS)}")
 
@@ -33,7 +37,7 @@ def upsert(rec: dict, cur) -> int:
 # ---- H1: upsert ZDJĘĆ do iaai_vehicle_images (klucz: image_key UNIQUE) -----
 _IMG_COLS = ["salvage_id", "image_key", "seq", "width", "height", "url"]
 _IMG_UPD = ["seq", "width", "height", "url"]
-_IMG_INSERT = (f"INSERT INTO iaai_vehicle_images ({','.join('`'+c+'`' for c in _IMG_COLS)}) "
+_IMG_INSERT = (f"INSERT INTO {_T_IMG} ({','.join('`'+c+'`' for c in _IMG_COLS)}) "
                f"VALUES ({','.join(['%s'] * len(_IMG_COLS))}) "
                f"ON DUPLICATE KEY UPDATE {','.join('`'+c+'`=%s' for c in _IMG_UPD)}")
 
@@ -49,7 +53,7 @@ def upsert_image(rec: dict, cur) -> int:
 def krytyk_poprawnosc_json(rec: dict, cur) -> list[str]:
     """Odczyt zwrotny: czy zapis odpowiada intencji (raw_hash + kluczowe pola)."""
     issues = []
-    cur.execute("SELECT raw_hash, make, model, odometer FROM iaai_vehicles WHERE salvage_id=%s",
+    cur.execute(f"SELECT raw_hash, make, model, odometer FROM {_T_VEH} WHERE salvage_id=%s",
                 (rec.get("salvage_id"),))
     row = cur.fetchone()
     if row is None:
@@ -116,7 +120,7 @@ def main():
                 cur.executemany("INSERT IGNORE INTO _iaai_seen (salvage_id) VALUES (%s)",
                                 [(i,) for i in current])
                 cur.execute(
-                    "UPDATE iaai_vehicles v LEFT JOIN _iaai_seen s ON v.salvage_id = s.salvage_id "
+                    f"UPDATE {_T_VEH} v LEFT JOIN _iaai_seen s ON v.salvage_id = s.salvage_id "
                     "SET v.status = 'removed' WHERE v.status = 'active' AND s.salvage_id IS NULL")
                 removed = cur.rowcount
                 cur.execute("DROP TEMPORARY TABLE _iaai_seen")

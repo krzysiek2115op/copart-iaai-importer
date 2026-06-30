@@ -14,7 +14,9 @@ from __future__ import annotations
 import argparse, json, re, sys
 from pathlib import Path
 
-from common import connect, compute_hash
+from common import connect, compute_hash, tbl
+
+_T_VEH = tbl("iaai_vehicles")  # prefiks WP na VPS (wp_iaai_vehicles); dev: iaai_vehicles
 
 
 def diff_records(records: list[dict], conn) -> list[dict]:
@@ -22,7 +24,7 @@ def diff_records(records: list[dict], conn) -> list[dict]:
     with conn.cursor() as cur:
         for rec in records:
             h = compute_hash(rec)
-            cur.execute("SELECT raw_hash FROM iaai_vehicles WHERE salvage_id=%s",
+            cur.execute(f"SELECT raw_hash FROM {_T_VEH} WHERE salvage_id=%s",
                         (rec.get("salvage_id"),))
             row = cur.fetchone()
             if row is None:

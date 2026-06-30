@@ -1,6 +1,6 @@
 # STATUS PROJEKTU — Importer IAAI → WordPress
 
-Master-dokument: cel, jak działa, co mamy, czego brakuje. Stan: **2026-06-29, v0.20.0**.
+Master-dokument: cel, jak działa, co mamy, czego brakuje. Stan: **2026-06-30, v0.24.0** (blok A: kod gotowy).
 (Szczegóły techniczne: [docs/PIPELINE.md](docs/PIPELINE.md), [docs/AUDIT.md](docs/AUDIT.md),
 [docs/dzialy/](docs/dzialy/), [docs/refs/](docs/refs/).)
 
@@ -102,21 +102,22 @@ Raport: [docs/AUDIT.md](docs/AUDIT.md). Test integracyjny E2E przeszedł (realne
 ## 5. CO JESZCZE DO ZROBIENIA
 
 ### A. Wysoki priorytet (do działającej całości u klienta)
-1. **🔴 Automatyzacja ciągła (always-on) — RDZEŃ projektu.** Pipeline `live` ma chodzić sam w pętli
-   jako usługa, nie z ręki. Wyłapywanie nowych aut na bieżąco bez operatora. Do zrobienia:
-   - pętla/serwis `live` (daemon lub systemd lub cron co X min lub wp-cron),
-   - inkrementalne wykrywanie nowości (już mamy `diff` po `raw_hash` + `reconcile` sold/removed),
-   - rozsądny interwał + rate-limit (dział 7) + odporność na restart maszyny/serwera,
-   - automatyczne odpalenie publikacji do WP po każdym cyklu importu.
-2. **Runtime wtyczki w prawdziwym WordPressie** — wpiąć `wp-plugin/iaai-importer/` do instalacji WP
-   (Local/XAMPP), przetestować: zakładanie tabel (`dbDelta`), CPT, meta, import zdjęć, front.
-   (Działy 6/8/9 były dotąd tylko weryfikowane statycznie — brak PHP/WP w środowisku dev.)
-3. **Aktywacja wtyczki + `dbDelta()`** — dopisać hook aktywacji tworzący tabele z prefiksem WP
-   (`{$wpdb->prefix}iaai_*`) na podstawie `db/schema.sql`. (Obecnie schemat ładowany ręcznie.)
-4. **Konfiguracja połączenia z bazą** — wtyczka domyślnie używa bazy WordPressa; agenci Python
-   muszą pisać do TEJ SAMEJ bazy (ustawić `IAAI_DB_*` na bazę WP klienta). Połączenie lokalne
-   na VPS (scraper i WP na tym samym serwerze) — patrz model wdrożenia w sekcji 1.
-5. **Most Python → WP w pełni** — wyzwalanie publikacji po imporcie (WP-CLI/wp-cron), spięte z pkt 1.
+> **Blok A — kod GOTOWY (v0.24.0), zostaje test na realnym VPS.** Zob. `deploy/README.md`.
+
+1. **🔴 Automatyzacja ciągła (always-on) — RDZEŃ projektu.** ✅ **Zaimplementowane (kod):**
+   usługi systemd `iaai-importer-live.timer` (co 15 min od zakończenia, `Persistent` — nadrabia po
+   restarcie) + `iaai-importer-backfill.timer` (`full`+reconcile 03:30). Cykl
+   `deploy/iaai-live-cycle.sh` = pipeline `live` → publikacja do WP. Inkrement już był (`diff`
+   `raw_hash` + `reconcile`). Rate-limit/zgodność: dział 7.  ⏳ **Zostaje:** odpalić i potwierdzić na VPS.
+2. **Runtime wtyczki w prawdziwym WordPressie** — ⏳ wpiąć `wp-plugin/iaai-importer/` do instalacji WP,
+   przetestować: zakładanie tabel (`dbDelta`), CPT, meta, import zdjęć, front. (Działy 6/8/9 +
+   `activation.php` dotąd weryfikowane statycznie — brak PHP/WP w dev. Procedura: `deploy/README.md`.)
+3. **Aktywacja wtyczki + `dbDelta()`** — ✅ **Zrobione:** `includes/activation.php`
+   (`register_activation_hook` + `iaai_maybe_upgrade_db`) zakłada `{$wpdb->prefix}iaai_*` samo.
+4. **Konfiguracja połączenia z bazą** — ✅ **Zrobione:** `deploy/iaai-env.sh` czyta dane z
+   `wp-config.php` (WP-CLI) → `IAAI_DB_*` + `IAAI_DB_TABLE_PREFIX`. **Prefiks tabel** dodany w
+   `common.tbl()` i wpięty w `json_agent`/`diff` → Python pisze do TYCH SAMYCH `wp_iaai_*` co wtyczka.
+5. **Most Python → WP** — ✅ **Zrobione:** cykl kończy się `wp eval 'iaai_publish_all_active();'`.
 
 ### B. Średni priorytet (poprawność/skala produkcyjna)
 6. **Pełne pokrycie „całego IAAI"** — pojedyncze zapytanie wyszukiwarki ma limit wyników;
