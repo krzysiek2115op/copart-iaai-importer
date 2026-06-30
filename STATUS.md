@@ -131,13 +131,13 @@ Raport: [docs/AUDIT.md](docs/AUDIT.md). Test integracyjny E2E przeszedł (realne
    teraz format tekstowy I numeryczny (M/D/RRRR) → ISO; nieparsowalne → None (zabezpieczenie M1).
    ⏳ Potwierdzić dokładną etykietę na żywej karcie.
 
-**Decyzje do podjęcia (zmieniają implementację):**
-7. **Konto IAAI (pełny VIN)** — anonimowo VIN maskowany (`…******`); pełny VIN wymaga konta +
-   zgody prawnej. Marka/model/rok mamy z vPIC mimo maski. **Decyzja właściciela:** czy w ogóle
-   potrzebny pełny VIN (jeśli nie — nic nie budujemy, zostaje stan obecny).
-8. **Składowanie zdjęć przy skali** — przy całym IAAI to setki tys. aut × ~kilka zdjęć.
-   Opcje: (a) hotlink z `vis.iaai.com` (0 miejsca, zależność od IAAI), (b) pobieranie do
-   biblioteki mediów WP (duży dysk), (c) lazy/na żądanie. **Decyzja:** zależy od dysku VPS klienta.
+**Decyzje (PODJĘTE 2026-06-30):**
+7. **Konto IAAI (pełny VIN)** — ❌ **NIE budujemy.** Zostaje VIN maskowany + dekodowanie vPIC
+   (marka/model/rok). Bez konta, bez ryzyka prawnego. Stan obecny wystarcza.
+8. **Składowanie zdjęć** — ✅ **HOTLINK z vis.iaai.com** (0 miejsca na dysku). Wtyczka renderuje
+   zdjęcia bezpośrednio z URL-i w bazie (`iaai_image_mode()` = `hotlink`, domyślny). Tryb
+   `download` (sideload do mediów WP) zostaje opcjonalnie pod filtrem `iaai_image_mode`.
+   Wtyczka v0.14.0: lista i strona pojazdu hotlinkują (lazy `<img>`, escapowane).
 
 ### C. Niski priorytet (dopięcia — z audytu L1–L5)
 10. `vin_status` bywa null (niski wpływ).
