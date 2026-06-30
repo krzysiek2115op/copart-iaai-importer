@@ -36,6 +36,11 @@ DETAIL_MAP = {
     "Engine": "engine", "Transmission": "transmission", "Drive Line Type": "drive_line",
     "Fuel Type": "fuel_type", "Cylinders": "cylinders", "Exterior Color": "color",
     "Color": "color",
+    # M2 (#9): data sprzedaży/aukcji ze strony szczegółów (kilka wariantów etykiety
+    # — potwierdzić na żywo). Surowy string -> `sale_date`, ISO robi dział 2.
+    "Sale Date": "sale_date", "Auction Date": "sale_date",
+    "Auction Date & Time": "sale_date", "Sale Date/Time": "sale_date",
+    "Live Auction Date": "sale_date",
 }
 # Pola, których brak = rekord niekompletny (krytyk)
 REQUIRED = ["year", "make", "model", "odometer", "primary_damage", "title", "selling_branch"]

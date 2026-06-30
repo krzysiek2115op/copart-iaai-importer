@@ -120,14 +120,24 @@ Raport: [docs/AUDIT.md](docs/AUDIT.md). Test integracyjny E2E przeszedł (realne
 5. **Most Python → WP** — ✅ **Zrobione:** cykl kończy się `wp eval 'iaai_publish_all_active();'`.
 
 ### B. Średni priorytet (poprawność/skala produkcyjna)
-6. **Pełne pokrycie „całego IAAI"** — pojedyncze zapytanie wyszukiwarki ma limit wyników;
-   backfill całości wymaga iteracji po filtrach (np. po stanach/markach). Paginacja w obrębie
-   zapytania już działa (Playwright).
-7. **Konto IAAI (pełny VIN)** — anonimowo VIN jest maskowany (`…******`). Pełny VIN wymaga
-   zalogowanego konta. Decyzja: czy potrzebny pełny VIN (marka/model/rok mamy z vPIC mimo maski).
-8. **Strategia zdjęć** — ustalono „pobierać do nas" (lazy, ~1024px). Doprecyzować: gdzie trzymać
-   przy skali całego IAAI (miejsce na dysku), retencja, czyszczenie dla `removed`.
-9. **M2** — mapowanie `sale_date` (data sprzedaży/aukcji) — źródło pola na stronie do ustalenia.
+6. **Pełne pokrycie „całego IAAI"** — ✅ **Silnik gotowy (kod):** agent `pokrycie`
+   (`scraper/dzialy/01_pobieranie/pokrycie.py`) iteruje po SEGMENTACH (filtrach), scala
+   unikalne po `salvage_id`; krytyk `kompletność-pokrycia` wykrywa segment URWANY
+   (zebrano < ResultCount → „podziel drobniej"). Wpięte w orkiestrator: `--segments plik.json`.
+   ⏳ **Zostaje:** ustalić konkretne segmenty (parametr filtra po stanie/branch) na żywym IAAI —
+   `segments.example.json` to szablon; znany działający filtr to `?Keyword=`.
+9. **M2 — `sale_date`** — ✅ **Zrobione (kod):** mapowanie etykiet daty (Sale/Auction Date,
+   kilka wariantów) w `listingi`/`szczegóły` → `sale_date`; `jednostki.parse_sale_date` parsuje
+   teraz format tekstowy I numeryczny (M/D/RRRR) → ISO; nieparsowalne → None (zabezpieczenie M1).
+   ⏳ Potwierdzić dokładną etykietę na żywej karcie.
+
+**Decyzje do podjęcia (zmieniają implementację):**
+7. **Konto IAAI (pełny VIN)** — anonimowo VIN maskowany (`…******`); pełny VIN wymaga konta +
+   zgody prawnej. Marka/model/rok mamy z vPIC mimo maski. **Decyzja właściciela:** czy w ogóle
+   potrzebny pełny VIN (jeśli nie — nic nie budujemy, zostaje stan obecny).
+8. **Składowanie zdjęć przy skali** — przy całym IAAI to setki tys. aut × ~kilka zdjęć.
+   Opcje: (a) hotlink z `vis.iaai.com` (0 miejsca, zależność od IAAI), (b) pobieranie do
+   biblioteki mediów WP (duży dysk), (c) lazy/na żądanie. **Decyzja:** zależy od dysku VPS klienta.
 
 ### C. Niski priorytet (dopięcia — z audytu L1–L5)
 10. `vin_status` bywa null (niski wpływ).

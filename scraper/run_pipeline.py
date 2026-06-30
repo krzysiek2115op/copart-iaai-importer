@@ -74,6 +74,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", choices=["full", "live"], default="full")
     ap.add_argument("--base", default="https://www.iaai.com/Search")
+    ap.add_argument("--segments", type=Path, default=None,
+                    help="#6: JSON segmentów do PEŁNEGO pokrycia IAAI (iteracja filtrów). "
+                         "Gdy podany — zamiast pojedynczego --base używa agenta `pokrycie`.")
     ap.add_argument("--max-pages", type=int, default=100)
     ap.add_argument("--limit", type=int, default=0, help="ogranicz liczbę lotów do szczegółów/zdjęć (0=bez limitu)")
     ap.add_argument("--workdir", type=Path, default=Path("pipeline_out"))
@@ -87,8 +90,13 @@ def main():
 
     # 1. POBIERANIE
     d1 = ROOT / "01_pobieranie"
-    step("1a listingi", d1, ["listingi.py", "--base", args.base, "--mode", args.mode,
-                             "--max-pages", str(args.max_pages), "--out", str(W / "listingi.jsonl")], kg)
+    if args.segments:                          # #6: pełne pokrycie przez iterację segmentów
+        step("1a pokrycie (iteracja filtrów)", d1,
+             ["pokrycie.py", "--segments", str(args.segments.resolve()), "--mode", args.mode,
+              "--max-pages", str(args.max_pages), "--out", str((W / "listingi.jsonl").resolve())], kg)
+    else:
+        step("1a listingi", d1, ["listingi.py", "--base", args.base, "--mode", args.mode,
+                                 "--max-pages", str(args.max_pages), "--out", str(W / "listingi.jsonl")], kg)
     listings = W / "listingi.jsonl"
     if args.limit:                            # ogranicz wejście do szczegółów/zdjęć
         lines = listings.read_text().splitlines()[: args.limit]

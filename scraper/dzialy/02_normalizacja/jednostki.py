@@ -30,15 +30,26 @@ def parse_price(val) -> float | None:
 
 
 def parse_sale_date(val: str) -> str | None:
-    """'Mon Jun 29, 8:30am CDT' / 'Fri Jun 26, 1:20am CDT' -> 'YYYY-MM-DD' (best-effort)."""
+    """Data sprzedaży/aukcji IAAI -> 'YYYY-MM-DD' (best-effort). Obsługuje:
+       - tekst: 'Mon Jun 29, 8:30am CDT' / 'Fri Jun 26, 1:20am CDT',
+       - numeryczny: '6/29/2026 1:00:00 AM +00:00' (M/D/RRRR)."""
     if not val:
         return None
+    from datetime import date
+    # 1) numeryczny M/D/RRRR (np. z ProductDetailsVM)
+    n = re.search(r"\b(\d{1,2})/(\d{1,2})/(20\d{2})\b", val)
+    if n:
+        mo, dy, yr = int(n.group(1)), int(n.group(2)), int(n.group(3))
+        try:
+            return date(yr, mo, dy).isoformat()
+        except ValueError:
+            return None
+    # 2) tekstowy 'Mon Jun 29[, ...][ 2026]'
     m = re.search(r"\b([A-Z][a-z]{2})\s+(\d{1,2})\b", val)
     if not m or m.group(1) not in MONTHS:
         return None
     month, day = MONTHS[m.group(1)], int(m.group(2))
     yr = re.search(r"\b(20\d{2})\b", val)
-    from datetime import date
     year = int(yr.group(1)) if yr else date.today().year
     try:
         return date(year, month, day).isoformat()

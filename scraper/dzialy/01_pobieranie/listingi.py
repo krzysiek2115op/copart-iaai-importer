@@ -35,6 +35,12 @@ LABEL_MAP = {
     "Exterior Color": "color", "Branch": "selling_branch", "Title/Sale Doc": "title",
     "Lane/Run#": "lane", "Aisle/Stall": "aisle", "Transmission": "transmission",
     "Driveline Type": "drive_line", "Key": "key_available",
+    # M2 (#9): data sprzedaży/aukcji. Etykieta bywa różna na karcie — mapujemy
+    # kilka wariantów na to samo pole (potwierdzić na żywym IAAI). Surowy string
+    # trafia do `sale_date`, a dział 2 (jednostki.parse_sale_date) zamienia go na ISO.
+    "Sale Date": "sale_date", "Auction Date": "sale_date",
+    "Auction Date & Time": "sale_date", "Sale Date/Time": "sale_date",
+    "Live Auction Date": "sale_date",
 }
 RUNDRIVE_VALUES = {"run & drive", "runs & drives", "engine start program",
                    "stationary", "non runner", "does not run"}
