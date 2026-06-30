@@ -10,6 +10,10 @@ z zasilaniem danymi **live** i prezentacją na stronie klienta przez wtyczkę Wo
 ## 📋 Pełny status projektu: [STATUS.md](STATUS.md)
 Cel, architektura, co gotowe, co do zrobienia, ustalenia — wszystko w jednym miejscu.
 
+## 🧑‍💻 Instrukcja dla klienta (od A do Z, nietechniczna): [docs/klient/00-START-TUTAJ.md](docs/klient/00-START-TUTAJ.md)
+Wgranie wtyczki, pokazanie aut na stronie, uruchomienie automatyzacji (instalator
+[deploy/install.sh](deploy/install.sh)), obsługa, FAQ — krok po kroku.
+
 ## Status: wszystkie 9 działów zbudowane + audyt/naprawy (v0.20.0)
 
 Cały pipeline IAAI → WordPress rozpisany i zaimplementowany. Jak działa całość:

@@ -20,7 +20,7 @@ parytet danych, wpięcia, cykl życia rekordu. Wynik: rdzeń spójny; znaleziono
 
 ## 2. USTALENIA (F1–F7) — do decyzji
 
-> **STATUS NAPRAW (v0.28.0):** F1 ✅, F2 ✅, F3 ✅ (zrobione). F4–F7 pozostają wg opisu niżej.
+> **STATUS NAPRAW (v0.29.0):** F1 ✅, F2 ✅, F3 ✅, F4 ✅, F5 ✅ (zrobione). F6/F7 = info (żywy IAAI/VPS).
 
 ### ✅ F1 (NAPRAWIONE) — znikłe auta zostają opublikowane na stronie
 `iaai_publish_all_active()` publikuje **tylko** rekordy `status='active'`. Gdy reconcile oznaczy
@@ -50,15 +50,15 @@ WYŚWIETLANIA: `iaai_format_odometer()` liczy km przy renderze i honoruje `odome
 („169 594 km (105 380 mi)"). Pozostałe pola wyliczane zostają **diagnostyczne** (logi/krytycy),
 zgodnie z zasadą wiernej kopii.
 
-### 🟡 F4 (niskie) — meta WP nie wystawia `item_id` ani `branch_id`
-W bazie są (zapisywane), ale `iaai_meta_keys()` ich nie publikuje (30 z 32 pól). `branch_id` i tak
-jest by-design null (L11); `item_id` (Item #) jest realny i można go pokazać.
-**Opcje:** dodać `item_id` (ew. `branch_id`) do meta, jeśli ma być widoczny.
+### ✅ F4 (NAPRAWIONE) — meta WP nie wystawia `item_id`
+**Zrobione:** `item_id` (Item #) dodany do `iaai_meta_keys()` (+typ liczbowy) i pokazywany na
+stronie pojazdu (razem ze `stock_number`). Meta pokrywa teraz 31/32 pól. `branch_id` zostaje
+poza meta — jest by-design null (L11).
 
-### 🟡 F5 (niskie, kosmetyka) — dwie definicje schematu
-`db/schema.sql` ma `status ENUM(...)` (dla dev MariaDB), `activation.php` ma `status varchar(10)`
-(dbDelta nie lubi ENUM). To celowe, ale dwa źródła = ryzyko rozjazdu przy zmianach. Wartości
-zgodne (active/sold/removed). **Opcja:** opisać w `db/` że WP-autorytatywny jest `activation.php`.
+### ✅ F5 (NAPRAWIONE) — dwie definicje schematu
+**Zrobione:** w nagłówku `db/schema.sql` jednoznaczna notka: ten plik = instancja DEV; na
+WordPressie **autorytatywny jest `activation.php` (dbDelta)**, gdzie `status` to varchar(10)
+(dbDelta nie lubi ENUM). 32 kolumny zgodne (zweryfikowane). Zmiana pól = aktualizuj oba + `DATA_COLS`.
 
 ### 🔵 F6 (info, znane z bloku B) — do potwierdzenia na żywym IAAI
 Konkretne **segmenty pokrycia** (parametr filtra po stanie/branch) i dokładna **etykieta `sale_date`**

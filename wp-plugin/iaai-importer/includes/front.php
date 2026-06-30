@@ -151,6 +151,7 @@ function iaai_render_single( string $content ) : string {
 	}
 	$id     = get_the_ID();
 	$fields = array(
+		'stock_number' => 'Stock #', 'item_id' => 'Item #',
 		'vin' => 'VIN', 'year' => 'Rok', 'make' => 'Marka', 'model' => 'Model',
 		'odometer' => 'Przebieg', 'primary_damage' => 'Uszkodzenie', 'title' => 'Tytuł',
 		'run_and_drive' => 'Run & Drive', 'key_available' => 'Kluczyk', 'buy_now' => 'Buy Now',

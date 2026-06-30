@@ -13,9 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 const IAAI_CPT = 'pojazd';
 
-/** Pola pojazdu -> klucze meta (prefiks iaai_). */
+/** Pola pojazdu -> klucze meta (prefiks iaai_). F4: dodano item_id (Item #). */
 function iaai_meta_keys() : array {
-	return array( 'salvage_id', 'stock_number', 'vin', 'year', 'make', 'model', 'series',
+	return array( 'salvage_id', 'item_id', 'stock_number', 'vin', 'year', 'make', 'model', 'series',
 		'vehicle_type', 'body_style', 'engine', 'cylinders', 'fuel_type', 'transmission',
 		'drive_line', 'color', 'odometer', 'odometer_uom', 'odometer_brand', 'primary_damage',
 		'secondary_damage', 'loss', 'title', 'run_and_drive', 'key_available',
@@ -42,7 +42,7 @@ function iaai_register_pojazd_cpt() : void {
 /* ---------- 🔵 AGENT `meta` — rejestracja pól meta ----------------------- */
 add_action( 'init', 'iaai_register_pojazd_meta' );
 function iaai_register_pojazd_meta() : void {
-	$num = array( 'salvage_id', 'year', 'odometer', 'cylinders' );
+	$num = array( 'salvage_id', 'item_id', 'year', 'odometer', 'cylinders' );
 	foreach ( iaai_meta_keys() as $key ) {
 		register_post_meta( IAAI_CPT, 'iaai_' . $key, array(
 			'type'              => in_array( $key, $num, true ) ? 'integer'

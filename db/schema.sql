@@ -8,6 +8,14 @@
 --  Pola odwzorowują rekord/kartę listingu IAAI 1:1 (patrz db/mapping.md).
 --  Klucze: salvage_id (pojazd) + image_key (zdjęcie) — po nich agent
 --          rozpoznaje, że rekord już istnieje (brak duplikatów).
+--
+--  ⚠️ F5 — DWA ŹRÓDŁA SCHEMATU (świadomie):
+--   • TEN PLIK = instancja DEWELOPERSKA (przenośna MariaDB), bez prefiksu, `status` ENUM.
+--   • NA WORDPRESSIE AUTORYTATYWNY jest hook aktywacji wtyczki:
+--     wp-plugin/iaai-importer/includes/activation.php (dbDelta). Tam tabele mają
+--     prefiks WP ({$wpdb->prefix}iaai_*), a `status` to varchar(10) (dbDelta nie lubi ENUM).
+--   Wartości i komplet 32 kolumn są ZGODNE (zweryfikowane audytem). Zmieniając pola,
+--   aktualizuj OBA miejsca + common.DATA_COLS.
 -- =====================================================================
 
 SET NAMES utf8mb4;
