@@ -62,8 +62,9 @@ sec1 = DZIALY[:6]
 sec2 = DZIALY[6:]
 def section_height(cards):
     return sum(card_h(c)+GAP for c in cards)
-SEC_HDR=46; BAND=70
-total = TOP + SEC_HDR + section_height(sec1) + BAND + GAP + SEC_HDR + section_height(sec2) + BAND + 60
+SEC_HDR=46; BAND=70; SRC=58; CAP=26
+total = (TOP + SEC_HDR + SRC + GAP + section_height(sec1) + BAND + CAP + GAP
+         + SEC_HDR + section_height(sec2) + BAND + 60)
 
 add(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {total}" width="{W}" height="{total}" font-family="DejaVu Sans, Arial, sans-serif">')
 add('<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#666"/></marker></defs>')
@@ -110,20 +111,30 @@ def band(y, text, fill, stroke, tcol):
     add(f'<rect x="200" y="{y}" width="{W-400}" height="52" rx="10" fill="{fill}" stroke="{stroke}" stroke-width="2"/>')
     add(f'<text x="{W/2}" y="{y+32}" text-anchor="middle" font-size="16" font-weight="bold" fill="{tcol}">{esc(text)}</text>')
 
-def arrow(y):
+def arrow(y, label=None):
     add(f'<line x1="{W/2}" y1="{y}" x2="{W/2}" y2="{y+GAP-6}" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>')
+    if label:
+        add(f'<text x="{W/2+16}" y="{y+GAP/2+2}" font-size="12.5" font-style="italic" fill="#777">{esc(label)}</text>')
 
 # Sekcja 1
 add(f'<text x="48" y="{y+30}" font-size="18" font-weight="bold" fill="#333">▼ CZĘŚĆ 1 — SCRAPER (Python): zbiera dane z IAAI i zapisuje do bazy</text>')
 y += SEC_HDR
+# Źródło: IAAI.com  (to jest dawna „stara baza" — pobieramy scrapingiem, nie łączymy się do bazy IAAI)
+add(f'<rect x="200" y="{y}" width="{W-400}" height="{SRC}" rx="10" fill="#eceff1" stroke="#607d8b" stroke-width="2"/>')
+add(f'<text x="{W/2}" y="{y+25}" text-anchor="middle" font-size="16" font-weight="bold" fill="#37474f">IAAI.com — źródło (aukcje aut)</text>')
+add(f'<text x="{W/2}" y="{y+45}" text-anchor="middle" font-size="11.5" fill="#607d8b">to dawna „stara baza": dane IAAI; strona = aplikacja JS (Knockout) — pobieramy je scrapingiem</text>')
+y += SRC
+arrow(y, "AJAX · Playwright  (renderuje stronę i czyta dane)"); y += GAP
 for i,d in enumerate(sec1):
     h = draw_card(d, y)
     y += h
-    arrow(y); y += GAP
-# Baza
-band(y, "BAZA DANYCH  ·  wp_iaai_vehicles  +  wp_iaai_vehicle_images", "#e8f5e9","#43a047","#2e7d32")
+    arrow(y, "json (plik JSONL)"); y += GAP
+# Baza (NOWA = jedyna realna baza)
+band(y, "NOWA BAZA  ·  wp_iaai_vehicles  +  wp_iaai_vehicle_images", "#e8f5e9","#43a047","#2e7d32")
 y += 52
-arrow(y); y += GAP
+add(f'<text x="{W/2}" y="{y+18}" text-anchor="middle" font-size="11.5" fill="#777">jedyna realna baza (ta sama, której używa WordPress) — zapis przez SQL upsert (PyMySQL)</text>')
+y += CAP
+arrow(y, "wtyczka czyta bazę (SQL)"); y += GAP
 
 # Sekcja 2
 add(f'<text x="48" y="{y+30}" font-size="18" font-weight="bold" fill="#333">▼ CZĘŚĆ 2 — WORDPRESS (wtyczka PHP): pokazuje auta z bazy na stronie</text>')
