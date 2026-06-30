@@ -1,148 +1,144 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 2032" width="960" height="2032" font-family="DejaVu Sans, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 1978" width="960" height="1978" font-family="DejaVu Sans, Arial, sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#666"/></marker></defs>
-<rect x="0" y="0" width="960" height="2032" fill="#ffffff"/>
+<rect x="0" y="0" width="960" height="1978" fill="#ffffff"/>
 <text x="480.0" y="56" text-anchor="middle" font-size="30" font-weight="bold" fill="#1a1a1a">System importera IAAI — działy, agenci, krytycy</text>
 <text x="480.0" y="88" text-anchor="middle" font-size="15.5" fill="#555">9 działów · każdy ma agentów (wykonują) i krytyka (sprawdza) · jedna oryginalna dokumentacja na dział</text>
 <circle cx="180.0" cy="116" r="7" fill="#2f6fed"/><text x="194.0" y="121" font-size="13.5" fill="#333">agent — wykonuje zadanie</text>
 <circle cx="430.0" cy="116" r="7" fill="#e23b3b"/><text x="444.0" y="121" font-size="13.5" fill="#333">krytyk — sprawdza wynik</text>
 <rect x="670.0" y="109" width="16" height="15" rx="3" fill="#ede7f6" stroke="#7e57c2"/><text x="692.0" y="121" font-size="13.5" fill="#333">oryginalna dokumentacja</text>
 <text x="48" y="180" font-size="18" font-weight="bold" fill="#333">▼ CZĘŚĆ 1 — SCRAPER (Python): zbiera dane z IAAI i zapisuje do bazy</text>
-<rect x="200" y="196" width="560" height="50" rx="10" fill="#e0e0e0" stroke="#757575" stroke-width="2" stroke-dasharray="6 4"/>
-<text x="480.0" y="219" text-anchor="middle" font-size="15" font-weight="bold" fill="#424242">BAZA IAAI  (ich serwer — dawna „stara baza")</text>
-<text x="480.0" y="237" text-anchor="middle" font-size="11" fill="#757575">NIE mamy do niej dostępu — nie łączymy się do bazy IAAI</text>
-<line x1="480.0" y1="246" x2="480.0" y2="270" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<text x="496.0" y="263.0" font-size="12.5" font-style="italic" fill="#777">AJAX  (strona IAAI sama pobiera dane z ich bazy)</text>
-<rect x="200" y="276" width="560" height="50" rx="10" fill="#eceff1" stroke="#607d8b" stroke-width="2"/>
-<text x="480.0" y="299" text-anchor="middle" font-size="15" font-weight="bold" fill="#37474f">Strona IAAI w przeglądarce  (aplikacja JS / Knockout)</text>
-<text x="480.0" y="317" text-anchor="middle" font-size="11" fill="#607d8b">to widzimy publicznie — tu zaczyna się nasz system</text>
-<line x1="480.0" y1="326" x2="480.0" y2="350" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<text x="496.0" y="343.0" font-size="12.5" font-style="italic" fill="#777">Playwright  (czytamy wyrenderowaną stronę)</text>
-<rect x="30" y="356" width="900" height="186" rx="12" fill="#eef4ff" stroke="#4f7cff" stroke-width="2"/>
-<text x="52" y="386" font-size="17" font-weight="bold" fill="#1a3a8f">DZIAŁ 1 · POBIERANIE<tspan font-size="12" font-weight="normal" fill="#888">   ·   Python</tspan></text>
-<rect x="718.0" y="368" width="194.0" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
-<text x="815.0" y="384" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: playwright-python.md</text>
-<circle cx="62" cy="414" r="6.5" fill="#2f6fed"/>
-<text x="76" y="418" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">pokrycie</tspan><tspan fill="#444"> — iteruje filtry/segmenty, scala całą ofertę</tspan></text>
-<circle cx="585" cy="414" r="6.5" fill="#e23b3b"/>
-<text x="599" y="418" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">kompletność-pokrycia</tspan></text>
-<circle cx="62" cy="444" r="6.5" fill="#2f6fed"/>
-<text x="76" y="448" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">listingi</tspan><tspan fill="#444"> — czyta karty wyników + paginacja (Knockout/Playwright)</tspan></text>
-<circle cx="585" cy="444" r="6.5" fill="#e23b3b"/>
-<text x="599" y="448" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">kompletność-listy</tspan></text>
-<circle cx="62" cy="474" r="6.5" fill="#2f6fed"/>
-<text x="76" y="478" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">szczegóły</tspan><tspan fill="#444"> — otwiera stronę lotu (render JS), uzupełnia pola</tspan></text>
-<circle cx="585" cy="474" r="6.5" fill="#e23b3b"/>
-<text x="599" y="478" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">kompletność-pól</tspan></text>
-<circle cx="62" cy="504" r="6.5" fill="#2f6fed"/>
-<text x="76" y="508" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">zdjęcia</tspan><tspan fill="#444"> — pobiera listę zdjęć z vis.iaai.com (klucze + URL-e)</tspan></text>
-<circle cx="585" cy="504" r="6.5" fill="#e23b3b"/>
-<text x="599" y="508" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">kompletność-zdjęć</tspan></text>
-<line x1="480.0" y1="542" x2="480.0" y2="566" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<text x="496.0" y="559.0" font-size="12.5" font-style="italic" fill="#777">json (plik JSONL)</text>
-<rect x="30" y="572" width="900" height="96" rx="12" fill="#eef4ff" stroke="#4f7cff" stroke-width="2"/>
-<text x="52" y="602" font-size="17" font-weight="bold" fill="#1a3a8f">DZIAŁ 7 · ZGODNOŚĆ<tspan font-size="12" font-weight="normal" fill="#888">   ·   Python</tspan></text>
-<rect x="743.5" y="584" width="168.5" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
-<text x="827.75" y="600" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: robots-rfc9309.md</text>
-<circle cx="62" cy="630" r="6.5" fill="#2f6fed"/>
-<text x="76" y="634" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">zgody</tspan><tspan fill="#444"> — respektuje robots.txt, trzyma rate-limit, wykrywa blokady</tspan></text>
-<circle cx="585" cy="630" r="6.5" fill="#e23b3b"/>
-<text x="599" y="634" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">blokady</tspan></text>
-<line x1="480.0" y1="668" x2="480.0" y2="692" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<text x="496.0" y="685.0" font-size="12.5" font-style="italic" fill="#777">json (plik JSONL)</text>
-<rect x="30" y="698" width="900" height="126" rx="12" fill="#eef4ff" stroke="#4f7cff" stroke-width="2"/>
-<text x="52" y="728" font-size="17" font-weight="bold" fill="#1a3a8f">DZIAŁ 2 · NORMALIZACJA<tspan font-size="12" font-weight="normal" fill="#888">   ·   Python</tspan></text>
-<rect x="786.0" y="710" width="126.0" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
-<text x="849.0" y="726" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: vin-nhtsa.md</text>
-<circle cx="62" cy="756" r="6.5" fill="#2f6fed"/>
-<text x="76" y="760" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">VIN</tspan><tspan fill="#444"> — format + cyfra kontrolna, maska, vPIC → marka/model/rok</tspan></text>
-<circle cx="585" cy="756" r="6.5" fill="#e23b3b"/>
-<text x="599" y="760" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">poprawność-VIN</tspan></text>
-<circle cx="62" cy="786" r="6.5" fill="#2f6fed"/>
-<text x="76" y="790" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">jednostki</tspan><tspan fill="#444"> — mile→km, ceny→liczby, daty→ISO, tytuł→marka/stan</tspan></text>
-<circle cx="585" cy="786" r="6.5" fill="#e23b3b"/>
-<text x="599" y="790" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">jakość-jednostek</tspan></text>
-<line x1="480.0" y1="824" x2="480.0" y2="848" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<text x="496.0" y="841.0" font-size="12.5" font-style="italic" fill="#777">json (plik JSONL)</text>
-<rect x="30" y="854" width="900" height="96" rx="12" fill="#eef4ff" stroke="#4f7cff" stroke-width="2"/>
-<text x="52" y="884" font-size="17" font-weight="bold" fill="#1a3a8f">DZIAŁ 3 · DEDUPLIKACJA<tspan font-size="12" font-weight="normal" fill="#888">   ·   Python</tspan></text>
-<rect x="760.5" y="866" width="151.5" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
-<text x="836.25" y="882" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: (logika własna)</text>
-<circle cx="62" cy="912" r="6.5" fill="#2f6fed"/>
-<text x="76" y="916" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">match</tspan><tspan fill="#444"> — usuwa duplikaty (salvage_id); relist po PEŁNYM VIN</tspan></text>
-<circle cx="585" cy="912" r="6.5" fill="#e23b3b"/>
-<text x="599" y="916" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">fałszywe-trafienia</tspan></text>
-<line x1="480.0" y1="950" x2="480.0" y2="974" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<text x="496.0" y="967.0" font-size="12.5" font-style="italic" fill="#777">json (plik JSONL)</text>
-<rect x="30" y="980" width="900" height="126" rx="12" fill="#eef4ff" stroke="#4f7cff" stroke-width="2"/>
-<text x="52" y="1010" font-size="17" font-weight="bold" fill="#1a3a8f">DZIAŁ 4 · SYNCHRONIZACJA<tspan font-size="12" font-weight="normal" fill="#888">   ·   Python</tspan></text>
-<rect x="760.5" y="992" width="151.5" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
-<text x="836.25" y="1008" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: mysql-upsert.md</text>
-<circle cx="62" cy="1038" r="6.5" fill="#2f6fed"/>
-<text x="76" y="1042" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">diff</tspan><tspan fill="#444"> — wykrywa zmiany (raw_hash: new / changed / unchanged)</tspan></text>
-<circle cx="585" cy="1038" r="6.5" fill="#e23b3b"/>
-<text x="599" y="1042" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">spójność</tspan></text>
-<circle cx="62" cy="1068" r="6.5" fill="#2f6fed"/>
-<text x="76" y="1072" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">json</tspan><tspan fill="#444"> — zapis do bazy (upsert) + reconcile (sold/removed)</tspan></text>
-<circle cx="585" cy="1068" r="6.5" fill="#e23b3b"/>
-<text x="599" y="1072" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">poprawność-json</tspan></text>
-<line x1="480.0" y1="1106" x2="480.0" y2="1130" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<text x="496.0" y="1123.0" font-size="12.5" font-style="italic" fill="#777">json (plik JSONL)</text>
-<rect x="30" y="1136" width="900" height="96" rx="12" fill="#eef4ff" stroke="#4f7cff" stroke-width="2"/>
-<text x="52" y="1166" font-size="17" font-weight="bold" fill="#1a3a8f">DZIAŁ 5 · AUDYT<tspan font-size="12" font-weight="normal" fill="#888">   ·   Python</tspan></text>
-<rect x="769.0" y="1148" width="143.0" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
-<text x="840.5" y="1164" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: json-schema.md</text>
-<circle cx="62" cy="1194" r="6.5" fill="#2f6fed"/>
-<text x="76" y="1198" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">walidacja</tspan><tspan fill="#444"> — sprawdza dane regułami (JSON Schema)</tspan></text>
-<circle cx="585" cy="1194" r="6.5" fill="#e23b3b"/>
-<text x="599" y="1198" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">poprawność</tspan></text>
-<line x1="480.0" y1="1232" x2="480.0" y2="1256" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<text x="496.0" y="1249.0" font-size="12.5" font-style="italic" fill="#777">json (plik JSONL)</text>
-<rect x="200" y="1262" width="560" height="52" rx="10" fill="#e8f5e9" stroke="#43a047" stroke-width="2"/>
-<text x="480.0" y="1294" text-anchor="middle" font-size="16" font-weight="bold" fill="#2e7d32">NOWA BAZA  ·  wp_iaai_vehicles  +  wp_iaai_vehicle_images</text>
-<text x="480.0" y="1332" text-anchor="middle" font-size="11.5" fill="#777">jedyna realna baza (ta sama, której używa WordPress) — zapis przez SQL upsert (PyMySQL)</text>
-<line x1="480.0" y1="1340" x2="480.0" y2="1364" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<text x="496.0" y="1357.0" font-size="12.5" font-style="italic" fill="#777">wtyczka czyta bazę (SQL)</text>
-<text x="48" y="1400" font-size="18" font-weight="bold" fill="#333">▼ CZĘŚĆ 2 — WORDPRESS (wtyczka PHP): pokazuje auta z bazy na stronie</text>
-<rect x="30" y="1416" width="900" height="126" rx="12" fill="#fff4ec" stroke="#ff8a3d" stroke-width="2"/>
-<text x="52" y="1446" font-size="17" font-weight="bold" fill="#9c4a00">DZIAŁ 6 · BEZPIECZEŃSTWO<tspan font-size="12" font-weight="normal" fill="#888">   ·   PHP/WP</tspan></text>
-<rect x="709.5" y="1428" width="202.5" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
-<text x="810.75" y="1444" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: wordpress-security.md</text>
-<circle cx="62" cy="1474" r="6.5" fill="#2f6fed"/>
-<text x="76" y="1478" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">sanityzacja</tspan><tspan fill="#444"> — czyści dane wchodzące do WP (escape/prepare)</tspan></text>
-<circle cx="585" cy="1474" r="6.5" fill="#e23b3b"/>
-<text x="599" y="1478" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">podatności</tspan></text>
-<circle cx="62" cy="1504" r="6.5" fill="#2f6fed"/>
-<text x="76" y="1508" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">nonce</tspan><tspan fill="#444"> — chroni akcje administratora (CSRF)</tspan></text>
-<circle cx="585" cy="1504" r="6.5" fill="#e23b3b"/>
-<text x="599" y="1508" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">podatności</tspan></text>
-<line x1="480.0" y1="1542" x2="480.0" y2="1566" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<rect x="30" y="1572" width="900" height="126" rx="12" fill="#fff4ec" stroke="#ff8a3d" stroke-width="2"/>
-<text x="52" y="1602" font-size="17" font-weight="bold" fill="#9c4a00">DZIAŁ 8 · PUBLIKACJA<tspan font-size="12" font-weight="normal" fill="#888">   ·   PHP/WP</tspan></text>
-<rect x="752.0" y="1584" width="160.0" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
-<text x="832.0" y="1600" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: wordpress-cpt.md</text>
-<circle cx="62" cy="1630" r="6.5" fill="#2f6fed"/>
-<text x="76" y="1634" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">CPT</tspan><tspan fill="#444"> — tworzy typ treści „Pojazd” w WordPress</tspan></text>
-<circle cx="585" cy="1630" r="6.5" fill="#e23b3b"/>
-<text x="599" y="1634" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">poprawność-publikacji</tspan></text>
-<circle cx="62" cy="1660" r="6.5" fill="#2f6fed"/>
-<text x="76" y="1664" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">meta</tspan><tspan fill="#444"> — pola pojazdu (VIN, rok, cena, przebieg…)</tspan></text>
-<circle cx="585" cy="1660" r="6.5" fill="#e23b3b"/>
-<text x="599" y="1664" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">poprawność-publikacji</tspan></text>
-<line x1="480.0" y1="1698" x2="480.0" y2="1722" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<rect x="30" y="1728" width="900" height="126" rx="12" fill="#fff4ec" stroke="#ff8a3d" stroke-width="2"/>
-<text x="52" y="1758" font-size="17" font-weight="bold" fill="#9c4a00">DZIAŁ 9 · FRONT I MEDIA<tspan font-size="12" font-weight="normal" fill="#888">   ·   PHP/WP</tspan></text>
-<rect x="735.0" y="1740" width="177.0" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
-<text x="823.5" y="1756" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: wordpress-media.md</text>
-<circle cx="62" cy="1786" r="6.5" fill="#2f6fed"/>
-<text x="76" y="1790" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">front</tspan><tspan fill="#444"> — lista + strona pojazdu (dane escapowane)</tspan></text>
-<circle cx="585" cy="1786" r="6.5" fill="#e23b3b"/>
-<text x="599" y="1790" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">render</tspan></text>
-<circle cx="62" cy="1816" r="6.5" fill="#2f6fed"/>
-<text x="76" y="1820" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">media</tspan><tspan fill="#444"> — zdjęcia (HOTLINK z vis.iaai.com)</tspan></text>
-<circle cx="585" cy="1816" r="6.5" fill="#e23b3b"/>
-<text x="599" y="1820" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">render</tspan></text>
-<line x1="480.0" y1="1854" x2="480.0" y2="1878" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<rect x="200" y="1884" width="560" height="52" rx="10" fill="#e1f5fe" stroke="#039be5" stroke-width="2"/>
-<text x="480.0" y="1916" text-anchor="middle" font-size="16" font-weight="bold" fill="#0277bd">STRONA WORDPRESS  →  klienci widzą auta</text>
-<text x="480.0" y="2010" text-anchor="middle" font-size="11.5" fill="#999">Importer aut IAAI → WordPress · diagram architektury (działy / agenci / krytycy / dokumentacja)</text>
+<rect x="200" y="196" width="560" height="54" rx="10" fill="#e0e0e0" stroke="#757575" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="480.0" y="220" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#424242">SERWER / BAZA IAAI  (dawna „stara baza")</text>
+<text x="480.0" y="239" text-anchor="middle" font-size="11" fill="#757575">ich baza — NIE mamy do niej dostępu; nie łączymy się do niej bezpośrednio</text>
+<line x1="480.0" y1="250" x2="480.0" y2="274" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<text x="496.0" y="267.0" font-size="12.5" font-style="italic" fill="#777">AJAX  (dane z serwera IAAI)</text>
+<text x="480.0" y="282" text-anchor="middle" font-size="11.5" font-style="italic" fill="#777">Dział 1 sam uruchamia przeglądarkę (Playwright), która renderuje stronę IAAI i odczytuje z niej dane</text>
+<rect x="30" y="302" width="900" height="186" rx="12" fill="#eef4ff" stroke="#4f7cff" stroke-width="2"/>
+<text x="52" y="332" font-size="17" font-weight="bold" fill="#1a3a8f">DZIAŁ 1 · POBIERANIE<tspan font-size="12" font-weight="normal" fill="#888">   ·   Python</tspan></text>
+<rect x="718.0" y="314" width="194.0" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
+<text x="815.0" y="330" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: playwright-python.md</text>
+<circle cx="62" cy="360" r="6.5" fill="#2f6fed"/>
+<text x="76" y="364" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">pokrycie</tspan><tspan fill="#444"> — iteruje filtry/segmenty, scala całą ofertę</tspan></text>
+<circle cx="585" cy="360" r="6.5" fill="#e23b3b"/>
+<text x="599" y="364" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">kompletność-pokrycia</tspan></text>
+<circle cx="62" cy="390" r="6.5" fill="#2f6fed"/>
+<text x="76" y="394" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">listingi</tspan><tspan fill="#444"> — czyta karty wyników + paginacja (Knockout/Playwright)</tspan></text>
+<circle cx="585" cy="390" r="6.5" fill="#e23b3b"/>
+<text x="599" y="394" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">kompletność-listy</tspan></text>
+<circle cx="62" cy="420" r="6.5" fill="#2f6fed"/>
+<text x="76" y="424" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">szczegóły</tspan><tspan fill="#444"> — otwiera stronę lotu (render JS), uzupełnia pola</tspan></text>
+<circle cx="585" cy="420" r="6.5" fill="#e23b3b"/>
+<text x="599" y="424" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">kompletność-pól</tspan></text>
+<circle cx="62" cy="450" r="6.5" fill="#2f6fed"/>
+<text x="76" y="454" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">zdjęcia</tspan><tspan fill="#444"> — pobiera listę zdjęć z vis.iaai.com (klucze + URL-e)</tspan></text>
+<circle cx="585" cy="450" r="6.5" fill="#e23b3b"/>
+<text x="599" y="454" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">kompletność-zdjęć</tspan></text>
+<line x1="480.0" y1="488" x2="480.0" y2="512" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<text x="496.0" y="505.0" font-size="12.5" font-style="italic" fill="#777">json (plik JSONL)</text>
+<rect x="30" y="518" width="900" height="96" rx="12" fill="#eef4ff" stroke="#4f7cff" stroke-width="2"/>
+<text x="52" y="548" font-size="17" font-weight="bold" fill="#1a3a8f">DZIAŁ 7 · ZGODNOŚĆ<tspan font-size="12" font-weight="normal" fill="#888">   ·   Python</tspan></text>
+<rect x="743.5" y="530" width="168.5" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
+<text x="827.75" y="546" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: robots-rfc9309.md</text>
+<circle cx="62" cy="576" r="6.5" fill="#2f6fed"/>
+<text x="76" y="580" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">zgody</tspan><tspan fill="#444"> — respektuje robots.txt, trzyma rate-limit, wykrywa blokady</tspan></text>
+<circle cx="585" cy="576" r="6.5" fill="#e23b3b"/>
+<text x="599" y="580" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">blokady</tspan></text>
+<line x1="480.0" y1="614" x2="480.0" y2="638" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<text x="496.0" y="631.0" font-size="12.5" font-style="italic" fill="#777">json (plik JSONL)</text>
+<rect x="30" y="644" width="900" height="126" rx="12" fill="#eef4ff" stroke="#4f7cff" stroke-width="2"/>
+<text x="52" y="674" font-size="17" font-weight="bold" fill="#1a3a8f">DZIAŁ 2 · NORMALIZACJA<tspan font-size="12" font-weight="normal" fill="#888">   ·   Python</tspan></text>
+<rect x="786.0" y="656" width="126.0" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
+<text x="849.0" y="672" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: vin-nhtsa.md</text>
+<circle cx="62" cy="702" r="6.5" fill="#2f6fed"/>
+<text x="76" y="706" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">VIN</tspan><tspan fill="#444"> — format + cyfra kontrolna, maska, vPIC → marka/model/rok</tspan></text>
+<circle cx="585" cy="702" r="6.5" fill="#e23b3b"/>
+<text x="599" y="706" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">poprawność-VIN</tspan></text>
+<circle cx="62" cy="732" r="6.5" fill="#2f6fed"/>
+<text x="76" y="736" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">jednostki</tspan><tspan fill="#444"> — mile→km, ceny→liczby, daty→ISO, tytuł→marka/stan</tspan></text>
+<circle cx="585" cy="732" r="6.5" fill="#e23b3b"/>
+<text x="599" y="736" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">jakość-jednostek</tspan></text>
+<line x1="480.0" y1="770" x2="480.0" y2="794" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<text x="496.0" y="787.0" font-size="12.5" font-style="italic" fill="#777">json (plik JSONL)</text>
+<rect x="30" y="800" width="900" height="96" rx="12" fill="#eef4ff" stroke="#4f7cff" stroke-width="2"/>
+<text x="52" y="830" font-size="17" font-weight="bold" fill="#1a3a8f">DZIAŁ 3 · DEDUPLIKACJA<tspan font-size="12" font-weight="normal" fill="#888">   ·   Python</tspan></text>
+<rect x="760.5" y="812" width="151.5" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
+<text x="836.25" y="828" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: (logika własna)</text>
+<circle cx="62" cy="858" r="6.5" fill="#2f6fed"/>
+<text x="76" y="862" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">match</tspan><tspan fill="#444"> — usuwa duplikaty (salvage_id); relist po PEŁNYM VIN</tspan></text>
+<circle cx="585" cy="858" r="6.5" fill="#e23b3b"/>
+<text x="599" y="862" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">fałszywe-trafienia</tspan></text>
+<line x1="480.0" y1="896" x2="480.0" y2="920" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<text x="496.0" y="913.0" font-size="12.5" font-style="italic" fill="#777">json (plik JSONL)</text>
+<rect x="30" y="926" width="900" height="126" rx="12" fill="#eef4ff" stroke="#4f7cff" stroke-width="2"/>
+<text x="52" y="956" font-size="17" font-weight="bold" fill="#1a3a8f">DZIAŁ 4 · SYNCHRONIZACJA<tspan font-size="12" font-weight="normal" fill="#888">   ·   Python</tspan></text>
+<rect x="760.5" y="938" width="151.5" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
+<text x="836.25" y="954" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: mysql-upsert.md</text>
+<circle cx="62" cy="984" r="6.5" fill="#2f6fed"/>
+<text x="76" y="988" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">diff</tspan><tspan fill="#444"> — wykrywa zmiany (raw_hash: new / changed / unchanged)</tspan></text>
+<circle cx="585" cy="984" r="6.5" fill="#e23b3b"/>
+<text x="599" y="988" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">spójność</tspan></text>
+<circle cx="62" cy="1014" r="6.5" fill="#2f6fed"/>
+<text x="76" y="1018" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">json</tspan><tspan fill="#444"> — zapis do bazy (upsert) + reconcile (sold/removed)</tspan></text>
+<circle cx="585" cy="1014" r="6.5" fill="#e23b3b"/>
+<text x="599" y="1018" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">poprawność-json</tspan></text>
+<line x1="480.0" y1="1052" x2="480.0" y2="1076" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<text x="496.0" y="1069.0" font-size="12.5" font-style="italic" fill="#777">json (plik JSONL)</text>
+<rect x="30" y="1082" width="900" height="96" rx="12" fill="#eef4ff" stroke="#4f7cff" stroke-width="2"/>
+<text x="52" y="1112" font-size="17" font-weight="bold" fill="#1a3a8f">DZIAŁ 5 · AUDYT<tspan font-size="12" font-weight="normal" fill="#888">   ·   Python</tspan></text>
+<rect x="769.0" y="1094" width="143.0" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
+<text x="840.5" y="1110" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: json-schema.md</text>
+<circle cx="62" cy="1140" r="6.5" fill="#2f6fed"/>
+<text x="76" y="1144" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">walidacja</tspan><tspan fill="#444"> — sprawdza dane regułami (JSON Schema)</tspan></text>
+<circle cx="585" cy="1140" r="6.5" fill="#e23b3b"/>
+<text x="599" y="1144" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">poprawność</tspan></text>
+<line x1="480.0" y1="1178" x2="480.0" y2="1202" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<text x="496.0" y="1195.0" font-size="12.5" font-style="italic" fill="#777">json (plik JSONL)</text>
+<rect x="200" y="1208" width="560" height="52" rx="10" fill="#e8f5e9" stroke="#43a047" stroke-width="2"/>
+<text x="480.0" y="1240" text-anchor="middle" font-size="16" font-weight="bold" fill="#2e7d32">NOWA BAZA  ·  wp_iaai_vehicles  +  wp_iaai_vehicle_images</text>
+<text x="480.0" y="1278" text-anchor="middle" font-size="11.5" fill="#777">jedyna realna baza (ta sama, której używa WordPress) — zapis przez SQL upsert (PyMySQL)</text>
+<line x1="480.0" y1="1286" x2="480.0" y2="1310" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<text x="496.0" y="1303.0" font-size="12.5" font-style="italic" fill="#777">wtyczka czyta bazę (SQL)</text>
+<text x="48" y="1346" font-size="18" font-weight="bold" fill="#333">▼ CZĘŚĆ 2 — WORDPRESS (wtyczka PHP): pokazuje auta z bazy na stronie</text>
+<rect x="30" y="1362" width="900" height="126" rx="12" fill="#fff4ec" stroke="#ff8a3d" stroke-width="2"/>
+<text x="52" y="1392" font-size="17" font-weight="bold" fill="#9c4a00">DZIAŁ 6 · BEZPIECZEŃSTWO<tspan font-size="12" font-weight="normal" fill="#888">   ·   PHP/WP</tspan></text>
+<rect x="709.5" y="1374" width="202.5" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
+<text x="810.75" y="1390" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: wordpress-security.md</text>
+<circle cx="62" cy="1420" r="6.5" fill="#2f6fed"/>
+<text x="76" y="1424" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">sanityzacja</tspan><tspan fill="#444"> — czyści dane wchodzące do WP (escape/prepare)</tspan></text>
+<circle cx="585" cy="1420" r="6.5" fill="#e23b3b"/>
+<text x="599" y="1424" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">podatności</tspan></text>
+<circle cx="62" cy="1450" r="6.5" fill="#2f6fed"/>
+<text x="76" y="1454" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">nonce</tspan><tspan fill="#444"> — chroni akcje administratora (CSRF)</tspan></text>
+<circle cx="585" cy="1450" r="6.5" fill="#e23b3b"/>
+<text x="599" y="1454" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">podatności</tspan></text>
+<line x1="480.0" y1="1488" x2="480.0" y2="1512" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="30" y="1518" width="900" height="126" rx="12" fill="#fff4ec" stroke="#ff8a3d" stroke-width="2"/>
+<text x="52" y="1548" font-size="17" font-weight="bold" fill="#9c4a00">DZIAŁ 8 · PUBLIKACJA<tspan font-size="12" font-weight="normal" fill="#888">   ·   PHP/WP</tspan></text>
+<rect x="752.0" y="1530" width="160.0" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
+<text x="832.0" y="1546" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: wordpress-cpt.md</text>
+<circle cx="62" cy="1576" r="6.5" fill="#2f6fed"/>
+<text x="76" y="1580" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">CPT</tspan><tspan fill="#444"> — tworzy typ treści „Pojazd” w WordPress</tspan></text>
+<circle cx="585" cy="1576" r="6.5" fill="#e23b3b"/>
+<text x="599" y="1580" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">poprawność-publikacji</tspan></text>
+<circle cx="62" cy="1606" r="6.5" fill="#2f6fed"/>
+<text x="76" y="1610" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">meta</tspan><tspan fill="#444"> — pola pojazdu (VIN, rok, cena, przebieg…)</tspan></text>
+<circle cx="585" cy="1606" r="6.5" fill="#e23b3b"/>
+<text x="599" y="1610" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">poprawność-publikacji</tspan></text>
+<line x1="480.0" y1="1644" x2="480.0" y2="1668" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="30" y="1674" width="900" height="126" rx="12" fill="#fff4ec" stroke="#ff8a3d" stroke-width="2"/>
+<text x="52" y="1704" font-size="17" font-weight="bold" fill="#9c4a00">DZIAŁ 9 · FRONT I MEDIA<tspan font-size="12" font-weight="normal" fill="#888">   ·   PHP/WP</tspan></text>
+<rect x="735.0" y="1686" width="177.0" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
+<text x="823.5" y="1702" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: wordpress-media.md</text>
+<circle cx="62" cy="1732" r="6.5" fill="#2f6fed"/>
+<text x="76" y="1736" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">front</tspan><tspan fill="#444"> — lista + strona pojazdu (dane escapowane)</tspan></text>
+<circle cx="585" cy="1732" r="6.5" fill="#e23b3b"/>
+<text x="599" y="1736" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">render</tspan></text>
+<circle cx="62" cy="1762" r="6.5" fill="#2f6fed"/>
+<text x="76" y="1766" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">media</tspan><tspan fill="#444"> — zdjęcia (HOTLINK z vis.iaai.com)</tspan></text>
+<circle cx="585" cy="1762" r="6.5" fill="#e23b3b"/>
+<text x="599" y="1766" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">render</tspan></text>
+<line x1="480.0" y1="1800" x2="480.0" y2="1824" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="200" y="1830" width="560" height="52" rx="10" fill="#e1f5fe" stroke="#039be5" stroke-width="2"/>
+<text x="480.0" y="1862" text-anchor="middle" font-size="16" font-weight="bold" fill="#0277bd">STRONA WORDPRESS  →  klienci widzą auta</text>
+<text x="480.0" y="1956" text-anchor="middle" font-size="11.5" fill="#999">Importer aut IAAI → WordPress · diagram architektury (działy / agenci / krytycy / dokumentacja)</text>
 </svg>

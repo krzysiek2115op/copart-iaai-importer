@@ -63,8 +63,8 @@ sec2 = DZIALY[6:]
 def section_height(cards):
     return sum(card_h(c)+GAP for c in cards)
 SEC_HDR=46; BAND=70; CAP=26
-SBOX=50; SRCBLK = SBOX + GAP + SBOX     # baza IAAI -> (AJAX) -> strona IAAI
-total = (TOP + SEC_HDR + SRCBLK + GAP + section_height(sec1) + BAND + CAP + GAP
+SBOX=54; SNOTE=22; SRCBLK = SBOX + GAP + SNOTE   # serwer/baza IAAI --AJAX--> (podpis) --> Dział 1
+total = (TOP + SEC_HDR + SRCBLK + section_height(sec1) + BAND + CAP + GAP
          + SEC_HDR + section_height(sec2) + BAND + 60)
 
 add(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {total}" width="{W}" height="{total}" font-family="DejaVu Sans, Arial, sans-serif">')
@@ -120,17 +120,14 @@ def arrow(y, label=None):
 # Sekcja 1
 add(f'<text x="48" y="{y+30}" font-size="18" font-weight="bold" fill="#333">▼ CZĘŚĆ 1 — SCRAPER (Python): zbiera dane z IAAI i zapisuje do bazy</text>')
 y += SEC_HDR
-# Źródło — rozdzielone: BAZA IAAI (ich, niedostępna) --AJAX--> STRONA IAAI --Playwright--> scraper
+# Źródło: SERWER/BAZA IAAI --AJAX--> Dział 1 (który sam uruchamia przeglądarkę Playwright)
 add(f'<rect x="200" y="{y}" width="{W-400}" height="{SBOX}" rx="10" fill="#e0e0e0" stroke="#757575" stroke-width="2" stroke-dasharray="6 4"/>')
-add(f'<text x="{W/2}" y="{y+23}" text-anchor="middle" font-size="15" font-weight="bold" fill="#424242">BAZA IAAI  (ich serwer — dawna „stara baza")</text>')
-add(f'<text x="{W/2}" y="{y+41}" text-anchor="middle" font-size="11" fill="#757575">NIE mamy do niej dostępu — nie łączymy się do bazy IAAI</text>')
+add(f'<text x="{W/2}" y="{y+24}" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#424242">SERWER / BAZA IAAI  (dawna „stara baza")</text>')
+add(f'<text x="{W/2}" y="{y+43}" text-anchor="middle" font-size="11" fill="#757575">ich baza — NIE mamy do niej dostępu; nie łączymy się do niej bezpośrednio</text>')
 y += SBOX
-arrow(y, "AJAX  (strona IAAI sama pobiera dane z ich bazy)"); y += GAP
-add(f'<rect x="200" y="{y}" width="{W-400}" height="{SBOX}" rx="10" fill="#eceff1" stroke="#607d8b" stroke-width="2"/>')
-add(f'<text x="{W/2}" y="{y+23}" text-anchor="middle" font-size="15" font-weight="bold" fill="#37474f">Strona IAAI w przeglądarce  (aplikacja JS / Knockout)</text>')
-add(f'<text x="{W/2}" y="{y+41}" text-anchor="middle" font-size="11" fill="#607d8b">to widzimy publicznie — tu zaczyna się nasz system</text>')
-y += SBOX
-arrow(y, "Playwright  (czytamy wyrenderowaną stronę)"); y += GAP
+arrow(y, "AJAX  (dane z serwera IAAI)"); y += GAP
+add(f'<text x="{W/2}" y="{y+2}" text-anchor="middle" font-size="11.5" font-style="italic" fill="#777">Dział 1 sam uruchamia przeglądarkę (Playwright), która renderuje stronę IAAI i odczytuje z niej dane</text>')
+y += SNOTE
 for i,d in enumerate(sec1):
     h = draw_card(d, y)
     y += h
