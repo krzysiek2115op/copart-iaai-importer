@@ -73,6 +73,18 @@ def normalize(rec: dict, session: requests.Session) -> dict:
     out["vin_masked"] = bool(vin) and is_masked(vin)
     out["vin_format_ok"] = format_ok(vin) if vin else False
     out["vin_check_digit_ok"] = check_digit_ok(vin) if vin else None
+    # L10: vin_status spójny (gdy szczegóły nie podały go w nawiasie, wyprowadź z walidacji).
+    if not out.get("vin_status"):
+        if not vin:
+            out["vin_status"] = None
+        elif out["vin_masked"]:
+            out["vin_status"] = "masked"
+        elif out["vin_check_digit_ok"] is True:
+            out["vin_status"] = "ok"
+        elif out["vin_check_digit_ok"] is False:
+            out["vin_status"] = "invalid"
+        else:
+            out["vin_status"] = "unknown"
     out["vpic"] = None
     if vin and out["vin_format_ok"]:
         try:

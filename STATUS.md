@@ -139,12 +139,19 @@ Raport: [docs/AUDIT.md](docs/AUDIT.md). Test integracyjny E2E przeszedł (realne
    `download` (sideload do mediów WP) zostaje opcjonalnie pod filtrem `iaai_image_mode`.
    Wtyczka v0.14.0: lista i strona pojazdu hotlinkują (lazy `<img>`, escapowane).
 
-### C. Niski priorytet (dopięcia — z audytu L1–L5)
-10. `vin_status` bywa null (niski wpływ).
-11. `branch_id` + tabela `iaai_branches` nieużywane (mamy `selling_branch` tekstem).
-12. Niespójne wartości `key_available` („Present" vs „Available") — `key_present` normalizuje.
-13. `parse_sale_date` zakłada bieżący rok przy braku roku.
-14. Testy automatyczne (unit/integration) jako stały zestaw.
+### C. Niski priorytet (dopięcia — z audytu L1–L5) — ✅ ZROBIONE (v0.27.0)
+10. ✅ **`vin_status`** — `vin.py` wyprowadza spójny status (masked/ok/invalid/unknown), gdy
+    szczegóły nie podały go w nawiasie. (Pole diagnostyczne — nie idzie do bazy.)
+11. ✅ **`branch_id`** — celowo NULL-owalny; źródłem prawdy jest `selling_branch` (tekst, jak na
+    karcie IAAI anonimowo). Brak tabeli `iaai_branches` z założenia (płaska, wierna kopia). *By design.*
+12. ✅ **`key_available`** — naprawiony błąd: „Not Available" zawiera „avail" → wcześniej dawało
+    `key_present=True`. Teraz najpierw negacja (`not/no/without/...`) → poprawne `False`.
+13. ✅ **`parse_sale_date`** — przy braku roku wybiera rok dający datę NAJBLIŻSZĄ dziś
+    (aukcje bywają tuż po przełomie roku), nie sztywno bieżący.
+14. ✅ **Testy automatyczne** — `scraper/tests/test_pure.py` (stdlib `unittest`, bez sieci/bazy):
+    jednostki, vin, match, common(tbl/hash), pokrycie. Miękki import → moduł z brakującą
+    zależnością jest pomijany, nie wywraca całości. Uruchom:
+    `python -m unittest discover -s scraper/tests`.
 
 ### D. Dostawa dla klienta
 15. **Paczka ZIP wtyczki** — spakować `wp-plugin/iaai-importer/` jako instalowalny plugin WP

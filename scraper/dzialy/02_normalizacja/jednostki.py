@@ -50,7 +50,19 @@ def parse_sale_date(val: str) -> str | None:
         return None
     month, day = MONTHS[m.group(1)], int(m.group(2))
     yr = re.search(r"\b(20\d{2})\b", val)
-    year = int(yr.group(1)) if yr else date.today().year
+    if yr:
+        year = int(yr.group(1))
+    else:
+        # L13: brak roku -> wybierz rok dający datę NAJBLIŻSZĄ dziś (aukcje bywają tuż po
+        # przełomie roku), zamiast sztywno bieżącego.
+        today = date.today()
+        cands = []
+        for y in (today.year - 1, today.year, today.year + 1):
+            try:
+                cands.append(date(y, month, day))
+            except ValueError:
+                pass
+        year = min(cands, key=lambda d: abs((d - today).days)).year if cands else today.year
     try:
         return date(year, month, day).isoformat()
     except ValueError:
@@ -86,9 +98,14 @@ def normalize(rec: dict) -> dict:
     # tytuł
     if out.get("title"):
         out["title_brand"], out["title_state"] = split_title(out["title"])
-    # klucz
+    # klucz (L12): normalizacja niespójnych wartości ("Present"/"Available"/"Not Available"/...).
+    # UWAGA: najpierw negacja — "Not Available" zawiera "avail", więc naiwne wyszukanie dałoby True.
     if out.get("key_available"):
-        out["key_present"] = bool(re.search(r"avail|present|yes", str(out["key_available"]), re.I))
+        kv = str(out["key_available"]).strip().lower()
+        if re.search(r"\b(not|no|without|missing|absent)\b", kv) or kv in ("none", "n/a", "-"):
+            out["key_present"] = False
+        else:
+            out["key_present"] = bool(re.search(r"avail|present|yes", kv))
     return out
 
 
