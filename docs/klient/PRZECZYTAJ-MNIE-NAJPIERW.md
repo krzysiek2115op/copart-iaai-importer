@@ -34,10 +34,12 @@ znika też u Ciebie (wpis zostaje ukryty, historia się nie kasuje). **Wszystko 
 się samo.**
 
 Co dostajesz w tej paczce (ZIP):
-   • wp-plugin/iaai-importer/  → WTYCZKA do WordPress (pokazuje auta)
-   • scraper/                  → PROGRAM ZBIERAJĄCY (pobiera auta z IAAI)
-   • deploy/                   → INSTALATOR automatyzacji (install.sh) + ustawienia
-   • docs/klient/             → instrukcje (ten plik + rozbite na etapy)
+   • iaai-importer.zip         → WTYCZKA do WordPress (gotowa — wgrywasz w panelu)
+   • 0-Instrukcja-klienta.pdf  → pełna instrukcja A–Z w jednym ładnym pliku
+   • Instrukcje-PDF/           → każdy etap instrukcji jako osobny PDF
+   • scraper/                  → PROGRAM ZBIERAJĄCY (pobiera auta z IAAI, na VPS)
+   • deploy/                   → INSTALATOR automatyzacji (install.sh) + usługi
+   • db/                       → schemat bazy danych (referencja)
 
 Czego potrzebujesz:
    ✔ WordPress na własnym hostingu (Twoja strona).
