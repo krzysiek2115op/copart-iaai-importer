@@ -4,7 +4,7 @@ Tags: iaai, vehicles, auctions, import, cpt
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 0.20.0
+Stable tag: 0.21.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,9 @@ dane strukturalne pojazdu.
 Sama wtyczka działa na zwykłym WordPressie. Automatyzacja pobierania aut wymaga VPS z SSH.
 
 == Changelog ==
+
+= 0.21.0 =
+* Ładniejsza, bardziej szczegółowa lista aut (styl zbliżony do IAAI): karta ze zdjęciem 4:3, tytuł-link, cena Buy Now, przebieg, uszkodzenie, skrzynia, plakietki Run & Drive / Key Available. Dodano paginację (?iaai_str).
 
 = 0.20.0 =
 * Auto-menu na froncie: „Nasze auta" pojawia się na górnym pasku także w motywach z menu „na sztywno" (gotowce/page-buildery) — skrypt dokleja link do głównej nawigacji, bez duplikatów; wyłączalny filtrem iaai_auto_menu.

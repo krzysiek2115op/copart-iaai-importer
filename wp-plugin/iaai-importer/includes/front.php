@@ -203,7 +203,8 @@ if(nav.tagName==='UL'){var l=document.createElement('li');l.appendChild(a2);nav.
  * 🔵 AGENT `front` — render listy i strony pojazdu (escapowane!)
  * ==================================================================== */
 
-/** [iaai_pojazdy ile="12"] — siatka pojazdów. Wynik cache'owany (Transient API). */
+/** [iaai_pojazdy ile="12"] — siatka pojazdów (styl zbliżony do IAAI) + paginacja.
+ * `ile` = liczba aut na stronę. Wynik cache'owany (Transient API). */
 add_shortcode( 'iaai_pojazdy', 'iaai_render_list' );
 function iaai_render_list( $atts ) : string {
 	$a   = shortcode_atts( array( 'ile' => 12 ), $atts, 'iaai_pojazdy' );
@@ -215,8 +216,11 @@ function iaai_render_list( $atts ) : string {
 		wp_enqueue_style( 'iaai-importer' );
 	}
 
-	// Cache na 5 min — odciąża bazę przy ruchu (DoS/throttling). Unieważniany przy publikacji.
-	$cache_key = 'iaai_list_' . $ile;
+	// Numer strony — własny parametr, by nie kolidować z paginacją treści strony WP.
+	$paged = isset( $_GET['iaai_str'] ) ? max( 1, absint( wp_unslash( $_GET['iaai_str'] ) ) ) : 1;
+
+	// Cache na 5 min (klucz z wersją — bump przy publikacji unieważnia wszystkie strony).
+	$cache_key = 'iaai_list_' . iaai_list_cache_version() . '_' . $ile . '_' . $paged;
 	$cached    = get_transient( $cache_key );
 	if ( false !== $cached ) {
 		return $cached;
@@ -225,54 +229,118 @@ function iaai_render_list( $atts ) : string {
 	$q = new WP_Query( array(
 		'post_type'           => IAAI_CPT,
 		'posts_per_page'      => $ile,
+		'paged'               => $paged,
 		'post_status'         => 'publish',
-		'no_found_rows'       => true,
 		'ignore_sticky_posts' => true,
+		'orderby'             => 'date',
+		'order'               => 'DESC',
 	) );
 	if ( ! $q->have_posts() ) {
-		$empty = '<p>' . esc_html__( 'Brak pojazdów.', 'iaai-importer' ) . '</p>';
+		$empty = '<p class="iaai-empty">' . esc_html__( 'Brak pojazdów.', 'iaai-importer' ) . '</p>';
 		set_transient( $cache_key, $empty, 5 * MINUTE_IN_SECONDS );
 		return $empty;
 	}
-	$out = '<ul class="iaai-pojazdy-grid">';
+	$out = '<div class="iaai-pojazdy" id="iaai"><div class="iaai-grid">';
 	while ( $q->have_posts() ) {
 		$q->the_post();
-		$id    = get_the_ID();
-		$odo   = iaai_format_odometer(
-			get_post_meta( $id, 'iaai_odometer', true ),
-			(string) get_post_meta( $id, 'iaai_odometer_uom', true )
-		);
-		$dmg   = get_post_meta( $id, 'iaai_primary_damage', true );
-		// Miniatura: hotlink (1. zdjęcie z bazy) albo — w trybie download — miniatura WP.
-		if ( 'hotlink' === iaai_image_mode() ) {
-			$sid   = (int) get_post_meta( $id, 'iaai_salvage_id', true );
-			$first = $sid ? iaai_get_image_urls( $sid, 1 ) : array();
-			$alt   = get_the_title() . ( $dmg ? ' – ' . $dmg : '' );   // opisowy alt (SEO/dostępność)
-			$thumb = $first
-				? '<img class="iaai-thumb" loading="lazy" src="' . esc_url( $first[0] ) . '" alt="'
-					. esc_attr( $alt ) . '" />'
-				: '';
-		} else {
-			$thumb = get_the_post_thumbnail( $id, 'medium' );       // już bezpieczne
-		}
-		$out  .= '<li class="iaai-card"><a href="' . esc_url( get_permalink( $id ) ) . '">'
-			. $thumb
-			. '<h3>' . esc_html( get_the_title() ) . '</h3>'
-			. ( $odo ? '<span class="odo">' . $odo . '</span> ' : '' )
-			. '<span class="dmg">' . esc_html( $dmg ) . '</span>'
-			. '</a></li>';
+		$out .= iaai_render_card( (int) get_the_ID() );
 	}
+	$out .= '</div>';
+	$out .= iaai_render_pager( $paged, (int) $q->max_num_pages );
+	$out .= '</div>';
 	wp_reset_postdata();
-	$out .= '</ul>';
+
 	set_transient( $cache_key, $out, 5 * MINUTE_IN_SECONDS );
 	return $out;
 }
 
-/** Czyści cache list po publikacji/zmianach (woła to dział 8). */
-function iaai_flush_list_cache() : void {
-	for ( $i = 1; $i <= 48; $i++ ) {
-		delete_transient( 'iaai_list_' . $i );
+/** Jedna karta pojazdu: zdjęcie, tytuł-link, cena, kluczowe dane, plakietki. */
+function iaai_render_card( int $id ) : string {
+	$title = get_the_title( $id );
+	$link  = get_permalink( $id );
+	$m     = static function ( string $k ) use ( $id ) {
+		return trim( (string) get_post_meta( $id, 'iaai_' . $k, true ) );
+	};
+
+	$dmg   = $m( 'primary_damage' );
+	$trans = $m( 'transmission' );
+	$odo   = iaai_format_odometer( $m( 'odometer' ), $m( 'odometer_uom' ) ?: 'mi' );
+	$buy   = (float) $m( 'buy_now' );
+	$bid   = (float) $m( 'current_bid' );
+
+	// Zdjęcie (hotlink 1. z bazy albo miniatura WP; brak → placeholder).
+	if ( 'hotlink' === iaai_image_mode() ) {
+		$sid   = (int) get_post_meta( $id, 'iaai_salvage_id', true );
+		$first = $sid ? iaai_get_image_urls( $sid, 1 ) : array();
+		$img   = $first
+			? '<img loading="lazy" src="' . esc_url( $first[0] ) . '" alt="'
+				. esc_attr( $title . ( $dmg ? ' – ' . $dmg : '' ) ) . '" />'
+			: '<span class="iaai-noimg" aria-hidden="true"></span>';
+	} else {
+		$img = get_the_post_thumbnail( $id, 'medium' ) ?: '<span class="iaai-noimg" aria-hidden="true"></span>';
 	}
+
+	// Cena.
+	$price = '';
+	if ( $buy > 0 ) {
+		$price = 'Buy Now: USD ' . number_format_i18n( $buy );
+	} elseif ( $bid > 0 ) {
+		$price = esc_html__( 'Aktualna oferta', 'iaai-importer' ) . ': USD ' . number_format_i18n( $bid );
+	}
+
+	// Wiersze danych (odo już zescapowane w iaai_format_odometer).
+	$rows = '';
+	if ( '' !== $price ) { $rows .= '<span class="iaai-price">' . esc_html( $price ) . '</span>'; }
+	if ( '' !== $odo )   { $rows .= '<span class="iaai-odo">' . $odo . '</span>'; }
+	if ( '' !== $dmg )   { $rows .= '<span class="iaai-dmg">' . esc_html( $dmg ) . '</span>'; }
+	if ( '' !== $trans ) { $rows .= '<span class="iaai-trans">' . esc_html( $trans ) . '</span>'; }
+
+	// Plakietki.
+	$badges = '';
+	$rd = strtolower( $m( 'run_and_drive' ) );
+	if ( false !== strpos( $rd, 'run' ) || false !== strpos( $rd, 'drive' ) ) {
+		$badges .= '<span class="iaai-badge iaai-badge--rd">' . esc_html__( 'Run &amp; Drive', 'iaai-importer' ) . '</span>';
+	}
+	$key = strtolower( $m( 'key_available' ) );
+	if ( '' !== $key && false === strpos( $key, 'no' )
+		&& ( false !== strpos( $key, 'yes' ) || false !== strpos( $key, 'avail' ) || false !== strpos( $key, 'key' ) ) ) {
+		$badges .= '<span class="iaai-badge iaai-badge--key">' . esc_html__( 'Key Available', 'iaai-importer' ) . '</span>';
+	}
+
+	return '<article class="iaai-card">'
+		. '<a class="iaai-card__media" href="' . esc_url( $link ) . '">' . $img . '</a>'
+		. '<div class="iaai-card__body">'
+		. '<a class="iaai-card__title" href="' . esc_url( $link ) . '">' . esc_html( $title ) . '</a>'
+		. ( $rows ? '<div class="iaai-card__rows">' . $rows . '</div>' : '' )
+		. ( $badges ? '<div class="iaai-card__badges">' . $badges . '</div>' : '' )
+		. '</div></article>';
+}
+
+/** Pager „‹  n z N  ›" pod siatką (paginacja przez ?iaai_str=N). */
+function iaai_render_pager( int $paged, int $max ) : string {
+	if ( $max <= 1 ) {
+		return '';
+	}
+	$base = remove_query_arg( 'iaai_str' );
+	$mk   = static function ( int $p, string $label ) use ( $base ) {
+		$url = $p <= 1 ? $base : add_query_arg( 'iaai_str', $p, $base );
+		return '<a class="iaai-pager__btn" href="' . esc_url( $url ) . '#iaai">' . $label . '</a>';
+	};
+	$prev = $paged > 1 ? $mk( $paged - 1, '‹' ) : '<span class="iaai-pager__btn is-disabled">‹</span>';
+	$next = $paged < $max ? $mk( $paged + 1, '›' ) : '<span class="iaai-pager__btn is-disabled">›</span>';
+	/* translators: 1: bieżąca strona, 2: liczba stron */
+	$info = '<span class="iaai-pager__info">' . sprintf( esc_html__( '%1$d z %2$d', 'iaai-importer' ), $paged, $max ) . '</span>';
+	return '<nav class="iaai-pager" aria-label="Paginacja">' . $prev . $info . $next . '</nav>';
+}
+
+/** Wersja cache list (bump = unieważnienie wszystkich stron). */
+function iaai_list_cache_version() : int {
+	return (int) get_option( 'iaai_list_cv', 1 );
+}
+
+/** Czyści cache list po publikacji/zmianach (woła to dział 8) — bump wersji. */
+function iaai_flush_list_cache() : void {
+	update_option( 'iaai_list_cv', time() );
 }
 
 /** Strona pojedynczego pojazdu: dokleja tabelę danych + galerię do treści. */
