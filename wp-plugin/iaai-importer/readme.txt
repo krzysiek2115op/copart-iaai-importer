@@ -4,7 +4,7 @@ Tags: iaai, vehicles, auctions, import, cpt
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 0.19.0
+Stable tag: 0.20.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,9 @@ dane strukturalne pojazdu.
 Sama wtyczka działa na zwykłym WordPressie. Automatyzacja pobierania aut wymaga VPS z SSH.
 
 == Changelog ==
+
+= 0.20.0 =
+* Auto-menu na froncie: „Nasze auta" pojawia się na górnym pasku także w motywach z menu „na sztywno" (gotowce/page-buildery) — skrypt dokleja link do głównej nawigacji, bez duplikatów; wyłączalny filtrem iaai_auto_menu.
 
 = 0.19.0 =
 * Auto-dodawanie podstrony „Nasze auta" do menu także w motywach BLOKOWYCH (blok Nawigacja/wp_navigation), nie tylko klasycznych. Motywy z nagłówkiem „na sztywno" (bez menu WP) trzeba uzupełnić ręcznie.

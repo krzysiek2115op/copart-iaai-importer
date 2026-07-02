@@ -145,6 +145,61 @@ function iaai_enqueue_styles() : void {
 }
 
 /* ====================================================================
+ * AUTO-MENU (front-end) — wstawia „Nasze auta" na górny pasek NA KAŻDYM motywie.
+ *
+ * Preferowana droga to menu WP / blok Nawigacja (activation.php). Ten skrypt to
+ * SIATKA BEZPIECZEŃSTWA dla motywów z paskiem „na sztywno" (gotowce/page-buildery),
+ * gdzie nie ma menu WordPressa. Heurystyka: znajduje w <header> największą listę
+ * linków = główne menu i dokleja pozycję dopasowaną stylem do sąsiadów.
+ * NIE duplikuje (gdy link już jest w menu — pomija). Wyłączenie:
+ *   add_filter('iaai_auto_menu','__return_false');
+ * ==================================================================== */
+add_action( 'wp_footer', 'iaai_auto_menu_script' );
+function iaai_auto_menu_script() : void {
+	if ( is_admin() || ! apply_filters( 'iaai_auto_menu', true ) ) {
+		return;
+	}
+	$pid = (int) get_option( 'iaai_page_id' );
+	if ( ! $pid ) {
+		return;
+	}
+	$url = get_permalink( $pid );
+	if ( ! $url ) {
+		return;
+	}
+	$data = wp_json_encode( array(
+		'url'       => esc_url_raw( $url ),
+		'label'     => get_the_title( $pid ),
+		'selectors' => array_values( (array) apply_filters( 'iaai_auto_menu_selectors', array(
+			'.wp-block-navigation__container', 'header nav ul', 'nav ul.menu',
+			'#site-navigation ul', '.main-navigation ul', 'header nav', 'header ul',
+		) ) ),
+	) );
+	?>
+<script>(function(){try{
+var D=<?php echo $data; // już zescapowane przez wp_json_encode ?>;
+var path=new URL(D.url,location.href).pathname;
+var cand=[];
+D.selectors.forEach(function(s){document.querySelectorAll(s).forEach(function(n){cand.push(n);});});
+var hdr=document.querySelector('header')||document.body;
+hdr.querySelectorAll('ul,nav').forEach(function(n){cand.push(n);});
+var nav=null,best=-1;
+cand.forEach(function(el){var c=el.querySelectorAll('a').length;if(c>best){best=c;nav=el;}});
+if(!nav||best<1)return;
+var as=nav.querySelectorAll('a'),i;
+for(i=0;i<as.length;i++){try{if(new URL(as[i].href).pathname===path)return;}catch(e){}}
+var sample=nav.querySelector('li');
+if(sample){var li=sample.cloneNode(true);li.querySelectorAll('ul').forEach(function(u){u.remove();});
+li.className=sample.className.replace(/current[-_][a-z-]+/g,'');
+var a=li.querySelector('a')||document.createElement('a');a.setAttribute('href',D.url);a.textContent=D.label;
+if(!a.parentNode)li.appendChild(a);nav.appendChild(li);}
+else{var a2=document.createElement('a');a2.href=D.url;a2.textContent=D.label;
+if(nav.tagName==='UL'){var l=document.createElement('li');l.appendChild(a2);nav.appendChild(l);}else nav.appendChild(a2);}
+}catch(e){}})();</script>
+	<?php
+}
+
+/* ====================================================================
  * 🔵 AGENT `front` — render listy i strony pojazdu (escapowane!)
  * ==================================================================== */
 
