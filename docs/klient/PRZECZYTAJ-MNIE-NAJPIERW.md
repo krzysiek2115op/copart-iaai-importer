@@ -203,7 +203,10 @@ CZĘŚĆ IV — CO MOŻE PÓJŚĆ NIE TAK (i jak to naprawić)
    do panelu). Jeśli dalej nie ma — utwórz ręcznie stronę z kodem [iaai_pojazdy].
 
 ▸ Podstrona nie dodała się do menu
-   To normalne, gdy motyw nie ma jeszcze menu. Dodaj ręcznie — patrz KROK 7.
+   Wtyczka dodaje ją sama w motywach klasycznych i blokowych. Jeśli nie wskoczyła,
+   dodaj ręcznie — patrz KROK 7. WYJĄTEK: motywy z menu „na sztywno" (gotowce premium,
+   page-buildery jak Elementor/Divi) nie używają menu WordPressa — tam żadna wtyczka
+   nie doda pozycji; link „Nasze auta" wstawia się raz ręcznie w edytorze motywu.
 
 ▸ Auta się nie pokazują (strona pusta)
    • Jeśli NIE zrobiłeś Części III — to oczekiwane; auta pojawią się po

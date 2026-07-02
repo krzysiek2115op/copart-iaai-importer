@@ -44,9 +44,15 @@ Po kliknięciu w auto otwiera się jego strona ze zdjęciami i danymi.
 ---
 
 ## Menu nie dodało się samo?
-Wtyczka dopina „Nasze auta" do menu automatycznie, ale jeśli Twój motyw nie ma
-jeszcze ustawionego menu, zrób to raz ręcznie:
-**Wygląd → Menu** → zaznacz stronę „Nasze auta" → **Dodaj do menu** → **Zapisz menu**.
+Wtyczka dopina „Nasze auta" do menu automatycznie (motywy klasyczne i blokowe).
+Jeśli mimo to nie ma jej na pasku, dodaj raz ręcznie:
+**Wygląd → Menu** → zaznacz „Nasze auta" → **Dodaj do menu** → **Zapisz menu**
+(w motywach blokowych: **Wygląd → Edytor → Nawigacja**).
+
+> ℹ️ Wyjątek: jeśli Twój motyw ma menu **wpisane „na sztywno"** (np. gotowy motyw
+> premium albo strona zbudowana page-builderem jak Elementor/Divi), to menu nie
+> jest zwykłym menu WordPressa — wtedy żadna wtyczka nie doda tam pozycji i trzeba
+> wstawić link „Nasze auta" ręcznie w edytorze tego motywu/buildera (jednorazowo).
 
 ## Dobrze wiedzieć
 - **Zdjęcia** ładują się wprost z serwerów IAAI (nie zajmują miejsca na Twoim hostingu).
