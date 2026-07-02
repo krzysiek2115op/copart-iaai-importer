@@ -4,7 +4,8 @@ Master-dokument: cel, jak działa, co mamy, czego brakuje. Stan: **2026-07-02, v
 (wtyczka 0.18.0: auto-podstrona „Nasze auta" z shortcode po aktywacji + wpięcie do menu +
 responsywny CSS dziedziczący motyw; archiwum CPT /pojazdy; **SEO**: JSON-LD Schema.org „Car",
 meta description + Open Graph/Twitter (fallback, bez konfliktu z Yoast/RankMath), opisowe alt,
-sitemap przez rdzeń WP)
+sitemap przez rdzeń WP. Schemat audytu wyciągnięty do `vehicle.schema.json`.
+Pełna instrukcja klienta A–Z w jednym pliku: `docs/klient/PRZECZYTAJ-MNIE-NAJPIERW.md`)
 (bloki A/B/C: kod gotowy; audyt A–Z + naprawy F1–F5 — [docs/AUDIT2.md](docs/AUDIT2.md);
 **audyt bezpieczeństwa wtyczki — [docs/SECURITY-AUDIT.md](docs/SECURITY-AUDIT.md), ocena 9/10**;
 instrukcja klienta A–Z — [docs/klient/00-START-TUTAJ.md](docs/klient/00-START-TUTAJ.md);

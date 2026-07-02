@@ -3,6 +3,10 @@
 To jest komplet instrukcji do uruchomienia **importera aut z IAAI** na Twojej stronie.
 Pisane prostym językiem — **nie musisz być informatykiem**. Idź etapami, po kolei.
 
+> 📘 Wolisz **wszystko w jednym pliku** (A–Z, z FAQ i „co może pójść nie tak")?
+> → [PRZECZYTAJ-MNIE-NAJPIERW.md](PRZECZYTAJ-MNIE-NAJPIERW.md). Poniżej ten sam
+> materiał rozbity na krótkie etapy.
+
 ---
 
 ## Co to robi? (w jednym zdaniu)
