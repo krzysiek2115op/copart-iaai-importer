@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(cd \"/home/krzysiek/zlecenie plugin 1 \" && grep -rn \"iaai_vehicles\\\\|iaai_vehicle_images\\\\|FROM \\\\|INTO \\\\|UPDATE \\\\|connect\\(\" scraper/dzialy/04_synchronizacja/diff.py)",
-      "Read(//home/krzysiek/zlecenie plugin 1 /scraper/dzialy/04_synchronizacja/**)"
+      "Read(//home/krzysiek/zlecenie plugin 1 /scraper/dzialy/04_synchronizacja/**)",
+      "Bash(git add *)",
+      "Bash(git commit -q -m 'Auto-podstrona '\\\\''Nasze auta'\\\\'' po aktywacji + menu + responsywny CSS motywu \\(wtyczka 0.17.0\\) *)",
+      "Bash(git tag *)",
+      "Bash(git push *)"
     ],
     "additionalDirectories": [
       "/home/krzysiek/zlecenie plugin 1 ",

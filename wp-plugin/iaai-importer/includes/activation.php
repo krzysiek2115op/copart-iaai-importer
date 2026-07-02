@@ -108,6 +108,106 @@ function iaai_activate() : void {
 		dbDelta( $sql );
 	}
 	update_option( 'iaai_db_version', IAAI_DB_VERSION );
+	iaai_create_landing_page();   // auto-podstrona „Nasze auta" + wpięcie do menu
+	flush_rewrite_rules();        // by archiwum CPT /pojazdy działało od razu
+}
+
+/* =====================================================================
+ * AUTO-PODSTRONA — Strona WP „Nasze auta" z shortcode [iaai_pojazdy]
+ * tworzona SAMA po aktywacji i dopinana do głównego menu.
+ * Wszystko idempotentne: przy ponownej aktywacji nic się nie duplikuje.
+ * ===================================================================== */
+
+/** Zwraca ID istniejącej podstrony IAAI (opcja lub meta `_iaai_landing`), albo 0. */
+function iaai_get_landing_page_id() : int {
+	$id = (int) get_option( 'iaai_page_id' );
+	if ( $id && 'publish' === get_post_status( $id ) ) {
+		return $id;
+	}
+	$q = get_posts( array(
+		'post_type'   => 'page',
+		'post_status' => 'any',
+		'numberposts' => 1,
+		'fields'      => 'ids',
+		'meta_key'    => '_iaai_landing',
+		'meta_value'  => '1',
+	) );
+	return $q ? (int) $q[0] : 0;
+}
+
+/**
+ * Tworzy Stronę WP „Nasze auta" z shortcode (jeśli jej nie ma) i dopina do menu.
+ * Strona to zwykła treść WP — klient może ją przenieść, zmienić nazwę, dodać sekcje.
+ */
+function iaai_create_landing_page() : void {
+	$id = iaai_get_landing_page_id();
+	if ( ! $id ) {
+		$id = wp_insert_post( array(
+			'post_title'   => __( 'Nasze auta', 'iaai-importer' ),
+			'post_name'    => 'nasze-auta',
+			'post_status'  => 'publish',
+			'post_type'    => 'page',
+			'post_content' => '[iaai_pojazdy ile="24"]',
+		) );
+		if ( is_wp_error( $id ) || ! $id ) {
+			if ( function_exists( 'iaai_log' ) ) {
+				iaai_log( 'activation: nie udało się utworzyć podstrony „Nasze auta"', 'error' );
+			}
+			return;
+		}
+		update_post_meta( $id, '_iaai_landing', '1' );
+		update_option( 'iaai_page_id', (int) $id );
+	}
+	update_option( 'iaai_landing_done', 1 );
+	iaai_maybe_add_page_to_menu( (int) $id );
+}
+
+/**
+ * Dopina podstronę do menu przypisanego do lokalizacji „primary" (a jak nie ma —
+ * do pierwszego przypisanego menu motywu). Nie duplikuje pozycji. Gdy strona nie
+ * ma jeszcze żadnego menu, po cichu odpuszcza — klient doda w 2 kliki (instrukcja).
+ */
+function iaai_maybe_add_page_to_menu( int $page_id ) : void {
+	if ( ! $page_id || ! function_exists( 'wp_update_nav_menu_item' ) ) {
+		return;
+	}
+	$locations = (array) get_nav_menu_locations();
+	$menu_id   = isset( $locations['primary'] ) ? (int) $locations['primary'] : 0;
+	if ( ! $menu_id ) {
+		foreach ( $locations as $loc_menu ) {
+			if ( $loc_menu ) {
+				$menu_id = (int) $loc_menu;
+				break;
+			}
+		}
+	}
+	if ( ! $menu_id || ! wp_get_nav_menu_object( $menu_id ) ) {
+		return;   // brak menu — klient doda ręcznie (patrz docs/klient)
+	}
+	foreach ( (array) wp_get_nav_menu_items( $menu_id ) as $it ) {
+		if ( (int) $it->object_id === $page_id && 'page' === $it->object ) {
+			return;   // już w menu — nie duplikuj
+		}
+	}
+	wp_update_nav_menu_item( $menu_id, 0, array(
+		'menu-item-title'     => __( 'Nasze auta', 'iaai-importer' ),
+		'menu-item-object'    => 'page',
+		'menu-item-object-id' => $page_id,
+		'menu-item-type'      => 'post_type',
+		'menu-item-status'    => 'publish',
+	) );
+}
+
+/**
+ * Bezpiecznik dla AKTUALIZACJI przez podmianę plików (bez ponownej aktywacji):
+ * gdy podstrona jeszcze nie istnieje, utwórz ją raz przy wejściu do panelu.
+ */
+add_action( 'admin_init', 'iaai_maybe_create_landing' );
+function iaai_maybe_create_landing() : void {
+	if ( get_option( 'iaai_landing_done' ) ) {
+		return;
+	}
+	iaai_create_landing_page();
 }
 
 /**

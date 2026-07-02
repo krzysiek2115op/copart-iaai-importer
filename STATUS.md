@@ -1,6 +1,8 @@
 # STATUS PROJEKTU — Importer IAAI → WordPress
 
-Master-dokument: cel, jak działa, co mamy, czego brakuje. Stan: **2026-06-30, v0.30.0**
+Master-dokument: cel, jak działa, co mamy, czego brakuje. Stan: **2026-07-02, v0.31.0**
+(wtyczka 0.17.0: auto-podstrona „Nasze auta" z shortcode po aktywacji + wpięcie do menu +
+responsywny CSS dziedziczący motyw; archiwum CPT /pojazdy)
 (bloki A/B/C: kod gotowy; audyt A–Z + naprawy F1–F5 — [docs/AUDIT2.md](docs/AUDIT2.md);
 **audyt bezpieczeństwa wtyczki — [docs/SECURITY-AUDIT.md](docs/SECURITY-AUDIT.md), ocena 9/10**;
 instrukcja klienta A–Z — [docs/klient/00-START-TUTAJ.md](docs/klient/00-START-TUTAJ.md);

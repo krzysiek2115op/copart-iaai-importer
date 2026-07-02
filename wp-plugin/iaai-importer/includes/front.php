@@ -124,6 +124,27 @@ function iaai_import_images( int $salvage_id, int $post_id ) : int {
 }
 
 /* ====================================================================
+ * Style frontu — minimalny CSS, DZIEDZICZY MOTYW (dział 9).
+ * Wczytywany TYLKO tam, gdzie potrzebny: strona/archiwum pojazdu albo
+ * strona z shortcode [iaai_pojazdy]. Zero obciążenia reszty witryny.
+ * ==================================================================== */
+add_action( 'wp_enqueue_scripts', 'iaai_enqueue_styles' );
+function iaai_enqueue_styles() : void {
+	wp_register_style( 'iaai-importer', IAAI_IMPORTER_URL . 'assets/iaai.css', array(), IAAI_IMPORTER_VERSION );
+
+	$need = is_singular( IAAI_CPT ) || is_post_type_archive( IAAI_CPT );
+	if ( ! $need && is_singular() ) {
+		$post = get_post();
+		if ( $post instanceof WP_Post && has_shortcode( (string) $post->post_content, 'iaai_pojazdy' ) ) {
+			$need = true;
+		}
+	}
+	if ( $need ) {
+		wp_enqueue_style( 'iaai-importer' );
+	}
+}
+
+/* ====================================================================
  * 🔵 AGENT `front` — render listy i strony pojazdu (escapowane!)
  * ==================================================================== */
 
@@ -133,6 +154,11 @@ function iaai_render_list( $atts ) : string {
 	$a   = shortcode_atts( array( 'ile' => 12 ), $atts, 'iaai_pojazdy' );
 	// Clamp 1..48 — ochrona przed [iaai_pojazdy ile="999999"] (DoS / ciężkie zapytanie).
 	$ile = max( 1, min( 48, absint( $a['ile'] ) ) );
+
+	// Fallback: gdy shortcode użyty poza wykrytą stroną (widget/blok) — dołóż styl.
+	if ( ! wp_style_is( 'iaai-importer', 'enqueued' ) ) {
+		wp_enqueue_style( 'iaai-importer' );
+	}
 
 	// Cache na 5 min — odciąża bazę przy ruchu (DoS/throttling). Unieważniany przy publikacji.
 	$cache_key = 'iaai_list_' . $ile;

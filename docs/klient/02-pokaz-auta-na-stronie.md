@@ -1,14 +1,22 @@
 # Etap 2 — Pokaż auta na stronie
 
-Cel: stworzyć stronę, na której wyświetlą się auta. Używamy tzw. **krótkiego kodu**
-(ang. *shortcode*) — to gotowy „klocek", który wstawiasz raz, a on sam pokazuje pojazdy.
+> ✅ **Zwykle nie musisz tu nic robić.** Po włączeniu wtyczki (Etap 1) sama
+> tworzy się gotowa podstrona **„Nasze auta"** z siatką aut, dopasowana do
+> wyglądu Twojego motywu (kolory, fonty) i responsywna (ładnie działa na
+> telefonie). Wtyczka próbuje też **dodać ją do głównego menu**.
+>
+> Znajdziesz ją w **Strony → Nasze auta** (adres `.../nasze-auta`).
+> Auta wypełnią ją naprawdę dopiero po **Etapie 3** (uruchomienie automatyzacji).
+>
+> Reszta tej instrukcji przyda się tylko, gdy chcesz **dodatkową** stronę z autami
+> albo gdy menu nie dodało się samo (patrz sekcja na dole).
 
-> Auta pojawią się tu naprawdę dopiero po **Etapie 3** (gdy uruchomisz automatyzację).
-> Stronę możesz jednak przygotować już teraz.
+Do ręcznego wstawienia aut w dowolnym miejscu używamy tzw. **krótkiego kodu**
+(ang. *shortcode*) — gotowego „klocka", który wstawiasz raz, a on sam pokazuje pojazdy.
 
 ---
 
-## Krok po kroku
+## Krok po kroku (opcjonalnie — własna, dodatkowa strona)
 
 **1. Menu po lewej:** **Strony → Dodaj nową stronę**
 
@@ -35,8 +43,10 @@ Po kliknięciu w auto otwiera się jego strona ze zdjęciami i danymi.
 
 ---
 
-## Gdzie wstawić, żeby był link w menu?
-**Wygląd → Menu** → dodaj utworzoną stronę („Nasze auta") do menu na stronie.
+## Menu nie dodało się samo?
+Wtyczka dopina „Nasze auta" do menu automatycznie, ale jeśli Twój motyw nie ma
+jeszcze ustawionego menu, zrób to raz ręcznie:
+**Wygląd → Menu** → zaznacz stronę „Nasze auta" → **Dodaj do menu** → **Zapisz menu**.
 
 ## Dobrze wiedzieć
 - **Zdjęcia** ładują się wprost z serwerów IAAI (nie zajmują miejsca na Twoim hostingu).
