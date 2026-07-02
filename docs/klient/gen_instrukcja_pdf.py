@@ -307,6 +307,22 @@ CONTENT = [
         "pierwsze pojazdy ze zdjęciami. Gotowe — system działa sam, nie musisz nic robić na co dzień.",
     ]),
 
+    ("h1", "Edycja podstrony i dopasowanie do motywu"),
+    ("p", "Podstrona „Nasze auta” powstaje sama, ale możesz ją swobodnie edytować: Strony → Wszystkie strony → „Nasze auta” → Edytuj."),
+    ("bullet", [
+        "Nie usuwaj krótkiego kodu [iaai_pojazdy] — to on wyświetla auta.",
+        "Możesz dopisać własny tekst nad/pod listą i zmienić tytuł strony.",
+        "Liczbę aut zmienisz w kodzie: [iaai_pojazdy ile=\"24\"] (maksymalnie 48).",
+    ]),
+    ("h2", "Filtry i wygląd"),
+    ("p", "Nad listą pojawia się pasek filtrów (marka, rok, uszkodzenie, sortowanie) — sam, z realnych danych; pod listą jest paginacja. Karty, filtry i paginacja DZIEDZICZĄ kolory i fonty Twojego motywu (jasny/ciemny), więc od razu pasują do strony — nic nie musisz ustawiać."),
+    ("callout", True, [
+        "Chcesz dostroić kolory/zaokrąglenia? Wygląd → Dodatkowy CSS (motyw klasyczny)",
+        "lub Wygląd → Edytor → Style → Dodatkowy CSS (blokowy), i wklej:",
+        "    .iaai-pojazdy{ --iaai-accent:#c0392b; --iaai-radius:6px; }",
+        "Więcej pokręteł: --iaai-border (ramki), --iaai-tint (tło kart), --iaai-muted.",
+    ]),
+
     ("h1", "Co może pójść nie tak (i jak to naprawić)"),
     ("callout", False, [
         "„Wtyczka nie mogła zostać zainstalowana” → wysłano folder zamiast ZIP; wgraj plik ZIP.",
