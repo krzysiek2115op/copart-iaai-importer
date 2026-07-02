@@ -18,7 +18,9 @@
       "/home/krzysiek/zlecenie plugin 1 /scraper",
       "/home/krzysiek/zlecenie plugin 1 /docs",
       "/home/krzysiek/zlecenie plugin 1 /db",
-      "/home/krzysiek/zlecenie plugin 1 /docs/klient"
+      "/home/krzysiek/zlecenie plugin 1 /docs/klient",
+      "/home/krzysiek/zlecenie plugin 1 /scraper/dzialy/05_audyt",
+      "/home/krzysiek/zlecenie plugin 1 /docs/dzialy"
     ]
   }
 }

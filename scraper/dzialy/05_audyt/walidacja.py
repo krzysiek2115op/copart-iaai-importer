@@ -5,7 +5,8 @@ Sprawdza każdy rekord względem JSON Schema (typy, zakresy, wymagane pola) oraz
 reguł biznesowych (rok ≤ bieżący+1, przebieg w sensownym zakresie). Rekordy
 niepoprawne są oznaczane `_audit_ok=false` + listą błędów — nie trafiają dalej.
 
-Oryginał: docs/refs/json-schema.md (draft 2020-12).
+Schemat (źródło prawdy): vehicle.schema.json (obok tego pliku) — edytuj go bez
+ruszania kodu. Oryginał-dokumentacja: docs/refs/json-schema.md (draft 2020-12).
 Wymagania: pip install jsonschema
 Użycie:   python walidacja.py --in out/diff.jsonl --out out/audyt.jsonl
 """
@@ -16,28 +17,31 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
-VIN_RE = r"^[A-HJ-NPR-Z0-9*]{11,17}$"   # dozwala maskę '*'; bez I,O,Q
+# Schemat trzymany w osobnym pliku JSON (artefakt w repo, edytowalny bez kodu).
+SCHEMA_PATH = Path(__file__).with_name("vehicle.schema.json")
 
-VEHICLE_SCHEMA = {
+# Minimalny schemat awaryjny — używany TYLKO gdy pliku brak/jest uszkodzony,
+# żeby audyt nie wywrócił całego pipeline'u (przepuszcza z samym wymogiem salvage_id).
+_FALLBACK_SCHEMA = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
-    "additionalProperties": True,            # pola pomocnicze dozwolone
+    "additionalProperties": True,
     "required": ["salvage_id"],
-    "properties": {
-        "salvage_id": {"type": "integer", "minimum": 1},
-        "stock_number": {"type": ["string", "null"]},
-        "vin": {"type": ["string", "null"], "pattern": VIN_RE},
-        "year": {"type": ["integer", "null"], "minimum": 1900, "maximum": 2027},
-        "make": {"type": ["string", "null"], "maxLength": 60},
-        "model": {"type": ["string", "null"], "maxLength": 80},
-        "odometer": {"type": ["integer", "null"], "minimum": 0, "maximum": 2000000},
-        "odometer_uom": {"type": ["string", "null"], "enum": ["mi", "km", "MI", "KM", None]},
-        "cylinders": {"type": ["integer", "null"], "minimum": 0, "maximum": 16},
-        "buy_now": {"type": ["number", "null"], "minimum": 0},
-        "current_bid": {"type": ["number", "null"], "minimum": 0},
-        "status": {"type": ["string", "null"], "enum": ["active", "sold", "removed", None]},
-    },
+    "properties": {"salvage_id": {"type": "integer", "minimum": 1}},
 }
+
+
+def _load_schema() -> dict:
+    """Wczytuje vehicle.schema.json; przy błędzie ostrzega i wraca do schematu awaryjnego."""
+    try:
+        return json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        print(f"[walidacja] UWAGA: nie wczytano {SCHEMA_PATH.name} ({e}); "
+              "używam minimalnego schematu awaryjnego", file=sys.stderr)
+        return _FALLBACK_SCHEMA
+
+
+VEHICLE_SCHEMA = _load_schema()
 _validator = Draft202012Validator(VEHICLE_SCHEMA)
 
 
