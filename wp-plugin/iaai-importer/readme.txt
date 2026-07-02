@@ -4,7 +4,7 @@ Tags: iaai, vehicles, auctions, import, cpt
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 0.23.0
+Stable tag: 0.24.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,9 @@ dane strukturalne pojazdu.
 Sama wtyczka działa na zwykłym WordPressie. Automatyzacja pobierania aut wymaga VPS z SSH.
 
 == Changelog ==
+
+= 0.24.0 =
+* Optymalizacja: pierwsze zdjęcia listy jednym zapytaniem (N+1 → 1), wyłączony zbędny cache termów. Debug całości. Instrukcja edycji podstrony i dopasowania do motywu (docs/klient/06). Szczegółowe testy systemu (docs/TESTY-SZCZEGOLOWE.md).
 
 = 0.23.0 =
 * Wygląd listy DZIEDZICZY MOTYW klienta (kolory, fonty, jasny/ciemny) zamiast narzuconej palety — karta/filtry/paginacja wpasowują się w styl strony (currentColor/inherit/color-mix + akcent motywu). Zachowana profesjonalna struktura. Zmienne --iaai-* do dostrajania.

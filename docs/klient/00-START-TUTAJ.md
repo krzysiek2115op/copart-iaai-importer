@@ -45,6 +45,7 @@ IAAI.com  ──►  [Twój serwer: program zbierający]  ──►  [Baza danyc
 | **2** | Pokazujesz auta na stronie (jeden „krótki kod") | [02-pokaz-auta-na-stronie.md](02-pokaz-auta-na-stronie.md) | łatwe (klikanie) |
 | **3** | Uruchamiasz automatyzację na serwerze | [03-uruchom-automatyzacje.md](03-uruchom-automatyzacje.md) | średnie (kopiuj-wklej) |
 | **4** | Sprawdzasz, że działa + obsługa na co dzień | [04-jak-dziala-i-obsluga.md](04-jak-dziala-i-obsluga.md) | informacyjne |
+| **5** | Edycja podstrony + dopasowanie do motywu (dla Ciebie) | [06-edycja-podstrony-i-motyw.md](06-edycja-podstrony-i-motyw.md) | łatwe |
 | **—** | Problemy i pytania (FAQ) + słowniczek | [05-problemy-i-pytania.md](05-problemy-i-pytania.md) | na wszelki wypadek |
 
 > 🗺️ Chcesz najpierw zobaczyć, **jak to działa na obrazku**? →

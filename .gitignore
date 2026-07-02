@@ -28,3 +28,4 @@ research/scraper/out/
 .DS_Store
 Thumbs.db
 *.log
+/dist/

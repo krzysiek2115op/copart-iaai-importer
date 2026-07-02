@@ -219,7 +219,7 @@ function iaai_render_list( $atts ) : string {
 	// Filtry z adresu (GET) — walidowane; puste = brak filtra.
 	$sel = array(
 		'make' => isset( $_GET['iaai_make'] ) ? sanitize_text_field( wp_unslash( $_GET['iaai_make'] ) ) : '',
-		'year' => isset( $_GET['iaai_year'] ) ? absint( $_GET['iaai_year'] ) : 0,
+		'year' => isset( $_GET['iaai_year'] ) ? absint( wp_unslash( $_GET['iaai_year'] ) ) : 0,
 		'dmg'  => isset( $_GET['iaai_dmg'] ) ? sanitize_text_field( wp_unslash( $_GET['iaai_dmg'] ) ) : '',
 		'sort' => isset( $_GET['iaai_sort'] ) ? sanitize_key( wp_unslash( $_GET['iaai_sort'] ) ) : '',
 	);
@@ -235,11 +235,12 @@ function iaai_render_list( $atts ) : string {
 	}
 
 	$args = array(
-		'post_type'           => IAAI_CPT,
-		'posts_per_page'      => $ile,
-		'paged'               => $paged,
-		'post_status'         => 'publish',
-		'ignore_sticky_posts' => true,
+		'post_type'              => IAAI_CPT,
+		'posts_per_page'         => $ile,
+		'paged'                  => $paged,
+		'post_status'            => 'publish',
+		'ignore_sticky_posts'    => true,
+		'update_post_term_cache' => false,   // CPT bez taksonomii — nie grzej cache termów
 	);
 	$meta = array();
 	if ( '' !== $sel['make'] ) { $meta[] = array( 'key' => 'iaai_make', 'value' => $sel['make'] ); }
@@ -265,10 +266,23 @@ function iaai_render_list( $atts ) : string {
 		set_transient( $cache_key, $out, 5 * MINUTE_IN_SECONDS );
 		return $out;
 	}
+	// Optymalizacja: pierwsze zdjęcia wszystkich aut na stronie JEDNYM zapytaniem (zamiast N).
+	$hotlink = ( 'hotlink' === iaai_image_mode() );
+	$firsts  = array();
+	if ( $hotlink ) {
+		$sids = array();
+		foreach ( $q->posts as $p ) {
+			$sids[] = (int) get_post_meta( $p->ID, 'iaai_salvage_id', true );
+		}
+		$firsts = iaai_first_images_map( $sids );
+	}
+
 	$out = '<div class="iaai-pojazdy" id="iaai">' . $filters . '<div class="iaai-grid">';
 	while ( $q->have_posts() ) {
 		$q->the_post();
-		$out .= iaai_render_card( (int) get_the_ID() );
+		$pid   = (int) get_the_ID();
+		$thumb = $hotlink ? ( $firsts[ (int) get_post_meta( $pid, 'iaai_salvage_id', true ) ] ?? '' ) : null;
+		$out  .= iaai_render_card( $pid, $thumb );
 	}
 	$out .= '</div>';
 	$out .= iaai_render_pager( $paged, (int) $q->max_num_pages );
@@ -339,8 +353,9 @@ function iaai_render_filters( array $sel ) : string {
 	return $html . '</form>';
 }
 
-/** Jedna karta pojazdu: zdjęcie, tytuł-link, cena, kluczowe dane, plakietki. */
-function iaai_render_card( int $id ) : string {
+/** Jedna karta pojazdu: zdjęcie, tytuł-link, cena, kluczowe dane, plakietki.
+ * $thumb_url: gotowy bezpieczny URL miniatury (prefetch, hotlink); null = użyj miniatury WP. */
+function iaai_render_card( int $id, ?string $thumb_url = null ) : string {
 	$title = get_the_title( $id );
 	$link  = get_permalink( $id );
 	$m     = static function ( string $k ) use ( $id ) {
@@ -353,12 +368,10 @@ function iaai_render_card( int $id ) : string {
 	$buy   = (float) $m( 'buy_now' );
 	$bid   = (float) $m( 'current_bid' );
 
-	// Zdjęcie (hotlink 1. z bazy albo miniatura WP; brak → placeholder).
-	if ( 'hotlink' === iaai_image_mode() ) {
-		$sid   = (int) get_post_meta( $id, 'iaai_salvage_id', true );
-		$first = $sid ? iaai_get_image_urls( $sid, 1 ) : array();
-		$img   = $first
-			? '<img loading="lazy" src="' . esc_url( $first[0] ) . '" alt="'
+	// Zdjęcie: przekazana miniatura (prefetch/hotlink) albo miniatura WP (download); brak → placeholder.
+	if ( null !== $thumb_url ) {
+		$img = '' !== $thumb_url
+			? '<img loading="lazy" src="' . esc_url( $thumb_url ) . '" alt="'
 				. esc_attr( $title . ( $dmg ? ' – ' . $dmg : '' ) ) . '" />'
 			: '<span class="iaai-noimg" aria-hidden="true"></span>';
 	} else {
@@ -399,6 +412,35 @@ function iaai_render_card( int $id ) : string {
 		. ( $rows ? '<div class="iaai-card__rows">' . $rows . '</div>' : '' )
 		. ( $badges ? '<div class="iaai-card__badges">' . $badges . '</div>' : '' )
 		. '</div></article>';
+}
+
+/** Pierwsze (najniższy seq) BEZPIECZNE URL-e zdjęć dla wielu aut — JEDNYM zapytaniem.
+ * @param int[] $sids  lista salvage_id.
+ * @return array<int,string>  salvage_id => bezpieczny URL miniatury. */
+function iaai_first_images_map( array $sids ) : array {
+	$sids = array_values( array_unique( array_filter( array_map( 'intval', $sids ) ) ) );
+	if ( ! $sids ) {
+		return array();
+	}
+	global $wpdb;
+	$table = $wpdb->prefix . 'iaai_vehicle_images';
+	$ph    = implode( ',', array_fill( 0, count( $sids ), '%d' ) );
+	$rows  = $wpdb->get_results( $wpdb->prepare(
+		"SELECT salvage_id, url, seq FROM {$table} WHERE salvage_id IN ({$ph}) AND url IS NOT NULL ORDER BY salvage_id ASC, seq ASC",
+		...$sids
+	), ARRAY_A );
+	$map = array();
+	foreach ( (array) $rows as $r ) {
+		$sid = (int) $r['salvage_id'];
+		if ( isset( $map[ $sid ] ) ) {
+			continue;   // pierwszy (najniższy seq) wygrywa
+		}
+		$safe = iaai_safe_image_url( (string) $r['url'] );   // SSRF: tylko host IAAI
+		if ( '' !== $safe ) {
+			$map[ $sid ] = $safe;
+		}
+	}
+	return $map;
 }
 
 /** Pager „‹  n z N  ›" pod siatką (paginacja przez ?iaai_str=N). */
