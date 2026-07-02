@@ -1,7 +1,7 @@
 # STATUS PROJEKTU — Importer IAAI → WordPress
 
 Master-dokument: cel, jak działa, co mamy, czego brakuje. Stan: **2026-07-02, v0.32.0**
-(wtyczka 0.21.0: auto-podstrona „Nasze auta" z shortcode po aktywacji + wpięcie do menu +
+(wtyczka 0.22.0: auto-podstrona „Nasze auta" z shortcode po aktywacji + wpięcie do menu +
 responsywny CSS dziedziczący motyw; archiwum CPT /pojazdy; **SEO**: JSON-LD Schema.org „Car",
 meta description + Open Graph/Twitter (fallback, bez konfliktu z Yoast/RankMath), opisowe alt,
 sitemap przez rdzeń WP. Schemat audytu wyciągnięty do `vehicle.schema.json`.

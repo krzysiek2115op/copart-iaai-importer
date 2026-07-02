@@ -216,31 +216,56 @@ function iaai_render_list( $atts ) : string {
 		wp_enqueue_style( 'iaai-importer' );
 	}
 
+	// Filtry z adresu (GET) — walidowane; puste = brak filtra.
+	$sel = array(
+		'make' => isset( $_GET['iaai_make'] ) ? sanitize_text_field( wp_unslash( $_GET['iaai_make'] ) ) : '',
+		'year' => isset( $_GET['iaai_year'] ) ? absint( $_GET['iaai_year'] ) : 0,
+		'dmg'  => isset( $_GET['iaai_dmg'] ) ? sanitize_text_field( wp_unslash( $_GET['iaai_dmg'] ) ) : '',
+		'sort' => isset( $_GET['iaai_sort'] ) ? sanitize_key( wp_unslash( $_GET['iaai_sort'] ) ) : '',
+	);
 	// Numer strony — własny parametr, by nie kolidować z paginacją treści strony WP.
 	$paged = isset( $_GET['iaai_str'] ) ? max( 1, absint( wp_unslash( $_GET['iaai_str'] ) ) ) : 1;
 
-	// Cache na 5 min (klucz z wersją — bump przy publikacji unieważnia wszystkie strony).
-	$cache_key = 'iaai_list_' . iaai_list_cache_version() . '_' . $ile . '_' . $paged;
-	$cached    = get_transient( $cache_key );
+	// Cache 5 min; klucz = wersja + liczba + strona + odcisk filtrów.
+	$cache_key = 'iaai_list_' . iaai_list_cache_version() . '_' . $ile . '_' . $paged
+		. '_' . substr( md5( maybe_serialize( $sel ) ), 0, 8 );
+	$cached = get_transient( $cache_key );
 	if ( false !== $cached ) {
 		return $cached;
 	}
 
-	$q = new WP_Query( array(
+	$args = array(
 		'post_type'           => IAAI_CPT,
 		'posts_per_page'      => $ile,
 		'paged'               => $paged,
 		'post_status'         => 'publish',
 		'ignore_sticky_posts' => true,
-		'orderby'             => 'date',
-		'order'               => 'DESC',
-	) );
-	if ( ! $q->have_posts() ) {
-		$empty = '<p class="iaai-empty">' . esc_html__( 'Brak pojazdów.', 'iaai-importer' ) . '</p>';
-		set_transient( $cache_key, $empty, 5 * MINUTE_IN_SECONDS );
-		return $empty;
+	);
+	$meta = array();
+	if ( '' !== $sel['make'] ) { $meta[] = array( 'key' => 'iaai_make', 'value' => $sel['make'] ); }
+	if ( $sel['year'] > 0 )    { $meta[] = array( 'key' => 'iaai_year', 'value' => $sel['year'], 'type' => 'NUMERIC' ); }
+	if ( '' !== $sel['dmg'] )  { $meta[] = array( 'key' => 'iaai_primary_damage', 'value' => $sel['dmg'] ); }
+	if ( $meta ) {
+		$meta['relation']    = 'AND';
+		$args['meta_query']  = $meta;
 	}
-	$out = '<div class="iaai-pojazdy" id="iaai"><div class="iaai-grid">';
+	switch ( $sel['sort'] ) {
+		case 'price_asc':  $args['meta_key'] = 'iaai_buy_now';  $args['orderby'] = 'meta_value_num'; $args['order'] = 'ASC';  break;
+		case 'price_desc': $args['meta_key'] = 'iaai_buy_now';  $args['orderby'] = 'meta_value_num'; $args['order'] = 'DESC'; break;
+		case 'odo_asc':    $args['meta_key'] = 'iaai_odometer'; $args['orderby'] = 'meta_value_num'; $args['order'] = 'ASC';  break;
+		default:           $args['orderby'] = 'date'; $args['order'] = 'DESC';
+	}
+
+	$q       = new WP_Query( $args );
+	$filters = iaai_render_filters( $sel );
+
+	if ( ! $q->have_posts() ) {
+		$out = '<div class="iaai-pojazdy" id="iaai">' . $filters
+			. '<p class="iaai-empty">' . esc_html__( 'Brak pojazdów dla wybranych filtrów.', 'iaai-importer' ) . '</p></div>';
+		set_transient( $cache_key, $out, 5 * MINUTE_IN_SECONDS );
+		return $out;
+	}
+	$out = '<div class="iaai-pojazdy" id="iaai">' . $filters . '<div class="iaai-grid">';
 	while ( $q->have_posts() ) {
 		$q->the_post();
 		$out .= iaai_render_card( (int) get_the_ID() );
@@ -252,6 +277,66 @@ function iaai_render_list( $atts ) : string {
 
 	set_transient( $cache_key, $out, 5 * MINUTE_IN_SECONDS );
 	return $out;
+}
+
+/** Distinct wartości pola ze źródłowej tabeli (opcje filtrów). Kolumna z allowlisty. */
+function iaai_distinct_meta( string $col, int $limit = 300 ) : array {
+	$allowed = array( 'make', 'model', 'year', 'primary_damage', 'transmission', 'fuel_type' );
+	if ( ! in_array( $col, $allowed, true ) ) {
+		return array();
+	}
+	global $wpdb;
+	$table = $wpdb->prefix . 'iaai_vehicles';
+	$order = 'year' === $col ? "{$col} DESC" : "{$col} ASC";
+	return (array) $wpdb->get_col( $wpdb->prepare(
+		"SELECT DISTINCT {$col} FROM {$table} WHERE status = %s AND {$col} IS NOT NULL AND {$col} <> '' ORDER BY {$order} LIMIT %d",
+		'active',
+		$limit
+	) );
+}
+
+/** Pasek filtrów nad siatką (marka / rok / uszkodzenie / sortowanie). GET, działa bez JS. */
+function iaai_render_filters( array $sel ) : string {
+	$makes = iaai_distinct_meta( 'make' );
+	$years = iaai_distinct_meta( 'year' );
+	$dmgs  = iaai_distinct_meta( 'primary_damage' );
+	if ( ! $makes && ! $years && ! $dmgs ) {
+		return '';
+	}
+	$mk_select = static function ( string $name, array $vals, $current, string $ph ) {
+		$h = '<select name="' . esc_attr( $name ) . '" onchange="this.form.submit()">'
+			. '<option value="">' . esc_html( $ph ) . '</option>';
+		foreach ( $vals as $v ) {
+			$h .= '<option value="' . esc_attr( $v ) . '"' . selected( (string) $current, (string) $v, false )
+				. '>' . esc_html( $v ) . '</option>';
+		}
+		return $h . '</select>';
+	};
+	$sorts = array(
+		''           => __( 'Sortuj: najnowsze', 'iaai-importer' ),
+		'price_asc'  => __( 'Cena: rosnąco', 'iaai-importer' ),
+		'price_desc' => __( 'Cena: malejąco', 'iaai-importer' ),
+		'odo_asc'    => __( 'Przebieg: rosnąco', 'iaai-importer' ),
+	);
+	$sortsel = '<select name="iaai_sort" onchange="this.form.submit()">';
+	foreach ( $sorts as $k => $lab ) {
+		$sortsel .= '<option value="' . esc_attr( $k ) . '"' . selected( $sel['sort'], $k, false ) . '>' . esc_html( $lab ) . '</option>';
+	}
+	$sortsel .= '</select>';
+
+	$has   = ( '' !== $sel['make'] || $sel['year'] > 0 || '' !== $sel['dmg'] || '' !== $sel['sort'] );
+	$clear = esc_url( remove_query_arg( array( 'iaai_make', 'iaai_year', 'iaai_dmg', 'iaai_sort', 'iaai_str' ) ) );
+
+	$html = '<form class="iaai-filters" method="get">';
+	if ( $makes ) { $html .= $mk_select( 'iaai_make', $makes, $sel['make'], __( 'Marka', 'iaai-importer' ) ); }
+	if ( $years ) { $html .= $mk_select( 'iaai_year', $years, $sel['year'] ?: '', __( 'Rok', 'iaai-importer' ) ); }
+	if ( $dmgs )  { $html .= $mk_select( 'iaai_dmg', $dmgs, $sel['dmg'], __( 'Uszkodzenie', 'iaai-importer' ) ); }
+	$html .= $sortsel;
+	$html .= '<button type="submit">' . esc_html__( 'Filtruj', 'iaai-importer' ) . '</button>';
+	if ( $has ) {
+		$html .= '<a class="iaai-filters__clear" href="' . $clear . '">' . esc_html__( 'Wyczyść', 'iaai-importer' ) . '</a>';
+	}
+	return $html . '</form>';
 }
 
 /** Jedna karta pojazdu: zdjęcie, tytuł-link, cena, kluczowe dane, plakietki. */

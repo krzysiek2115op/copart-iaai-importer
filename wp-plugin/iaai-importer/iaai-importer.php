@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       IAAI Importer
  * Description:        Import danych i zdjęć pojazdów z IAAI do WordPressa (CPT „Pojazd").
- * Version:           0.21.0
+ * Version:           0.22.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            (projekt importer Copart/IAAI)
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // brak bezpośredniego dostępu
 }
 
-define( 'IAAI_IMPORTER_VERSION', '0.21.0' );
+define( 'IAAI_IMPORTER_VERSION', '0.22.0' );
 define( 'IAAI_IMPORTER_DIR', plugin_dir_path( __FILE__ ) );
 define( 'IAAI_IMPORTER_URL', plugin_dir_url( __FILE__ ) );
 

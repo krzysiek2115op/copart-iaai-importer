@@ -4,6 +4,36 @@
  * Karta jest jasna (dla czytelności), reszta dopasowuje się do motywu.
  */
 
+/* ---- Pasek filtrów ---- */
+.iaai-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .6rem;
+	align-items: center;
+	margin: 0 0 1.25rem;
+}
+.iaai-filters select {
+	padding: .45rem .6rem;
+	border: 1px solid #cbd5e1;
+	border-radius: 8px;
+	background: #ffffff;
+	color: #12203a;
+	font-size: .9rem;
+	max-width: 100%;
+}
+.iaai-filters button {
+	padding: .48rem .95rem;
+	border: 0;
+	border-radius: 8px;
+	background: #1f4fd8;
+	color: #ffffff;
+	font-weight: 600;
+	font-size: .9rem;
+	cursor: pointer;
+}
+.iaai-filters button:hover { background: #1a43b8; }
+.iaai-filters__clear { font-size: .85rem; color: #475569; text-decoration: underline; }
+
 /* ---- Siatka kart ([iaai_pojazdy] i archiwum /pojazdy) ---- */
 .iaai-pojazdy { margin: 1.5em 0; }
 .iaai-grid {
