@@ -163,12 +163,19 @@ function iaai_create_landing_page() : void {
 }
 
 /**
- * Dopina podstronę do menu przypisanego do lokalizacji „primary" (a jak nie ma —
- * do pierwszego przypisanego menu motywu). Nie duplikuje pozycji. Gdy strona nie
- * ma jeszcze żadnego menu, po cichu odpuszcza — klient doda w 2 kliki (instrukcja).
+ * Dopina podstronę do menu — obsługuje OBA typy motywów:
+ *   • blokowe (Twenty Twenty-Four/Five itp.) → blok Nawigacja (wp_navigation),
+ *   • klasyczne → menu przypisane do lokalizacji motywu.
+ * Nie duplikuje pozycji. Gdy motyw ma nagłówek „na sztywno" (bez menu WP) —
+ * po cichu odpuszcza; wtedy dodanie jest fizycznie niemożliwe z poziomu wtyczki.
  */
 function iaai_maybe_add_page_to_menu( int $page_id ) : void {
-	if ( ! $page_id || ! function_exists( 'wp_update_nav_menu_item' ) ) {
+	if ( ! $page_id ) {
+		return;
+	}
+	iaai_add_page_to_block_nav( $page_id );          // motywy blokowe
+
+	if ( ! function_exists( 'wp_update_nav_menu_item' ) ) {
 		return;
 	}
 	$locations = (array) get_nav_menu_locations();
@@ -196,6 +203,45 @@ function iaai_maybe_add_page_to_menu( int $page_id ) : void {
 		'menu-item-type'      => 'post_type',
 		'menu-item-status'    => 'publish',
 	) );
+}
+
+/**
+ * Motywy BLOKOWE: dopisuje link do podstrony w bloku Nawigacja (wp_navigation).
+ * - jeśli nawigacja używa „Listy stron" (page-list), nasza strona i tak się pokaże → pomija,
+ * - jeśli link już jest → pomija (bez duplikatu),
+ * - w przeciwnym razie dokleja <!-- wp:navigation-link ... /--> do treści nawigacji.
+ * Bez efektu na motywach klasycznych i tych z nagłówkiem „na sztywno".
+ */
+function iaai_add_page_to_block_nav( int $page_id ) : void {
+	if ( ! $page_id || ! function_exists( 'wp_is_block_theme' ) || ! wp_is_block_theme() ) {
+		return;
+	}
+	$navs = get_posts( array(
+		'post_type'   => 'wp_navigation',
+		'post_status' => 'publish',
+		'numberposts' => -1,
+	) );
+	if ( ! $navs ) {
+		return;   // brak bloku Nawigacja (np. nagłówek na sztywno) — nic nie zrobimy
+	}
+	$url   = get_permalink( $page_id );
+	$title = get_the_title( $page_id );
+	$link  = sprintf(
+		'<!-- wp:navigation-link {"label":%s,"type":"page","id":%d,"url":%s,"kind":"post-type"} /-->',
+		wp_json_encode( $title ),
+		$page_id,
+		wp_json_encode( esc_url_raw( $url ) )
+	);
+	foreach ( $navs as $nav ) {
+		$content = (string) $nav->post_content;
+		if ( false !== strpos( $content, 'wp:page-list' ) ) {
+			continue;   // page-list pokazuje wszystkie strony automatycznie
+		}
+		if ( false !== strpos( $content, '"id":' . $page_id . ',' ) ) {
+			continue;   // już dodane
+		}
+		wp_update_post( array( 'ID' => $nav->ID, 'post_content' => $content . $link ) );
+	}
 }
 
 /**
