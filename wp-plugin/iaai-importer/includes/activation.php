@@ -147,7 +147,7 @@ function iaai_create_landing_page() : void {
 			'post_name'    => 'nasze-auta',
 			'post_status'  => 'publish',
 			'post_type'    => 'page',
-			'post_content' => '[iaai_pojazdy ile="24"]',
+			'post_content' => "<p>" . esc_html__( 'Aktualna oferta pojazdów z aukcji IAAI — zdjęcia, przebieg, zakres uszkodzeń i pełne dane techniczne każdego auta. Lista odświeża się automatycznie.', 'iaai-importer' ) . "</p>\n[iaai_pojazdy ile=\"24\"]",
 		) );
 		if ( is_wp_error( $id ) || ! $id ) {
 			if ( function_exists( 'iaai_log' ) ) {

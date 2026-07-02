@@ -192,9 +192,10 @@ function iaai_render_list( $atts ) : string {
 		if ( 'hotlink' === iaai_image_mode() ) {
 			$sid   = (int) get_post_meta( $id, 'iaai_salvage_id', true );
 			$first = $sid ? iaai_get_image_urls( $sid, 1 ) : array();
+			$alt   = get_the_title() . ( $dmg ? ' – ' . $dmg : '' );   // opisowy alt (SEO/dostępność)
 			$thumb = $first
 				? '<img class="iaai-thumb" loading="lazy" src="' . esc_url( $first[0] ) . '" alt="'
-					. esc_attr( get_the_title() ) . '" />'
+					. esc_attr( $alt ) . '" />'
 				: '';
 		} else {
 			$thumb = get_the_post_thumbnail( $id, 'medium' );       // już bezpieczne
@@ -250,9 +251,12 @@ function iaai_render_single( string $content ) : string {
 	$imgs = '';
 	if ( 'hotlink' === iaai_image_mode() ) {
 		$sid = (int) get_post_meta( $id, 'iaai_salvage_id', true );
+		$n   = 0;
 		foreach ( $sid ? iaai_get_image_urls( $sid ) : array() as $u ) {
+			$n++;
+			$alt   = get_the_title() . ' – zdjęcie ' . $n;   // unikalny, opisowy alt (SEO)
 			$imgs .= '<img class="iaai-gallery-img" loading="lazy" src="' . esc_url( $u )
-				. '" alt="' . esc_attr( get_the_title() ) . '" />';
+				. '" alt="' . esc_attr( $alt ) . '" />';
 		}
 	} else {
 		foreach ( (array) get_post_meta( $id, 'iaai_gallery', true ) as $att ) {
