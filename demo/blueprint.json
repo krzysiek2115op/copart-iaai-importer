@@ -1,0 +1,41 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"meta": {
+		"title": "Kredyt Kompas — demo wtyczki IAAI Importer",
+		"description": "Podglad na zywo: WordPress ze stylem strony + wtyczka IAAI Importer, ktora sama tworzy podstrone 'Nasze auta' z oferta pojazdow (filtry, karty, paginacja)."
+	},
+	"landingPage": "/nasze-auta/",
+	"preferredVersions": { "php": "8.2", "wp": "latest" },
+	"login": true,
+	"steps": [
+		{
+			"step": "installTheme",
+			"themeData": { "resource": "wordpress.org/themes", "slug": "twentytwentyfour" },
+			"options": { "activate": true }
+		},
+		{
+			"step": "installPlugin",
+			"pluginData": {
+				"resource": "url",
+				"url": "https://raw.githubusercontent.com/krzysiek2115op/iaai-importer-demo/main/iaai-importer.zip"
+			},
+			"options": { "activate": true }
+		},
+		{ "step": "mkdir", "path": "/wordpress/wp-content/mu-plugins" },
+		{
+			"step": "writeFile",
+			"path": "/wordpress/wp-content/mu-plugins/iaai-demo-seed.php",
+			"data": {
+				"resource": "url",
+				"url": "https://raw.githubusercontent.com/krzysiek2115op/iaai-importer-demo/main/iaai-demo-seed.php"
+			}
+		},
+		{
+			"step": "setSiteOptions",
+			"options": {
+				"blogname": "Kredyt Kompas",
+				"blogdescription": "Kredyty i auta z aukcji IAAI"
+			}
+		}
+	]
+}
