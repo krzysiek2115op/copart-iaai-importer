@@ -50,12 +50,9 @@ def main():
     if os.path.exists(OUT):
         os.remove(OUT)
     with zipfile.ZipFile(OUT, "w", zipfile.ZIP_DEFLATED) as z:
-        # instrukcje na wierzchu
+        # pointer tekstowy na wierzchu (kopia zapasowa, gdyby ktoś nie otwierał PDF)
         z.write(os.path.join(ROOT, "docs/klient/PRZECZYTAJ-MNIE-NAJPIERW.md"), "0-PRZECZYTAJ-MNIE-NAJPIERW.md")
-        pdf = os.path.join(ROOT, "docs/klient/Instrukcja-klienta.pdf")
-        if os.path.exists(pdf):
-            z.write(pdf, "0-Instrukcja-klienta.pdf")
-        # etapy jako osobne PDF
+        # instrukcje: TYLKO etapy jako osobne PDF (komplet-PDF pominięty — to duplikat folderu)
         pdir = os.path.join(ROOT, "docs/klient/pdf")
         if os.path.isdir(pdir):
             for fn in sorted(os.listdir(pdir)):
