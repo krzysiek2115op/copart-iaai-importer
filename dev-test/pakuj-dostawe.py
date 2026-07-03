@@ -59,7 +59,7 @@ def main():
         if os.path.isdir(pdir):
             for fn in sorted(os.listdir(pdir)):
                 if fn.endswith(".pdf") and not fn.startswith("00-"):
-                    z.write(os.path.join(pdir, fn), os.path.join("Instrukcje-PDF", fn))
+                    z.write(os.path.join(pdir, fn), os.path.join("1-Instrukcje", fn))
         # wtyczka
         z.write(PLUG_ZIP, "iaai-importer.zip")
         # części działające na serwerze
