@@ -129,9 +129,17 @@ CARS = [
     dict(t="2017 Volkswagen Jetta", make="Volkswagen", year=2017, dmg="Side", trans="Manual", odo=69540, buy=5400, rd=1, key=1, bg="5b4b8a", lbl="VW Jetta"),
 ]
 
-def card_html(c):
-    img = ('https://placehold.co/700x500/%s/ffffff?text=%s'
-           % (c["bg"], c["lbl"].replace(" ", "+")))
+# prawdziwe zdjecia aut (Unsplash, hotlink jak reszta motywu) — po jednym na karte
+PHOTOS = [
+    "1503376780353-7e6692767b70", "1552519507-da3b142c6e3d", "1494905998402-395d579af36f",
+    "1541899481282-d53bffe3c35d", "1550355291-bbee04a92027", "1517524008697-84bbe3c3fd98",
+    "1493238792000-8113da705763", "1568605117036-5fe5e7bab0b7", "1502877338535-766e1452684a",
+]
+def photo_url(pid):
+    return "https://images.unsplash.com/photo-%s?auto=format&fit=crop&w=700&h=500&q=70" % pid
+
+def card_html(c, photo):
+    img = photo
     rows = ('<span class="iaai-price">Buy Now: USD %s</span>'
             '<span class="iaai-odo">%s</span>'
             '<span class="iaai-dmg">%s</span>'
@@ -185,18 +193,19 @@ FILTER_JS = ("""<script>
 </script>""")
 
 def nasze_auta_html():
-    cards = "".join(card_html(c) for c in CARS)
-    intro = ('<section class="container" style="padding:48px 0 8px">'
-        '<h1 style="margin:0 0 6px">Nasze auta</h1>'
-        '<p style="opacity:.75;margin:0 0 4px">Aktualna oferta pojazdów z aukcji IAAI '
-        '(<span id="iaai-count">%d</span> szt.). Filtruj po marce, roku i uszkodzeniu.</p>'
-        '<p style="opacity:.6;font-size:.9em;margin:.2em 0 0">To podgląd demonstracyjny — dane i zdjęcia przykładowe.</p>'
-        '</section>' % len(CARS))
-    body = ('<div class="container" style="padding:16px 0 64px">'
+    cards = "".join(card_html(c, photo_url(p)) for c, p in zip(CARS, PHOTOS))
+    hero = ('<section class="page-hero on-dark"><div class="container stagger">'
+        '<span class="bearing">IAAI · Oferta pojazdów</span>'
+        '<h1>Nasze auta</h1>'
+        '<p>Aktualna oferta pojazdów z aukcji IAAI (<span id="iaai-count">%d</span> szt.). '
+        'Filtruj po marce, roku i rodzaju uszkodzenia.</p>'
+        '<p style="font-size:.92rem;opacity:.6;margin-top:6px">To podgląd demonstracyjny — dane i zdjęcia przykładowe.</p>'
+        '</div></section>' % len(CARS))
+    body = ('<section class="section" style="padding:56px 0 96px"><div class="container">'
         '<div class="iaai-pojazdy" id="iaai" style="--iaai-accent:#10B981">'
-        + filters_html() + '<div class="iaai-grid">' + cards + '</div></div></div>')
+        + filters_html() + '<div class="iaai-grid">' + cards + '</div></div></div></section>')
     head = head_html("Nasze auta — Kredyt Kompas", '<link rel="stylesheet" href="iaai.css">\n')
-    return head + header_html("nasze-auta") + intro + body + FOOTER + FILTER_JS + "\n</body></html>\n"
+    return head + header_html("nasze-auta") + hero + body + FOOTER + FILTER_JS + "\n</body></html>\n"
 
 def build():
     if os.path.isdir(OUT):
