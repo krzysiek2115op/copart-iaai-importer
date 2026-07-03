@@ -50,13 +50,15 @@ def main():
     if os.path.exists(OUT):
         os.remove(OUT)
     with zipfile.ZipFile(OUT, "w", zipfile.ZIP_DEFLATED) as z:
-        # pointer tekstowy na wierzchu (kopia zapasowa, gdyby ktoś nie otwierał PDF)
-        z.write(os.path.join(ROOT, "docs/klient/PRZECZYTAJ-MNIE-NAJPIERW.md"), "0-PRZECZYTAJ-MNIE-NAJPIERW.md")
-        # instrukcje: TYLKO etapy jako osobne PDF (komplet-PDF pominięty — to duplikat folderu)
+        # „Zacznij tutaj" jako ŁADNY PDF na wierzchu (to strona startowa instrukcji).
+        start_pdf = os.path.join(ROOT, "docs/klient/pdf/00-START-TUTAJ.pdf")
+        if os.path.exists(start_pdf):
+            z.write(start_pdf, "0-ZACZNIJ-TUTAJ.pdf")
+        # pozostałe etapy jako osobne PDF (bez 00 — jest już na wierzchu jako „Zacznij tutaj").
         pdir = os.path.join(ROOT, "docs/klient/pdf")
         if os.path.isdir(pdir):
             for fn in sorted(os.listdir(pdir)):
-                if fn.endswith(".pdf"):
+                if fn.endswith(".pdf") and not fn.startswith("00-"):
                     z.write(os.path.join(pdir, fn), os.path.join("Instrukcje-PDF", fn))
         # wtyczka
         z.write(PLUG_ZIP, "iaai-importer.zip")
