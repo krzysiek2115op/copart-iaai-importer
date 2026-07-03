@@ -1,0 +1,185 @@
+/*
+ * IAAI Importer — front (dział 9).
+ *
+ * ZASADA: struktura jak w profesjonalnym listingu (karty, filtry, paginacja),
+ * ale KOLORY/FONTY DZIEDZICZONE Z MOTYWU KLIENTA. Zero narzuconej palety:
+ * używamy `inherit`, `currentColor` i `color-mix` + akcentu motywu
+ * (--wp--preset--color--primary/accent, gdy motyw go udostępnia).
+ * Dzięki temu wtyczka „wpasowuje się" w każdą stronę (jasną i ciemną).
+ *
+ * Dostrajanie bez ruszania kodu — nadpisz zmienne w CSS motywu, np.:
+ *   .iaai-pojazdy{ --iaai-accent:#c00; --iaai-radius:4px; }
+ */
+
+.iaai-pojazdy {
+	--iaai-border: color-mix(in srgb, currentColor 16%, transparent);
+	--iaai-tint:   color-mix(in srgb, currentColor 6%, transparent);
+	--iaai-tint-2: color-mix(in srgb, currentColor 10%, transparent);
+	--iaai-muted:  color-mix(in srgb, currentColor 65%, transparent);
+	--iaai-accent: var(--wp--preset--color--primary, var(--wp--preset--color--accent, currentColor));
+	--iaai-radius: 10px;
+	margin: 1.5em 0;
+	color: inherit;
+}
+
+/* ---- Pasek filtrów (dziedziczy motyw) ---- */
+.iaai-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .6rem;
+	align-items: center;
+	margin: 0 0 1.25rem;
+}
+.iaai-filters select,
+.iaai-filters button {
+	font: inherit;
+	font-size: .9rem;
+	color: inherit;
+	background: transparent;
+	border: 1px solid var(--iaai-border);
+	border-radius: 8px;
+	padding: .45rem .65rem;
+	max-width: 100%;
+}
+.iaai-filters button {
+	cursor: pointer;
+	font-weight: 600;
+	border-color: color-mix(in srgb, var(--iaai-accent) 45%, var(--iaai-border));
+}
+.iaai-filters button:hover { background: var(--iaai-tint); }
+.iaai-filters__clear {
+	font-size: .85rem;
+	color: var(--iaai-muted);
+	text-decoration: underline;
+}
+
+/* ---- Siatka kart ---- */
+.iaai-grid {
+	display: grid;
+	gap: 1.5rem;
+	grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+}
+.iaai-card {
+	display: flex;
+	flex-direction: column;
+	background: var(--iaai-tint);         /* subtelny odcień tekstu motywu */
+	color: inherit;
+	border: 1px solid var(--iaai-border);
+	border-radius: var(--iaai-radius);
+	overflow: hidden;
+	transition: box-shadow .15s ease, transform .15s ease;
+}
+.iaai-card:hover {
+	box-shadow: 0 10px 28px color-mix(in srgb, currentColor 18%, transparent);
+	transform: translateY(-2px);
+}
+.iaai-card__media {
+	display: block;
+	aspect-ratio: 4 / 3;
+	background: var(--iaai-tint-2);
+	overflow: hidden;
+}
+.iaai-card__media img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+	transition: transform .3s ease;
+}
+.iaai-card:hover .iaai-card__media img { transform: scale(1.03); }
+.iaai-noimg {
+	display: block; width: 100%; height: 100%;
+	background: var(--iaai-tint-2);
+}
+
+.iaai-card__body {
+	padding: .85rem 1rem 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: .55rem;
+}
+.iaai-card__title {
+	font: inherit;                        /* font i rozmiar z motywu */
+	font-weight: 700;
+	line-height: 1.3;
+	color: inherit;
+	text-decoration: none;
+	text-transform: uppercase;
+	letter-spacing: .01em;
+}
+.iaai-card__title:hover { text-decoration: underline; }
+
+.iaai-card__rows {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: .2rem .8rem;
+	font-size: .85rem;
+	color: var(--iaai-muted);
+}
+.iaai-price { font-weight: 700; color: inherit; }
+
+.iaai-card__badges { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .1rem; }
+.iaai-badge {
+	font-size: .72rem;
+	font-weight: 600;
+	padding: .16rem .5rem;
+	border: 1px solid var(--iaai-border);
+	border-radius: 4px;
+	line-height: 1.4;
+	color: var(--iaai-muted);
+}
+/* Delikatny akcent semantyczny — na bazie akcentu motywu, nie sztywnej barwy. */
+.iaai-badge--rd  { color: color-mix(in srgb, var(--iaai-accent) 80%, currentColor); border-color: currentColor; }
+.iaai-badge--key { color: inherit; }
+
+.iaai-empty { opacity: .7; }
+
+/* ---- Paginacja ---- */
+.iaai-pager {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+	margin: 1.9rem 0 .5rem;
+}
+.iaai-pager__btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.2rem; height: 2.2rem;
+	border-radius: 50%;
+	border: 1px solid var(--iaai-border);
+	color: inherit;
+	text-decoration: none;
+	font-size: 1.15rem;
+	line-height: 1;
+}
+.iaai-pager__btn:hover { background: var(--iaai-tint); }
+.iaai-pager__btn.is-disabled { opacity: .35; pointer-events: none; }
+.iaai-pager__info { font-size: .95rem; color: var(--iaai-muted); }
+
+/* ---- Strona pojedynczego pojazdu: tabela danych + galeria ---- */
+.iaai-specs {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 1.5em 0;
+	color: inherit;
+}
+.iaai-specs th,
+.iaai-specs td {
+	text-align: left;
+	padding: .5rem .75rem;
+	border-bottom: 1px solid var(--iaai-border, color-mix(in srgb, currentColor 12%, transparent));
+}
+.iaai-specs th { width: 34%; font-weight: 600; color: var(--iaai-muted, inherit); }
+.iaai-gallery {
+	display: grid;
+	gap: .75rem;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	margin: 1.5em 0;
+}
+.iaai-gallery-img { width: 100%; height: auto; border-radius: 6px; }
+
+@media (max-width: 420px) {
+	.iaai-card__rows { grid-template-columns: 1fr; }
+}

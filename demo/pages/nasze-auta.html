@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nasze auta — Kredyt Kompas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta name="theme-color" content="#081730">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='18' fill='none' stroke='%2310B981' stroke-width='3'/%3E%3Cpath d='M20 6 L24 20 L20 34 L16 20 Z' fill='%2310B981'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="iaai.css">
+</head>
+<body>
+<header class="nav on-hero"><div class="container nav-inner">
+<a href="index.html" class="logo" aria-label="Kredyt Kompas — strona główna">
+<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="20" cy="20" r="18" stroke="#10B981" stroke-width="2.2"/><circle cx="20" cy="20" r="2" fill="#10B981"/><path class="needle" d="M20 6 L24 20 L20 34 L16 20 Z" fill="#10B981" fill-opacity=".25" stroke="#10B981" stroke-width="1.6"/></svg>
+<span>Kredyt<em>Kompas</em></span></a>
+<nav aria-label="Menu główne"><ul class="nav-links">
+<li><a href="index.html">Start</a></li>
+<li><a href="kredyty-hipoteczne.html">Kredyty hipoteczne</a></li>
+<li><a href="kalkulator.html">Kalkulator zdolności</a></li>
+<li><a href="o-nas.html">O nas</a></li>
+<li><a href="faq.html">FAQ</a></li>
+<li><a href="kontakt.html">Kontakt</a></li>
+<li><a href="nasze-auta.html" class="active">Nasze auta</a></li>
+</ul></nav>
+<a class="nav-cta" href="kontakt.html#formularz">Bezpłatna konsultacja</a>
+<button class="burger" aria-label="Otwórz menu" aria-expanded="false"><span></span><span></span><span></span></button>
+</div></header>
+<main id="main">
+<section class="container" style="padding:48px 0 8px"><h1 style="margin:0 0 6px">Nasze auta</h1><p style="opacity:.75;margin:0 0 4px">Aktualna oferta pojazdów z aukcji IAAI (<span id="iaai-count">9</span> szt.). Filtruj po marce, roku i uszkodzeniu.</p><p style="opacity:.6;font-size:.9em;margin:.2em 0 0">To podgląd demonstracyjny — dane i zdjęcia przykładowe.</p></section><div class="container" style="padding:16px 0 64px"><div class="iaai-pojazdy" id="iaai" style="--iaai-accent:#10B981"><form class="iaai-filters" onsubmit="return false"><select id="f-make"><option value="">Marka</option><option value="BMW">BMW</option><option value="Chevrolet">Chevrolet</option><option value="Dodge">Dodge</option><option value="Ford">Ford</option><option value="Honda">Honda</option><option value="Nissan">Nissan</option><option value="Tesla">Tesla</option><option value="Toyota">Toyota</option><option value="Volkswagen">Volkswagen</option></select><select id="f-year"><option value="">Rok</option><option value="2020">2020</option><option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option><option value="2016">2016</option></select><select id="f-dmg"><option value="">Uszkodzenie</option><option value="Front End">Front End</option><option value="Minor Dent/Scratches">Minor Dent/Scratches</option><option value="Rear">Rear</option><option value="Rear End">Rear End</option><option value="Side">Side</option><option value="Water/Flood">Water/Flood</option></select><button type="button" id="f-clear" class="iaai-filters__clear">Wyczyść</button></form><div class="iaai-grid"><article class="iaai-card" data-make="Toyota" data-year="2018" data-dmg="Front End"><a class="iaai-card__media" href="#"><img loading="lazy" src="https://placehold.co/700x500/1f4fd8/ffffff?text=Toyota+Camry" alt="2018 Toyota Camry"/></a><div class="iaai-card__body"><a class="iaai-card__title" href="#">2018 Toyota Camry</a><div class="iaai-card__rows"><span class="iaai-price">Buy Now: USD 8 200</span><span class="iaai-odo">169 593 km (105 380 mi)</span><span class="iaai-dmg">Front End</span><span class="iaai-trans">Automatic</span></div><div class="iaai-card__badges"><span class="iaai-badge iaai-badge--rd">Run &amp; Drive</span><span class="iaai-badge iaai-badge--key">Key Available</span></div></div></article><article class="iaai-card" data-make="Dodge" data-year="2016" data-dmg="Rear End"><a class="iaai-card__media" href="#"><img loading="lazy" src="https://placehold.co/700x500/111111/ffffff?text=Dodge+Charger" alt="2016 Dodge Charger"/></a><div class="iaai-card__body"><a class="iaai-card__title" href="#">2016 Dodge Charger</a><div class="iaai-card__rows"><span class="iaai-price">Buy Now: USD 6 900</span><span class="iaai-odo">141 994 km (88 231 mi)</span><span class="iaai-dmg">Rear End</span><span class="iaai-trans">Automatic</span></div><div class="iaai-card__badges"><span class="iaai-badge iaai-badge--rd">Run &amp; Drive</span><span class="iaai-badge iaai-badge--key">Key Available</span></div></div></article><article class="iaai-card" data-make="Ford" data-year="2019" data-dmg="Side"><a class="iaai-card__media" href="#"><img loading="lazy" src="https://placehold.co/700x500/2b6cb0/ffffff?text=Ford+F-150" alt="2019 Ford F-150"/></a><div class="iaai-card__body"><a class="iaai-card__title" href="#">2019 Ford F-150</a><div class="iaai-card__rows"><span class="iaai-price">Buy Now: USD 15 400</span><span class="iaai-odo">67 930 km (42 210 mi)</span><span class="iaai-dmg">Side</span><span class="iaai-trans">Automatic</span></div><div class="iaai-card__badges"><span class="iaai-badge iaai-badge--rd">Run &amp; Drive</span><span class="iaai-badge iaai-badge--key">Key Available</span></div></div></article><article class="iaai-card" data-make="Tesla" data-year="2019" data-dmg="Front End"><a class="iaai-card__media" href="#"><img loading="lazy" src="https://placehold.co/700x500/c53030/ffffff?text=Tesla+Model+3" alt="2019 Tesla Model 3"/></a><div class="iaai-card__body"><a class="iaai-card__title" href="#">2019 Tesla Model 3</a><div class="iaai-card__rows"><span class="iaai-price">Buy Now: USD 18 900</span><span class="iaai-odo">53 285 km (33 110 mi)</span><span class="iaai-dmg">Front End</span><span class="iaai-trans">Automatic</span></div><div class="iaai-card__badges"></div></div></article><article class="iaai-card" data-make="BMW" data-year="2016" data-dmg="Rear"><a class="iaai-card__media" href="#"><img loading="lazy" src="https://placehold.co/700x500/4a5568/ffffff?text=BMW+328i" alt="2016 BMW 328i"/></a><div class="iaai-card__body"><a class="iaai-card__title" href="#">2016 BMW 328i</a><div class="iaai-card__rows"><span class="iaai-price">Buy Now: USD 7 300</span><span class="iaai-odo">124 966 km (77 650 mi)</span><span class="iaai-dmg">Rear</span><span class="iaai-trans">Automatic</span></div><div class="iaai-card__badges"><span class="iaai-badge iaai-badge--rd">Run &amp; Drive</span><span class="iaai-badge iaai-badge--key">Key Available</span></div></div></article><article class="iaai-card" data-make="Nissan" data-year="2018" data-dmg="Water/Flood"><a class="iaai-card__media" href="#"><img loading="lazy" src="https://placehold.co/700x500/718096/ffffff?text=Nissan+Altima" alt="2018 Nissan Altima"/></a><div class="iaai-card__body"><a class="iaai-card__title" href="#">2018 Nissan Altima</a><div class="iaai-card__rows"><span class="iaai-price">Buy Now: USD 3 200</span><span class="iaai-odo">96 754 km (60 120 mi)</span><span class="iaai-dmg">Water/Flood</span><span class="iaai-trans">Automatic</span></div><div class="iaai-card__badges"></div></div></article><article class="iaai-card" data-make="Chevrolet" data-year="2018" data-dmg="Front End"><a class="iaai-card__media" href="#"><img loading="lazy" src="https://placehold.co/700x500/285e8a/ffffff?text=Chevrolet+Malibu" alt="2018 Chevrolet Malibu"/></a><div class="iaai-card__body"><a class="iaai-card__title" href="#">2018 Chevrolet Malibu</a><div class="iaai-card__rows"><span class="iaai-price">Buy Now: USD 6 100</span><span class="iaai-odo">82 447 km (51 230 mi)</span><span class="iaai-dmg">Front End</span><span class="iaai-trans">Automatic</span></div><div class="iaai-card__badges"><span class="iaai-badge iaai-badge--rd">Run &amp; Drive</span><span class="iaai-badge iaai-badge--key">Key Available</span></div></div></article><article class="iaai-card" data-make="Honda" data-year="2020" data-dmg="Minor Dent/Scratches"><a class="iaai-card__media" href="#"><img loading="lazy" src="https://placehold.co/700x500/0d7a5f/ffffff?text=Honda+Accord" alt="2020 Honda Accord"/></a><div class="iaai-card__body"><a class="iaai-card__title" href="#">2020 Honda Accord</a><div class="iaai-card__rows"><span class="iaai-price">Buy Now: USD 13 500</span><span class="iaai-odo">46 510 km (28 900 mi)</span><span class="iaai-dmg">Minor Dent/Scratches</span><span class="iaai-trans">Automatic</span></div><div class="iaai-card__badges"><span class="iaai-badge iaai-badge--rd">Run &amp; Drive</span><span class="iaai-badge iaai-badge--key">Key Available</span></div></div></article><article class="iaai-card" data-make="Volkswagen" data-year="2017" data-dmg="Side"><a class="iaai-card__media" href="#"><img loading="lazy" src="https://placehold.co/700x500/5b4b8a/ffffff?text=VW+Jetta" alt="2017 Volkswagen Jetta"/></a><div class="iaai-card__body"><a class="iaai-card__title" href="#">2017 Volkswagen Jetta</a><div class="iaai-card__rows"><span class="iaai-price">Buy Now: USD 5 400</span><span class="iaai-odo">111 914 km (69 540 mi)</span><span class="iaai-dmg">Side</span><span class="iaai-trans">Manual</span></div><div class="iaai-card__badges"><span class="iaai-badge iaai-badge--rd">Run &amp; Drive</span><span class="iaai-badge iaai-badge--key">Key Available</span></div></div></article></div></div></div></main>
+<footer><div class="container">
+<div class="foot-grid">
+<div><a href="index.html" class="logo" aria-label="Kredyt Kompas — strona główna">
+<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="20" cy="20" r="18" stroke="#10B981" stroke-width="2.2"/><circle cx="20" cy="20" r="2" fill="#10B981"/><path class="needle" d="M20 6 L24 20 L20 34 L16 20 Z" fill="#10B981" fill-opacity=".25" stroke="#10B981" stroke-width="1.6"/></svg>
+<span>Kredyt<em>Kompas</em></span></a>
+<p style="max-width:300px">Niezależni eksperci kredytowi. Porównujemy oferty kilkunastu banków i prowadzimy Cię przez cały proces — od analizy zdolności po podpisanie umowy.</p></div>
+<div><h4>Nawigacja</h4><ul>
+<li><a href="index.html">Start</a></li><li><a href="kredyty-hipoteczne.html">Kredyty hipoteczne</a></li>
+<li><a href="kalkulator.html">Kalkulator zdolności</a></li><li><a href="o-nas.html">O nas</a></li>
+<li><a href="faq.html">FAQ</a></li><li><a href="kontakt.html">Kontakt</a></li><li><a href="nasze-auta.html">Nasze auta</a></li></ul></div>
+<div><h4>Kontakt</h4><ul>
+<li><a href="tel:+48500678799">+48 500 678 799</a></li>
+<li><a href="mailto:kontakt@kompas.pl">kontakt@kompas.pl</a></li>
+<li>ul. Przykładowa 13/3<br>00-001 Warszawa</li></ul></div>
+<div><h4>Godziny pracy</h4><ul>
+<li>pon.–pt.: 9:00–18:00</li><li>sobota: 10:00–14:00</li><li>niedziela: nieczynne</li></ul></div>
+</div>
+<div class="foot-bottom">
+<span>© 2026 Kredyt Kompas. Wszelkie prawa zastrzeżone.</span>
+<div class="legal"><a href="polityka-prywatnosci.html">Polityka prywatności</a><a href="polityka-prywatnosci.html#rodo">RODO</a></div>
+</div></div></footer>
+<script src="assets/script.js"></script>
+<script>
+(function(){
+ var m=document.getElementById('f-make'),y=document.getElementById('f-year'),d=document.getElementById('f-dmg');
+ var cards=[].slice.call(document.querySelectorAll('.iaai-card'));
+ function apply(){var mv=m.value,yv=y.value,dv=d.value,n=0;
+  cards.forEach(function(c){
+   var ok=(!mv||c.dataset.make===mv)&&(!yv||c.dataset.year===yv)&&(!dv||c.dataset.dmg===dv);
+   c.style.display=ok?'':'none'; if(ok)n++;});
+  var e=document.getElementById('iaai-count'); if(e)e.textContent=n;
+ }
+ [m,y,d].forEach(function(s){s.addEventListener('change',apply);});
+ document.getElementById('f-clear').addEventListener('click',function(){m.value='';y.value='';d.value='';apply();});
+})();
+</script>
+</body></html>
