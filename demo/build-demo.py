@@ -35,8 +35,10 @@ def check_blueprint():
         data = json.load(f)
     steps = [s.get("step") for s in data.get("steps", [])]
     assert "installPlugin" in steps, "brak installPlugin"
-    assert "writeFile" in steps, "brak writeFile (seed)"
-    assert data.get("landingPage") == "/nasze-auta/", "zla landingPage"
+    assert steps.count("writeFile") >= 2, "brak writeFile (seed + tresci)"
+    assert data.get("landingPage") == "/", "zla landingPage"
+    # plik tresci stron musi istniec
+    assert os.path.isfile(os.path.join(DEMO, "kredyt-kompas-content.php")), "brak kredyt-kompas-content.php"
     return steps
 
 if __name__ == "__main__":

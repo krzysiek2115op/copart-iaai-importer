@@ -1,13 +1,14 @@
 # Kredyt Kompas — demo wtyczki **IAAI Importer**
 
-To repozytorium hostuje **działające demo** wtyczki. Klient klika w jeden link i w swojej
-przeglądarce uruchamia się WordPress ze stylem strony **oraz wtyczką IAAI Importer**, która
-sama tworzy podstronę **„Nasze auta"** z ofertą pojazdów (zdjęcia, filtry marka/rok/uszkodzenie,
-karty, paginacja). Nic nie trzeba instalować — działa w przeglądarce (technologia *WordPress Playground*).
+To repozytorium hostuje **działające demo**. Klient klika w jeden link i w swojej przeglądarce
+uruchamia się strona **Kredyt Kompas** (Start, Kredyty hipoteczne, Kalkulator, O nas, FAQ, Kontakt)
+z wtyczką **IAAI Importer** — w górnym menu pojawia się podstrona **„Nasze auta"** z ofertą pojazdów
+(zdjęcia, filtry marka/rok/uszkodzenie, karty, paginacja). Nic nie trzeba instalować — działa
+w przeglądarce (technologia *WordPress Playground*).
 
 ## ▶ Zobacz demo (kliknij)
 
-**[► Otwórz demo „Nasze auta"](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/krzysiek2115op/iaai-importer-demo/main/blueprint.json)**
+**[► Otwórz demo Kredyt Kompas](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/krzysiek2115op/iaai-importer-demo/main/blueprint.json)**
 
 > Pełny link do wysłania klientowi:
 > ```
@@ -15,23 +16,25 @@ karty, paginacja). Nic nie trzeba instalować — działa w przeglądarce (techn
 > ```
 
 ## Co widać w demie
-- Podstrona **„Nasze auta"** utworzona automatycznie po włączeniu wtyczki i dodana do menu.
+- **Strona Kredyt Kompas** z prawdziwymi podstronami, stroną główną „Start".
+- W **górnym menu** podstrona **„Nasze auta"** utworzona przez wtyczkę — klikalna.
 - **Karty pojazdów** ze zdjęciem, ceną „Buy Now", przebiegiem (km + mi), rodzajem uszkodzenia
   i plakietkami *Run & Drive* / *Key Available*.
 - **Pasek filtrów** (marka, rok, uszkodzenie, sortowanie) + **paginacja**.
-- Wygląd **dziedziczy motyw** strony (kolory/czcionki) — u klienta dopasuje się do jego szablonu.
 
 ## Ważne (to tylko prezentacja)
 - Dane aut są **przykładowe** (atrapa), zdjęcia z `placehold.co` — żeby pokazać układ.
-- Wersja w przeglądarce jest **tymczasowa**: po odświeżeniu strony demo startuje od nowa.
+- Wygląd renderuje czysty motyw blokowy (Twenty Twenty-Five); u klienta wtyczka dopasuje się do jego motywu.
+- Wersja w przeglądarce jest **tymczasowa**: po odświeżeniu demo startuje od nowa.
 - W prawdziwym wdrożeniu auta pobiera automat (scraper) z **iaai.com**, a zdjęcia idą z serwerów IAAI.
 
 ## Zawartość repo
 | Plik | Rola |
 |------|------|
-| `blueprint.json` | scenariusz startowy Playground (motyw + wtyczka + dane demo) |
+| `blueprint.json` | scenariusz startowy Playground (motyw + wtyczka + treści + dane demo) |
 | `iaai-importer.zip` | wtyczka WordPress (ta sama, którą dostaje klient) |
-| `iaai-demo-seed.php` | mu-plugin: wstawia przykładowe auta i zezwala na obrazki demo |
+| `iaai-demo-seed.php` | mu-plugin: odtwarza strony Kredyt Kompas, menu, auta |
+| `kredyt-kompas-content.php` | treści podstron Kredyt Kompas |
 
 ---
 *Demo generowane z prywatnego repo produktu. Kod źródłowy i dokumentacja wdrożeniowa — osobno.*

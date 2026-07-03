@@ -1,13 +1,15 @@
 <?php
 /**
- * IAAI Importer — SEED DEMO (WYŁĄCZNIE dla wersji demonstracyjnej w WordPress Playground).
+ * IAAI Importer — SEED DEMO „Kredyt Kompas" (WYŁĄCZNIE dla wersji demonstracyjnej w WordPress Playground).
  *
- * Ładowany jako mu-plugin. Robi dwie rzeczy:
- *   1) Pozwala pokazywać obrazki z placehold.co (produkcja: tylko host iaai.com — anty-SSRF).
- *   2) Jednorazowo wstawia przykładowe auta + zdjęcia do bazy i publikuje je jako CPT „pojazd”,
- *      żeby podstrona „Nasze auta” od razu prezentowała ofertę (bez scrapera i MySQL).
+ * Ładowany jako mu-plugin. Jednorazowo (guard: opcja iaai_demo_seeded):
+ *   1) pozwala pokazywać obrazki z placehold.co (produkcja: tylko host iaai.com — anty-SSRF),
+ *   2) odtwarza prawdziwe strony Kredyt Kompas (Start, Kredyty, Kalkulator, O nas, FAQ, Kontakt…)
+ *      z pliku danych kredyt-kompas-content.php i ustawia „Start" jako stronę główną,
+ *   3) wstawia przykładowe auta + zdjęcia i publikuje je jako CPT „pojazd”,
+ *   4) buduje górne menu (prawdziwe strony + „Nasze auta").
  *
- * ⚠ To jest tylko atrapa danych do prezentacji. NIE używać na produkcji.
+ * ⚠ To jest wersja pokazowa. NIE używać na produkcji.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,7 +24,7 @@ add_filter( 'iaai_allowed_image_hosts', function ( $hosts ) {
 
 add_action( 'init', 'iaai_demo_seed_now', 99 );
 
-/** Jednorazowy seed przykładowych aut (guard: opcja iaai_demo_seeded). */
+/** Jednorazowy seed całej strony demonstracyjnej. */
 function iaai_demo_seed_now() : void {
 	if ( get_option( 'iaai_demo_seeded' ) ) {
 		return;                                   // już zasiane
@@ -31,13 +33,130 @@ function iaai_demo_seed_now() : void {
 		return;                                   // wtyczka jeszcze się nie załadowała
 	}
 
-	global $wpdb;
-
-	// Bezpiecznik: gdyby aktywacja nie założyła tabel (idempotentne dbDelta).
-	if ( function_exists( 'iaai_activate' ) ) {
-		iaai_activate();
+	// Ładne odnośniki (potrzebne dla /nasze-auta/ i slugów stron).
+	if ( '/%postname%/' !== get_option( 'permalink_structure' ) ) {
+		update_option( 'permalink_structure', '/%postname%/' );
 	}
 
+	$slug_to_id = iaai_demo_create_pages();
+
+	// Strona główna = „Start”.
+	if ( ! empty( $slug_to_id['start'] ) ) {
+		update_option( 'show_on_front', 'page' );
+		update_option( 'page_on_front', (int) $slug_to_id['start'] );
+	}
+
+	iaai_demo_seed_cars();
+	iaai_demo_build_menu();
+
+	flush_rewrite_rules();
+	if ( function_exists( 'iaai_flush_list_cache' ) ) {
+		iaai_flush_list_cache();
+	}
+	update_option( 'iaai_demo_seeded', 1 );
+}
+
+/**
+ * Tworzy strony Kredyt Kompas z pliku danych (idempotentnie po slugu).
+ * @return array<string,int> slug => post_id
+ */
+function iaai_demo_create_pages() : array {
+	$map  = array();
+	$file = WP_CONTENT_DIR . '/kredyt-kompas-content.php';
+	if ( ! is_readable( $file ) ) {
+		return $map;
+	}
+	$pages = include $file;                       // zwraca tablicę stron
+	if ( ! is_array( $pages ) ) {
+		return $map;
+	}
+	foreach ( $pages as $p ) {
+		$slug = sanitize_title( $p['slug'] ?? '' );
+		if ( '' === $slug ) {
+			continue;
+		}
+		$existing = get_page_by_path( $slug );
+		if ( $existing ) {
+			$map[ $slug ] = (int) $existing->ID;
+			continue;
+		}
+		// Lokalne linki -> względne (żeby działały pod adresem Playground).
+		$content = (string) ( $p['content'] ?? '' );
+		$content = str_replace( array( 'http://127.0.0.1:9410', 'https://127.0.0.1:9410' ), '', $content );
+
+		$id = wp_insert_post( array(
+			'post_type'    => 'page',
+			'post_status'  => 'publish',
+			'post_title'   => (string) ( $p['title'] ?? $slug ),
+			'post_name'    => $slug,
+			'post_content' => $content,
+			'menu_order'   => (int) ( $p['menu_order'] ?? 0 ),
+		) );
+		if ( $id && ! is_wp_error( $id ) ) {
+			$map[ $slug ] = (int) $id;
+		}
+	}
+	return $map;
+}
+
+/** Buduje górne menu (blokowe): prawdziwe strony + „Nasze auta". */
+function iaai_demo_build_menu() : void {
+	// Kolejność i etykiety pozycji menu (slug => etykieta). Start = strona główna („/").
+	$items = array(
+		'start'                => 'Start',
+		'kredyty-hipoteczne'   => 'Kredyty hipoteczne',
+		'kalkulator'           => 'Kalkulator',
+		'o-nas'                => 'O nas',
+		'faq'                  => 'FAQ',
+		'kontakt'              => 'Kontakt',
+	);
+
+	$links = '';
+	foreach ( $items as $slug => $label ) {
+		$page = get_page_by_path( $slug );
+		if ( ! $page ) {
+			continue;
+		}
+		$url  = ( 'start' === $slug ) ? '/' : '/' . $slug . '/';
+		$links .= sprintf(
+			'<!-- wp:navigation-link {"label":%s,"url":%s,"kind":"custom","isTopLevelLink":true} /-->' . "\n",
+			wp_json_encode( $label ),
+			wp_json_encode( $url )
+		);
+	}
+
+	// „Nasze auta" (podstrona z wtyczki) — wyróżniona na końcu.
+	$nasze = get_page_by_path( 'nasze-auta' );
+	if ( $nasze ) {
+		$links .= '<!-- wp:navigation-link {"label":"Nasze auta","url":"/nasze-auta/","kind":"custom","isTopLevelLink":true} /-->' . "\n";
+	}
+
+	if ( '' === $links ) {
+		return;
+	}
+
+	// Nadpisz istniejący wpis nawigacji (motyw blokowy używa jedynej nawigacji) albo utwórz nowy.
+	$nav = get_posts( array( 'post_type' => 'wp_navigation', 'numberposts' => 1, 'post_status' => 'any', 'fields' => 'ids' ) );
+	$args = array(
+		'post_type'    => 'wp_navigation',
+		'post_status'  => 'publish',
+		'post_title'   => 'Menu',
+		'post_content' => $links,
+	);
+	if ( $nav ) {
+		$args['ID'] = (int) $nav[0];
+		wp_update_post( $args );
+	} else {
+		wp_insert_post( $args );
+	}
+}
+
+/** Wstawia przykładowe auta + zdjęcia i publikuje je jako CPT. */
+function iaai_demo_seed_cars() : void {
+	global $wpdb;
+	if ( function_exists( 'iaai_activate' ) ) {
+		iaai_activate();                          // bezpiecznik: tabele (idempotentne dbDelta)
+	}
 	$veh = $wpdb->prefix . 'iaai_vehicles';
 	$img = $wpdb->prefix . 'iaai_vehicle_images';
 
@@ -55,11 +174,6 @@ function iaai_demo_seed_now() : void {
 		}
 		iaai_publish_vehicle( (int) $c['v']['salvage_id'] );
 	}
-
-	if ( function_exists( 'iaai_flush_list_cache' ) ) {
-		iaai_flush_list_cache();
-	}
-	update_option( 'iaai_demo_seeded', 1 );
 }
 
 /** Zestaw przykładowych aut do prezentacji (dane wymyślone). */

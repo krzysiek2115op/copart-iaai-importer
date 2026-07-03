@@ -1,16 +1,16 @@
 {
 	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
 	"meta": {
-		"title": "Kredyt Kompas — demo wtyczki IAAI Importer",
-		"description": "Podglad na zywo: WordPress ze stylem strony + wtyczka IAAI Importer, ktora sama tworzy podstrone 'Nasze auta' z oferta pojazdow (filtry, karty, paginacja)."
+		"title": "Kredyt Kompas — demo z wtyczka IAAI Importer",
+		"description": "Strona Kredyt Kompas (Start, Kredyty, Kalkulator, O nas, FAQ, Kontakt) z wtyczka IAAI Importer i podstrona 'Nasze auta' w gornym menu — oferta pojazdow (filtry, karty, paginacja)."
 	},
-	"landingPage": "/nasze-auta/",
+	"landingPage": "/",
 	"preferredVersions": { "php": "8.2", "wp": "latest" },
 	"login": true,
 	"steps": [
 		{
 			"step": "installTheme",
-			"themeData": { "resource": "wordpress.org/themes", "slug": "twentytwentyfour" },
+			"themeData": { "resource": "wordpress.org/themes", "slug": "twentytwentyfive" },
 			"options": { "activate": true }
 		},
 		{
@@ -20,6 +20,14 @@
 				"url": "https://raw.githubusercontent.com/krzysiek2115op/iaai-importer-demo/main/iaai-importer.zip"
 			},
 			"options": { "activate": true }
+		},
+		{
+			"step": "writeFile",
+			"path": "/wordpress/wp-content/kredyt-kompas-content.php",
+			"data": {
+				"resource": "url",
+				"url": "https://raw.githubusercontent.com/krzysiek2115op/iaai-importer-demo/main/kredyt-kompas-content.php"
+			}
 		},
 		{ "step": "mkdir", "path": "/wordpress/wp-content/mu-plugins" },
 		{
@@ -34,7 +42,7 @@
 			"step": "setSiteOptions",
 			"options": {
 				"blogname": "Kredyt Kompas",
-				"blogdescription": "Kredyty i auta z aukcji IAAI"
+				"blogdescription": "Kredyty, finanse i auta z aukcji"
 			}
 		}
 	]
