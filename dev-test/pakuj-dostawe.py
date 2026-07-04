@@ -20,7 +20,7 @@ README.md, .gitignore, testy, pliki .pyc, .svg/.gen.
 Uruchom:  python3 dev-test/pakuj-dostawe.py
 Wynik:    dist/IAAI-Importer-dostawa.zip (+ kopia na Pulpicie)
 """
-import os, zipfile, shutil, tempfile, subprocess, sys
+import os, zipfile, shutil, tempfile, subprocess, sys, re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIST = os.path.join(ROOT, "dist"); os.makedirs(DIST, exist_ok=True)
@@ -54,12 +54,27 @@ def main():
         start_pdf = os.path.join(ROOT, "docs/klient/pdf/00-START-TUTAJ.pdf")
         if os.path.exists(start_pdf):
             z.write(start_pdf, "0-ZACZNIJ-TUTAJ.pdf")
-        # pozostałe etapy jako osobne PDF (bez 00 — jest już na wierzchu jako „Zacznij tutaj").
+        # 1-Instrukcje w USTALONEJ kolejności: najpierw 2 przeglądowe (dowód + diagram),
+        # potem etapy 01–06. Nazwy w ZIP-ie renumerowane 01..08 (spójna numeracja dla klienta).
         pdir = os.path.join(ROOT, "docs/klient/pdf")
-        if os.path.isdir(pdir):
-            for fn in sorted(os.listdir(pdir)):
-                if fn.endswith(".pdf") and not fn.startswith("00-"):
-                    z.write(os.path.join(pdir, fn), os.path.join("1-Instrukcje", fn))
+        order = [
+            "skad-pochodza-dane.pdf",          # 01 — dowód (skąd → dokąd)
+            "jak-to-dziala.pdf",               # 02 — diagram przepływu
+            "01-instalacja-wtyczki.pdf",
+            "02-pokaz-auta-na-stronie.pdf",
+            "03-uruchom-automatyzacje.pdf",
+            "04-jak-dziala-i-obsluga.pdf",
+            "05-problemy-i-pytania.pdf",
+            "06-edycja-podstrony-i-motyw.pdf",
+        ]
+        idx = 1
+        for fn in order:
+            src = os.path.join(pdir, fn)
+            if not os.path.isfile(src):
+                continue
+            slug = re.sub(r'^\d+-', '', fn)                       # usuń wiodące „NN-”
+            z.write(src, os.path.join("1-Instrukcje", f"{idx:02d}-{slug}"))
+            idx += 1
         # wtyczka
         z.write(PLUG_ZIP, "iaai-importer.zip")
         # części działające na serwerze
