@@ -70,7 +70,7 @@ def foot(txt):
 def proof_p1():
     s = page_open()
     s += header("Skąd pochodzą Twoje dane — i gdzie trafiają",
-                "Dowód: te same auta z serwisu aukcyjnego IAAI pojawiają się na Twojej stronie.")
+                "Dowód: te same auta z aukcji IAAI (i tak samo z Copart) pojawiają się na Twojej stronie.")
     iw, ih = 352.0, 352.0*516/1100
     y0 = 120; lx, rx = 40, W-40-iw
     s += num_badge(lx+13, y0-16, "1"); s += T(lx+34, y0-11, "ŹRÓDŁO — IAAI.com (aukcje w USA)", size=12, color=NAVY, weight="bold")
@@ -81,13 +81,14 @@ def proof_p1():
     s += arrow(lx+iw+10, midy, rx-10)
     s += T((lx+iw+rx)/2, midy-12, "automat", size=10, color=EMD, weight="bold", anchor="middle")
     s += T((lx+iw+rx)/2, midy+20, "pobiera", size=10, color=EMD, weight="bold", anchor="middle")
-    by = y0+ih+42
-    s += rect(40, by, W-80, 118, r=10, fill=CLOUD, stroke=LINE)
+    by = y0+ih+34
+    s += rect(40, by, W-80, 140, r=10, fill=CLOUD, stroke=LINE)
     s += T(58, by+28, "Co to znaczy — po ludzku:", size=13, color=NAVY, weight="bold")
     for i, ln in enumerate([
         "•  Po lewej: oryginalne ogłoszenia na IAAI.com (amerykański serwis aukcyjny aut powypadkowych).",
         "•  Po prawej: te same pojazdy — automatycznie przeniesione na Twoją stronę, w Twoim wyglądzie.",
         "•  Nic nie przepisujesz ręcznie. Program sam pobiera zdjęcia i dane, a strona pokazuje je klientom.",
+        "•  Tak samo działa drugie źródło — Copart. Na stronie każde auto ma plakietkę: IAAI albo Copart.",
         "•  Szczegóły, jak jedno ogłoszenie zamienia się w kartę — na następnej stronie."]):
         s += T(58, by+52+i*20, ln, size=11, color=INK)
     s += foot("Kredyt Kompas · IAAI Importer — skąd pochodzą dane (1/2)")
@@ -152,7 +153,7 @@ def flow_tile(x, y, w, h, n, title, lines, accent=False):
 def diag_p1():
     s = page_open()
     s += header("Jak to działa — droga auta (krok po kroku)",
-                "Gdzie co się dzieje: IAAI → Twój serwer (automat + baza) → Twój WordPress → klient.")
+                "Gdzie co się dzieje: IAAI + Copart → Twój serwer (automat + baza) → Twój WordPress → klient.")
     bx, bw = 30, 132
     gap = (W - 2*bx - 5*bw) / 4
     xs = [bx + i*(bw+gap) for i in range(5)]
@@ -162,12 +163,12 @@ def diag_p1():
         s2  = rect(x1, 258, x2-x1, 150, r=12, fill=fill, stroke=LINE, sw=1)
         s2 += T((x1+x2)/2, 276, label, size=10, color=NAVY, weight="bold", anchor="middle")
         return s2
-    s += zone(xs[0]-8, xs[0]+bw+8, "IAAI.com — USA", MINT)
+    s += zone(xs[0]-8, xs[0]+bw+8, "IAAI + Copart — USA", MINT)
     s += zone(xs[1]-8, xs[2]+bw+8, "TWÓJ SERWER (VPS) — działa 24/7", BLUE)
     s += zone(xs[3]-8, xs[4]+bw+8, "TWÓJ WORDPRESS", "#eef7f2")
     # kafelki
     boxes = [
-        ("1", "IAAI.com", ["Aukcje aut", "w USA (źródło)"], True),
+        ("1", "IAAI + Copart", ["Aukcje aut w USA", "(dwa źródła)"], True),
         ("2", "Automat (scraper)", ["Pobiera oferty", "i zdjęcia"], False),
         ("3", "Baza danych", ["Magazyn ofert", "na serwerze"], False),
         ("4", "Wtyczka WordPress", ["Publikuje auta", "na stronie"], False),

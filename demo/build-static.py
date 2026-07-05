@@ -127,6 +127,10 @@ CARS = [
     dict(t="2018 Chevrolet Malibu", make="Chevrolet", year=2018, dmg="Front End", trans="Automatic", odo=51230, buy=6100, rd=1, key=1, bg="285e8a", lbl="Chevrolet Malibu"),
     dict(t="2020 Honda Accord", make="Honda", year=2020, dmg="Minor Dent/Scratches", trans="Automatic", odo=28900, buy=13500, rd=1, key=1, bg="0d7a5f", lbl="Honda Accord"),
     dict(t="2017 Volkswagen Jetta", make="Volkswagen", year=2017, dmg="Side", trans="Manual", odo=69540, buy=5400, rd=1, key=1, bg="5b4b8a", lbl="VW Jetta"),
+    # --- auta z drugiego zrodla: Copart ---
+    dict(t="2015 Jeep Grand Cherokee", make="Jeep", year=2015, dmg="Rear End", trans="Automatic", odo=98420, buy=7600, rd=1, key=1, src="copart", bg="356", lbl="Jeep GC"),
+    dict(t="2019 Hyundai Elantra", make="Hyundai", year=2019, dmg="Front End", trans="Automatic", odo=44120, buy=6200, rd=1, key=1, src="copart", bg="468", lbl="Hyundai"),
+    dict(t="2017 Ram 1500", make="Ram", year=2017, dmg="Side", trans="Automatic", odo=71230, buy=12800, rd=1, key=0, src="copart", bg="853", lbl="Ram 1500"),
 ]
 
 # prawdziwe zdjecia aut (Unsplash, hotlink jak reszta motywu) — po jednym na karte
@@ -134,6 +138,7 @@ PHOTOS = [
     "1503376780353-7e6692767b70", "1552519507-da3b142c6e3d", "1494905998402-395d579af36f",
     "1541899481282-d53bffe3c35d", "1550355291-bbee04a92027", "1517524008697-84bbe3c3fd98",
     "1493238792000-8113da705763", "1568605117036-5fe5e7bab0b7", "1502877338535-766e1452684a",
+    "1511919884226-fd3cad34687c", "1549317661-bd32c8ce0db2", "1580273916550-e323be2ae537",
 ]
 def photo_url(pid):
     return "https://images.unsplash.com/photo-%s?auto=format&fit=crop&w=700&h=500&q=70" % pid
@@ -145,12 +150,14 @@ def card_html(c, photo):
             '<span class="iaai-dmg">%s</span>'
             '<span class="iaai-trans">%s</span>'
             % (nbsp(c["buy"]), odo(c["odo"]), html.escape(c["dmg"]), html.escape(c["trans"])))
-    badges = ""
+    src   = c.get("src", "iaai")
+    slbl  = "Copart" if src == "copart" else "IAAI"
+    badges = '<span class="iaai-badge iaai-badge--src iaai-badge--%s">%s</span>' % (src, slbl)
     if c["rd"]:
         badges += '<span class="iaai-badge iaai-badge--rd">Run &amp; Drive</span>'
     if c["key"]:
         badges += '<span class="iaai-badge iaai-badge--key">Key Available</span>'
-    return ('<article class="iaai-card" data-make="%s" data-year="%s" data-dmg="%s">'
+    return ('<article class="iaai-card" data-make="%s" data-year="%s" data-dmg="%s" data-src="%s">'
         '<a class="iaai-card__media" href="#">'
         '<img loading="lazy" src="%s" alt="%s"/></a>'
         '<div class="iaai-card__body">'
@@ -158,7 +165,7 @@ def card_html(c, photo):
         '<div class="iaai-card__rows">%s</div>'
         '<div class="iaai-card__badges">%s</div>'
         '</div></article>'
-        % (html.escape(c["make"]), c["year"], html.escape(c["dmg"]),
+        % (html.escape(c["make"]), c["year"], html.escape(c["dmg"]), src,
            img, html.escape(c["t"]), html.escape(c["t"]), rows, badges))
 
 def filters_html():
@@ -170,7 +177,10 @@ def filters_html():
         for v in opts:
             o += '<option value="%s">%s</option>' % (html.escape(str(v)), html.escape(str(v)))
         return '<select id="%s">%s</select>' % (name, o)
+    srcsel = ('<select id="f-src"><option value="">Źródło</option>'
+              '<option value="iaai">IAAI</option><option value="copart">Copart</option></select>')
     return ('<form class="iaai-filters" onsubmit="return false">'
+        + srcsel
         + sel("f-make", makes, "Marka")
         + sel("f-year", years, "Rok")
         + sel("f-dmg", dmgs, "Uszkodzenie")
@@ -179,26 +189,26 @@ def filters_html():
 
 FILTER_JS = ("""<script>
 (function(){
- var m=document.getElementById('f-make'),y=document.getElementById('f-year'),d=document.getElementById('f-dmg');
+ var m=document.getElementById('f-make'),y=document.getElementById('f-year'),d=document.getElementById('f-dmg'),sr=document.getElementById('f-src');
  var cards=[].slice.call(document.querySelectorAll('.iaai-card'));
- function apply(){var mv=m.value,yv=y.value,dv=d.value,n=0;
+ function apply(){var mv=m.value,yv=y.value,dv=d.value,sv=sr.value,n=0;
   cards.forEach(function(c){
-   var ok=(!mv||c.dataset.make===mv)&&(!yv||c.dataset.year===yv)&&(!dv||c.dataset.dmg===dv);
+   var ok=(!mv||c.dataset.make===mv)&&(!yv||c.dataset.year===yv)&&(!dv||c.dataset.dmg===dv)&&(!sv||c.dataset.src===sv);
    c.style.display=ok?'':'none'; if(ok)n++;});
   var e=document.getElementById('iaai-count'); if(e)e.textContent=n;
  }
- [m,y,d].forEach(function(s){s.addEventListener('change',apply);});
- document.getElementById('f-clear').addEventListener('click',function(){m.value='';y.value='';d.value='';apply();});
+ [m,y,d,sr].forEach(function(s){s.addEventListener('change',apply);});
+ document.getElementById('f-clear').addEventListener('click',function(){m.value='';y.value='';d.value='';sr.value='';apply();});
 })();
 </script>""")
 
 def nasze_auta_html():
     cards = "".join(card_html(c, photo_url(p)) for c, p in zip(CARS, PHOTOS))
     hero = ('<section class="page-hero on-dark"><div class="container stagger">'
-        '<span class="bearing">IAAI · Oferta pojazdów</span>'
+        '<span class="bearing">IAAI + Copart · Oferta pojazdów</span>'
         '<h1>Nasze auta</h1>'
-        '<p>Aktualna oferta pojazdów z aukcji IAAI (<span id="iaai-count">%d</span> szt.). '
-        'Filtruj po marce, roku i rodzaju uszkodzenia.</p>'
+        '<p>Aktualna oferta pojazdów z aukcji IAAI i Copart (<span id="iaai-count">%d</span> szt.). '
+        'Filtruj po źródle, marce, roku i rodzaju uszkodzenia.</p>'
         '<p style="font-size:.92rem;opacity:.6;margin-top:6px">To podgląd demonstracyjny — dane i zdjęcia przykładowe.</p>'
         '</div></section>' % len(CARS))
     body = ('<section class="section" style="padding:56px 0 96px"><div class="container">'
