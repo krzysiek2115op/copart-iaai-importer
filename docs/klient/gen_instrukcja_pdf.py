@@ -229,12 +229,12 @@ def draw_block(b, x, y) -> tuple[str, float]:
 
 CONTENT = [
     ("h1", "Jak to działa (w skrócie)"),
-    ("p", "System sam pobiera samochody z serwisu aukcyjnego IAAI (zdjęcia i dane) i pokazuje je na Twojej stronie WordPress — automatycznie, przez całą dobę. Gdy pojawia się nowe auto, trafia na stronę; gdy znika z aukcji, znika też u Ciebie."),
-    ("flow", "IAAI.com  →  Program zbierający (24/7)  →  Baza danych  →  Twoja strona WWW"),
+    ("p", "System sam pobiera samochody z dwóch serwisów aukcyjnych — IAAI oraz Copart (zdjęcia i dane) — i pokazuje je na Twojej stronie WordPress, automatycznie, przez całą dobę. Gdy pojawia się nowe auto, trafia na stronę; gdy znika z aukcji, znika też u Ciebie. Każde auto ma plakietkę źródła (IAAI / Copart), a odwiedzający mogą filtrować listę po źródle."),
+    ("flow", "IAAI + Copart  →  Program zbierający (24/7)  →  Baza danych  →  Twoja strona WWW"),
     ("bullet", [
-        "Program zbierający pilnuje IAAI i pobiera nowe auta.",
-        "Baza danych przechowuje auta (ta sama, na której stoi WordPress).",
-        "Wtyczka WordPress bierze auta z bazy i pokazuje je na stronie.",
+        "Program zbierający pilnuje IAAI i Copart i pobiera nowe auta.",
+        "Baza danych przechowuje auta z obu źródeł (ta sama, na której stoi WordPress).",
+        "Wtyczka WordPress bierze auta z bazy i pokazuje je na stronie (z plakietką źródła).",
     ]),
     ("callout", True, [
         "Dwie części, dwa poziomy trudności:",
@@ -245,7 +245,7 @@ CONTENT = [
     ("h2", "Co dostajesz w paczce"),
     ("bullet", [
         "wp-plugin/iaai-importer/ — WTYCZKA do WordPress (pokazuje auta).",
-        "scraper/ — PROGRAM ZBIERAJĄCY (pobiera auta z IAAI).",
+        "scraper/ — PROGRAM ZBIERAJĄCY (pobiera auta z IAAI i Copart).",
         "deploy/ — INSTALATOR automatyzacji (install.sh) i ustawienia.",
         "docs/klient/ — instrukcje (ten dokument oraz wersje etapowe).",
     ]),
@@ -282,7 +282,7 @@ CONTENT = [
         "oraz próbuje dodać ją do głównego menu.",
     ]),
     ("step", 6, "Sprawdź, że się udało", [
-        "Wtyczki → Zainstalowane: jest „IAAI Importer” (aktywna).",
+        "Wtyczki → Zainstalowane: jest „Importer Aukcji (IAAI + Copart)” (aktywna).",
         "W menu po lewej pojawia się „Pojazdy”. Strony → „Nasze auta” istnieje (/nasze-auta).",
         "Strona bywa pusta do czasu uruchomienia automatyzacji — to normalne.",
     ]),
@@ -301,6 +301,15 @@ CONTENT = [
         "(zamień /var/www/html na katalog Twojego WordPressa). Instalator sam zainstaluje",
         "potrzebne programy, połączy się z bazą i włączy usługę sprawdzającą IAAI co kilkanaście minut.",
         "Szczegóły: docs/klient/03-uruchom-automatyzacje.md",
+    ]),
+    ("callout", True, [
+        "Drugie źródło — Copart (opcjonalnie):",
+        "• IAAI działa od razu. Copart mocniej broni się przed automatami (Cloudflare),",
+        "  a pełne dane i zdjęcia zwykle wymagają konta Member — dlatego uruchamiasz je",
+        "  osobno, z sesją logowania: COPART_COOKIES=... python3 scraper/run_pipeline.py",
+        "  --source copart --mode live. Dane z obu źródeł trafiają do tej samej bazy i strony.",
+        "• Bez konta Copart zostaje samo IAAI — strona działa normalnie. Szczegóły w",
+        "  docs/klient/03 („Drugie źródło — Copart”).",
     ]),
     ("step", 10, "Sprawdź, że auta się pojawiają", [
         "Po pierwszym przebiegu (kilka–kilkanaście minut) na stronie „Nasze auta” pojawią się",
@@ -341,8 +350,14 @@ CONTENT = [
     ("h1", "FAQ — najczęstsze pytania"),
     ("faq", "Czy muszę coś robić codziennie?",
      "Nie. Po uruchomieniu system działa sam 24/7 — pobiera nowe auta i aktualizuje stronę."),
+    ("faq", "Skąd biorą się dane aut?",
+     "Z dwóch serwisów aukcyjnych — IAAI oraz Copart. System kopiuje oferty 1:1 do Twojej bazy i oznacza źródło (plakietka IAAI / Copart, filtr na liście)."),
+    ("faq", "Czym różni się Copart od IAAI?",
+     "Działa tak samo (dane, zdjęcia, plakietka, filtr), ale Copart mocniej broni się przed automatami (Cloudflare) i pełne dane zwykle wymagają konta Member (sesja COPART_COOKIES). Bez konta zostaje samo IAAI. Realne, ciągłe pobieranie z Copart potwierdza się na serwerze VPS (jak przy IAAI)."),
+    ("faq", "Mam już instalację z samym IAAI — aktualizacja coś zepsuje?",
+     "Dane zostają. Doszła jednak kolumna „źródło” i zmienił się klucz główny tabel: świeża instalacja robi to sama, a istniejącą bazę IAAI trzeba jednorazowo zmigrować — napisz do nas przed aktualizacją, podeślemy gotowe polecenie."),
     ("faq", "Czy zdjęcia zajmują miejsce na hostingu?",
-     "Nie. Domyślnie są pokazywane wprost z serwerów IAAI (0 miejsca na dysku)."),
+     "Nie. Domyślnie są pokazywane wprost z serwerów IAAI/Copart (0 miejsca na dysku)."),
     ("faq", "Czy auta same znikają, gdy schodzą z aukcji?",
      "Tak. Wpis jest wtedy ukrywany (szkic) — nie kasujemy historii."),
     ("faq", "Czy to jest zoptymalizowane pod Google (SEO)?",
@@ -384,7 +399,7 @@ def page_header(page_no):
     s = []
     s.append(rect(0, 0, PW, 66, DARK, rx=0))
     s.append(rect(0, 63, PW, 3, BLUE, rx=0))
-    s.append(text(MX, 30, "IAAI Importer", size=15, color="#ffffff", weight="bold"))
+    s.append(text(MX, 30, "Importer Aukcji (IAAI + Copart)", size=15, color="#ffffff", weight="bold"))
     s.append(text(MX, 50, "Instrukcja klienta — od A do Z", size=10.5, color="#aebfd8"))
     s.append(text(PW - MX, 40, "dla osoby nietechnicznej", size=9.5, color="#aebfd8", anchor="end"))
     return "".join(s)
@@ -393,7 +408,7 @@ def page_header(page_no):
 def page_footer(page_no, total):
     s = []
     s.append(f'<line x1="{MX}" y1="808" x2="{PW-MX}" y2="808" stroke="{GRAYBORDER}" stroke-width="1"/>')
-    s.append(text(MX, 822, "IAAI Importer — importer aut z IAAI do WordPress", size=8.5, color=MUTED))
+    s.append(text(MX, 822, "Importer Aukcji — auta z IAAI i Copart do WordPress", size=8.5, color=MUTED))
     s.append(text(PW - MX, 822, f"Strona {page_no} / {total}", size=8.5, color=MUTED, anchor="end"))
     return "".join(s)
 

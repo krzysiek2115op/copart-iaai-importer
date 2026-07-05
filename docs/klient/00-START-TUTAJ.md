@@ -1,6 +1,6 @@
 # 👋 START TUTAJ — zanim zaczniesz
 
-To jest komplet instrukcji do uruchomienia **importera aut z IAAI** na Twojej stronie.
+To jest komplet instrukcji do uruchomienia **importera aut z IAAI i Copart** na Twojej stronie.
 Pisane prostym językiem — **nie musisz być informatykiem**. Idź etapami, po kolei.
 
 > 📘 Wolisz **wszystko w jednym pliku** (A–Z, z FAQ i „co może pójść nie tak")?
@@ -10,18 +10,24 @@ Pisane prostym językiem — **nie musisz być informatykiem**. Idź etapami, po
 ---
 
 ## Co to robi? (w jednym zdaniu)
-Sam pobiera samochody z serwisu aukcyjnego **iaai.com** (zdjęcia + dane) i **pokazuje je
-na Twojej stronie WordPress** — automatycznie, przez całą dobę. Gdy pojawia się nowe auto,
-trafia na stronę; gdy auto znika z aukcji, znika też u Ciebie.
+Sam pobiera samochody z **dwóch** serwisów aukcyjnych — **iaai.com** oraz **copart.com**
+(zdjęcia + dane) — i **pokazuje je na Twojej stronie WordPress** — automatycznie, przez całą
+dobę. Gdy pojawia się nowe auto, trafia na stronę; gdy auto znika z aukcji, znika też u Ciebie.
+Każde auto ma **plakietkę źródła** (IAAI / Copart), a odwiedzający mogą **filtrować listę po źródle**.
 
 ```
-IAAI.com  ──►  [Twój serwer: program zbierający]  ──►  [Baza danych]  ──►  [Twoja strona WordPress]
- (źródło aut)        (działa sam, 24/7)               (auta)            (klienci widzą auta)
+IAAI + Copart  ──►  [Twój serwer: program zbierający]  ──►  [Baza danych]  ──►  [Twoja strona WordPress]
+ (dwa źródła aut)        (działa sam, 24/7)               (auta)            (klienci widzą auta)
 ```
+
+> ℹ️ **Uwaga o Copart:** IAAI działa od razu. Copart mocniej broni się przed automatami
+> (Cloudflare), a pełne dane i zdjęcia bywają dostępne dopiero **po zalogowaniu na konto
+> Member** — dlatego drugie źródło uruchamia się z danymi logowania (patrz Etap 3). Bez konta
+> działa samo IAAI; Copart dołączasz, gdy masz dostęp.
 
 ## Co dostajesz w paczce?
 - **Wtyczkę do WordPress** (folder `wp-plugin/iaai-importer`) — pokazuje auta na stronie.
-- **Program zbierający** („scraper", folder `scraper`) — pobiera auta z IAAI.
+- **Program zbierający** („scraper", folder `scraper`) — pobiera auta z IAAI i Copart.
 - **Instalator** (`deploy/install.sh`) — ustawia automatyzację jednym poleceniem.
 - **Te instrukcje** (`docs/klient/`).
 

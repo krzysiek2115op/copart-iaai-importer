@@ -56,7 +56,7 @@ zmieniać; zaawansowany deweloper może nadpisać szablon w motywie (`single-poj
 ## 7. Rzeczy, których lepiej NIE robić
 - Nie kasuj krótkiego kodu `[iaai_pojazdy]` — strona przestanie pokazywać auta.
 - Nie zmieniaj ręcznie wpisów „Pojazd" — są nadpisywane przy każdej synchronizacji
-  z IAAI (to jest zamierzone: dane mają być wierną kopią IAAI).
+  ze źródłem IAAI/Copart (to jest zamierzone: dane mają być wierną kopią aukcji).
 - Nie usuwaj wtyczki, jeśli chcesz zachować auta (dane są w bazie; dezaktywacja
   ukrywa je, usunięcie wtyczki nie kasuje bazy).
 

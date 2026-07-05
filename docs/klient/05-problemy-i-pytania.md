@@ -33,13 +33,35 @@ Komunikat podpowiada, czego brakuje:
 - „hosting współdzielony" → potrzebny VPS (patrz [00-START-TUTAJ.md](00-START-TUTAJ.md)).
 
 ### Auta są, ale bez zdjęć
-Zdjęcia ładują się z serwerów IAAI. Jeśli IAAI usunęło zdjęcie danego auta — nie wyświetli się.
-To normalne dla aut już zdjętych z aukcji.
+Zdjęcia ładują się z serwerów IAAI/Copart. Jeśli serwis usunął zdjęcie danego auta — nie
+wyświetli się. To normalne dla aut już zdjętych z aukcji.
+
+### Z Copart nic nie przychodzi (a IAAI działa)
+To najczęściej **kwestia logowania**, nie błąd wtyczki:
+- Copart zwykle oddaje pełne dane i zdjęcia dopiero **po zalogowaniu na konto Member**.
+  Uruchom źródło `copart` z aktualnymi ciasteczkami sesji (`COPART_COOKIES`) — patrz
+  [Etap 3 → „Drugie źródło — Copart"](03-uruchom-automatyzacje.md).
+- Ciasteczka **wygasają** — jeśli Copart nagle przestał zwracać auta, odśwież je (zaloguj się
+  ponownie i wklej nowe).
+- Copart mocno filtruje automaty (Cloudflare). Puste wyniki bez ważnej sesji to **zachowanie
+  serwisu**. Jeśli nie masz konta Copart — zostaw samo IAAI, strona działa normalnie.
+
+### Aktualizuję istniejącą instalację (miałem tylko IAAI)
+W wersji z drugim źródłem zmienił się **klucz główny bazy** (doszła kolumna „źródło").
+- **Nowa/świeża instalacja albo demo:** nic nie robisz — tabele zakładają się poprawnie same.
+- **Istniejąca baza z samym IAAI:** trzeba ją **jednorazowo zmigrować** (dodać kolumnę `source`
+  z wartością `iaai` i przełożyć klucz na parę „źródło + numer aukcji"). Jeśli aktualizujesz
+  działającą instalację — **napisz do nas przed aktualizacją**, podeślemy gotowe polecenie
+  migracji dopasowane do Twojej bazy. Starych danych IAAI to nie usuwa.
 
 ---
 
 ## Słowniczek (proste tłumaczenia)
-- **IAAI** — amerykański serwis aukcji samochodów (źródło danych).
+- **IAAI** — amerykański serwis aukcji samochodów (źródło danych nr 1).
+- **Copart** — drugi amerykański serwis aukcji samochodów (źródło danych nr 2; wymaga konta
+  Member i sesji logowania — `COPART_COOKIES`).
+- **Konto Member / ciasteczka sesji** — dane zalogowania do Copart; pozwalają programowi pobrać
+  pełne dane i zdjęcia. Wygasają — czasem trzeba je odświeżyć.
 - **Wtyczka (plugin)** — dodatek do WordPress; tu: pokazuje auta na stronie.
 - **Scraper / program zbierający** — program, który czyta auta z IAAI i wpisuje do bazy.
 - **Baza danych** — „magazyn" danych Twojej strony (auta tam siedzą).

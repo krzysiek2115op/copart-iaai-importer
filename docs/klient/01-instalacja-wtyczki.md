@@ -1,6 +1,6 @@
 # Etap 1 — Wgranie wtyczki do WordPress
 
-Cel: zainstalować wtyczkę „IAAI Importer" w Twoim WordPressie. To samo klikanie, ~3 minuty.
+Cel: zainstalować wtyczkę „Importer Aukcji (IAAI + Copart)" w Twoim WordPressie. To samo klikanie, ~3 minuty.
 
 > Najpierw spakuj folder wtyczki do pliku ZIP (jeśli dostałeś go rozpakowany):
 > spakuj folder `wp-plugin/iaai-importer` → powstanie `iaai-importer.zip`.
@@ -42,7 +42,7 @@ Cel: zainstalować wtyczkę „IAAI Importer" w Twoim WordPressie. To samo klika
 ---
 
 ## Skąd wiem, że się udało?
-- Wejdź w **Wtyczki → Zainstalowane wtyczki** — na liście jest **„IAAI Importer"** (aktywna).
+- Wejdź w **Wtyczki → Zainstalowane wtyczki** — na liście jest **„Importer Aukcji (IAAI + Copart)"** (aktywna).
 - W menu po lewej pojawi się nowa pozycja **„Pojazdy”** (tu trafią auta).
 
 > Na razie lista „Pojazdy" będzie pusta — auta pojawią się po **Etapie 3** (automatyzacja).

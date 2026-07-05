@@ -1,8 +1,11 @@
-# Architektura (v0.2 — tylko IAAI)
+# Architektura (v0.30 — dwa źródła: IAAI + Copart)
 
-> **Decyzja:** Copart **usunięty z planu** — cała domena jest za Imperva Incapsula
-> (brak legalnego, anonimowego dostępu). Pełna analiza Copart pozostaje w historii
-> repo (tag `v0.1.0`, `research/`). Skupiamy się wyłącznie na **iaai.com**.
+> **Decyzja (aktualna):** Copart **przywrócony jako DRUGIE ŹRÓDŁO** obok IAAI. Nowa baza ma
+> kolumnę `source` (`iaai` / `copart`), klucz główny to para `(source, salvage_id)`; wtyczka
+> pokazuje plakietkę źródła i filtr. Copart mocniej broni się przed automatami (Cloudflare),
+> a pełne dane/zdjęcia zwykle wymagają **konta Member** — sesja przez zmienną `COPART_COOKIES`;
+> realne, ciągłe pobieranie walidujemy na VPS (tak jak IAAI). Bez konta system działa na samym
+> IAAI. (Wcześniejsza decyzja „v0.2 — Copart usunięty" jest nieaktualna; analiza w tagu `v0.1.0`.)
 
 ## Schemat (wg rysunku)
 
@@ -11,22 +14,24 @@
                     ⇅ json
                   PLUGIN
                     ⇅ json
-                  DZIAŁY  ◄──── AJAX (live) ──── STARA BAZA DANYCH (iaai.com)
+                  DZIAŁY  ◄──── AJAX (live) ──── STARE BAZY: iaai.com + copart.com
                     ⇅                                      ⇅ JSON
-              NOWA BAZA DANYCH ◄────────────────── (sync/import)
-        (nowe informacje z iaai.com)
+              NOWA BAZA DANYCH ◄────────────────── (sync/import, --source iaai|copart)
+        (rekordy z obu źródeł; kolumna source rozróżnia IAAI/Copart)
 ```
 
 Kluczowe: **plugin łączy się tylko z DZIAŁAMI i ze stroną WordPress — NIE z bazą danych.**
-Z **nową bazą** połączone są **DZIAŁY**.
+Z **nową bazą** połączone są **DZIAŁY**. Oba źródła (IAAI, Copart) trafiają do **jednej** nowej
+bazy; rozróżnia je kolumna `source`, a klucz `(source, salvage_id)` chroni przed kolizją numerów
+lotów między serwisami.
 
 ## Komponenty i przepływ danych
 
 | Komponent | Rola |
 |---|---|
-| **STARA BAZA DANYCH (iaai.com)** | Źródło — dane i zdjęcia pojazdów pobierane z IAAI. |
-| **NOWA BAZA DANYCH** | Nasza docelowa baza. Zawiera dane zaimportowane z IAAI **oraz** dane zbierane na bieżąco („live") przez automatyzację. Połączona z **działami** (nie bezpośrednio z pluginem). |
-| **DZIAŁY** | Centralny węzeł: pobiera dane **live** z IAAI (**AJAX**), czyta/zapisuje **nową bazę** i wymienia **JSON** z pluginem. |
+| **STARE BAZY (iaai.com + copart.com)** | Dwa źródła — dane i zdjęcia pojazdów pobierane z IAAI oraz Copart. Copart wymaga sesji Member (`COPART_COOKIES`). |
+| **NOWA BAZA DANYCH** | Nasza docelowa baza. Zawiera dane z **obu** źródeł (kolumna `source`), zaimportowane i zbierane na bieżąco („live"). Klucz `(source, salvage_id)`. Połączona z **działami** (nie bezpośrednio z pluginem). |
+| **DZIAŁY** | Centralny węzeł: pobiera dane **live** z IAAI i Copart (**AJAX**, osobny przebieg per źródło: `--source iaai\|copart`), czyta/zapisuje **nową bazę** i wymienia **JSON** z pluginem. |
 | **PLUGIN (WordPress)** | Most: łączy się **tylko** z działami (JSON) i ze stroną WP (JSON). **Nie ma dostępu do bazy bezpośrednio.** |
 | **STRONA WORDPRESS** | Front klienta — wyświetla dane pojazdów (JSON z pluginu). |
 

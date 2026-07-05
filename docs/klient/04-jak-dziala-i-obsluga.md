@@ -12,7 +12,7 @@ Po Etapie 3 system działa sam. Auta pojawiają się i znikają automatycznie. T
  „są nowe auta?"                       „pełna synchronizacja"
         │                                      │
         ▼                                      ▼
-[1] Program wchodzi na IAAI i czyta listę aut (zdjęcia + dane)
+[1] Program wchodzi na IAAI (i opcjonalnie Copart) i czyta listę aut (zdjęcia + dane)
         │
         ▼
 [2] Porządkuje dane: przelicza mile→km, czyta markę/model z VIN, odrzuca błędne wpisy
@@ -56,7 +56,12 @@ sudo systemctl start iaai-importer-live.timer      # wznów
 ---
 
 ## Co warto wiedzieć
-- **Zdjęcia** nie zajmują miejsca na Twoim serwerze — ładują się wprost z IAAI.
+- **Dwa źródła:** auta pochodzą z IAAI oraz (opcjonalnie) z Copart. Na liście każde ma
+  **plakietkę źródła** (IAAI / Copart), a odwiedzający mogą **filtrować po źródle**. Oba źródła
+  trafiają do tej samej bazy i na tę samą stronę; rozróżnia je kolumna „źródło".
+- **Copart** wymaga konta Member i sesji logowania (`COPART_COOKIES`) — patrz Etap 3. Bez konta
+  działa samo IAAI.
+- **Zdjęcia** nie zajmują miejsca na Twoim serwerze — ładują się wprost z serwerów IAAI/Copart.
 - **VIN** w trybie anonimowym bywa częściowo zakryty (`...******`) — to normalne; markę, model i
   rok i tak rozpoznajemy z oficjalnej bazy pojazdów (NHTSA).
 - **Sprzedane/zdjęte auta** nie są kasowane — znikają ze strony, ale zostają w bazie (historia).

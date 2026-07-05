@@ -58,6 +58,7 @@ Sama wtyczka działa na zwykłym WordPressie. Automatyzacja pobierania aut wymag
 
 = 0.30.0 =
 * DRUGIE ŹRÓDŁO — Copart. Baza: kolumna `source` (iaai/copart), klucz (source, salvage_id) w pojazdach i zdjęciach (dbDelta 1.1.0). Wtyczka: publikacja/wyszukiwanie/zdjęcia po parze (source, salvage_id), plakietka źródła (IAAI/Copart) i filtr źródła na liście, allowlist zdjęć Copart. Scraper: moduł 01_pobieranie/copart.py (listingi/szczegoly/zdjecia) + run_pipeline `--source iaai|copart` + json_agent zapis `source` i reconcile per źródło. Neutralna nazwa wtyczki „Importer Aukcji (IAAI + Copart)".
+* AUDYT dual-source (naprawy): galeria szczegółów i krytyk zdjęć filtrują teraz po `source` (koniec kolizji zdjęć, gdy ten sam numer lotu występuje w IAAI i Copart); wykrywanie starego PRIMARY KEY po aktualizacji istniejącej bazy (iaai_check_source_pk — log ostrzegawczy zamiast ryzykownego auto-ALTER) z instrukcją migracji; leniwy import `requests` w copart.py (testowalność); testy jednostkowe dwóch źródeł (scraper/tests/test_copart.py). Instrukcje klienta i architektura zaktualizowane o Copart + uwagi (konto Member/COPART_COOKIES, migracja bazy).
 
 = 0.24.0 =
 * Optymalizacja: pierwsze zdjęcia listy jednym zapytaniem (N+1 → 1), wyłączony zbędny cache termów. Debug całości. Instrukcja edycji podstrony i dopasowania do motywu (docs/klient/06). Szczegółowe testy systemu (docs/TESTY-SZCZEGOLOWE.md).

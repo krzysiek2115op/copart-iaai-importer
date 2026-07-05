@@ -1,6 +1,6 @@
 # 🗺️ Jak działa system — diagram
 
-Prosty obraz tego, jak auta trafiają z aukcji IAAI na Twoją stronę. Wszystko dzieje się
+Prosty obraz tego, jak auta trafiają z aukcji IAAI i Copart na Twoją stronę. Wszystko dzieje się
 **automatycznie, całą dobę** — Ty nic nie klikasz na co dzień.
 
 ---
@@ -9,7 +9,7 @@ Prosty obraz tego, jak auta trafiają z aukcji IAAI na Twoją stronę. Wszystko 
 
 ```mermaid
 flowchart TB
-    IAAI["🌐 IAAI.com&#10;aukcje aut — źródło danych"]
+    IAAI["🌐 IAAI + Copart&#10;dwa serwisy aukcyjne — źródła danych"]
 
     subgraph VPS["🖥️ Twój serwer (VPS) — pracuje sam 24/7"]
         SCR["🤖 Program zbierający&#10;pobiera auta + zdjęcia"]
@@ -37,7 +37,7 @@ flowchart TB
 ## Ta sama treść — wersja tekstowa (widoczna wszędzie)
 
 ```
-        🌐  IAAI.com  (aukcje aut — źródło)
+     🌐  IAAI + Copart  (dwa serwisy aukcyjne — źródła)
               │
               │   co 15 min  → sprawdza nowe auta
               │   raz dziennie → pełna synchronizacja (sprząta, co zniknęło)
@@ -75,7 +75,8 @@ flowchart TB
 ```
 
 ## Legenda (proste tłumaczenia)
-- **IAAI.com** — serwis z aukcjami aut (skąd biorą się pojazdy).
+- **IAAI.com / Copart.com** — dwa serwisy z aukcjami aut (skąd biorą się pojazdy). Każde auto
+  ma plakietkę źródła; Copart wymaga konta Member (sesja `COPART_COOKIES`).
 - **VPS** — Twój serwer, na którym całą dobę pracuje program zbierający.
 - **Program zbierający** — „robot", który czyta auta z IAAI i wkłada do bazy.
 - **Baza danych** — magazyn, w którym trzymane są auta i ich dane.

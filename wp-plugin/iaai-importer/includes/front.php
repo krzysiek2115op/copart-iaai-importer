@@ -35,13 +35,15 @@ const IAAI_MAX_IMAGES = 40;
  * Każdy URL przechodzi przez allowlist hosta IAAI (SSRF / podstawione URL-e odrzucone).
  * @return string[] bezpieczne URL-e w kolejności seq.
  */
-function iaai_get_image_urls( int $salvage_id, int $limit = 0 ) : array {
+function iaai_get_image_urls( int $salvage_id, int $limit = 0, string $source = 'iaai' ) : array {
 	global $wpdb;
 	$table = $wpdb->prefix . 'iaai_vehicle_images';
 	$cap   = $limit > 0 ? min( absint( $limit ), IAAI_MAX_IMAGES ) : IAAI_MAX_IMAGES;
+	$src   = in_array( $source, array( 'iaai', 'copart' ), true ) ? $source : 'iaai';
 	$urls  = $wpdb->get_col( $wpdb->prepare(
-		"SELECT url FROM {$table} WHERE salvage_id = %d AND url IS NOT NULL ORDER BY seq ASC LIMIT %d",
+		"SELECT url FROM {$table} WHERE salvage_id = %d AND source = %s AND url IS NOT NULL ORDER BY seq ASC LIMIT %d",
 		$salvage_id,
+		$src,
 		$cap
 	) );
 	$safe = array();
@@ -536,8 +538,9 @@ function iaai_render_single( string $content ) : string {
 	$imgs = '';
 	if ( 'hotlink' === iaai_image_mode() ) {
 		$sid = (int) get_post_meta( $id, 'iaai_salvage_id', true );
+		$src = (string) ( get_post_meta( $id, 'iaai_source', true ) ?: 'iaai' );
 		$n   = 0;
-		foreach ( $sid ? iaai_get_image_urls( $sid ) : array() as $u ) {
+		foreach ( $sid ? iaai_get_image_urls( $sid, 0, $src ) : array() as $u ) {
 			$n++;
 			$alt   = get_the_title() . ' – zdjęcie ' . $n;   // unikalny, opisowy alt (SEO)
 			$imgs .= '<img class="iaai-gallery-img" loading="lazy" src="' . esc_url( $u )
@@ -562,11 +565,12 @@ function iaai_krytyk_render( int $salvage_id, int $post_id ) : array {
 	global $wpdb;
 	$issues = array();
 	$table  = $wpdb->prefix . 'iaai_vehicle_images';
+	$source = (string) ( get_post_meta( $post_id, 'iaai_source', true ) ?: 'iaai' );
 	$db     = (int) $wpdb->get_var( $wpdb->prepare(
-		"SELECT COUNT(*) FROM {$table} WHERE salvage_id = %d", $salvage_id ) );
+		"SELECT COUNT(*) FROM {$table} WHERE salvage_id = %d AND source = %s", $salvage_id, $source ) );
 
 	if ( 'hotlink' === iaai_image_mode() ) {
-		if ( $db > 0 && count( iaai_get_image_urls( $salvage_id ) ) < $db ) {
+		if ( $db > 0 && count( iaai_get_image_urls( $salvage_id, 0, $source ) ) < $db ) {
 			$issues[] = "render(media/hotlink): brak URL-i do hotlinka dla części z {$db} zdjęć";
 		}
 		return $issues;

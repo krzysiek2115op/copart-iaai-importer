@@ -30,7 +30,10 @@ from __future__ import annotations
 import argparse, json, os, sys, time
 from pathlib import Path
 
-import requests
+# `requests` importujemy LENIWIE w _session() (jedyne miejsce sieciowe), żeby czyste funkcje
+# mapujące (_map_detail) dało się testować jednostkowo bez tej zależności. Adnotacje typów są
+# odroczone przez `from __future__ import annotations`, więc `-> requests.Session` nie wymaga
+# importu w czasie wczytywania modułu.
 
 BASE = "https://www.copart.com"
 UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -38,6 +41,7 @@ UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
 
 
 def _session() -> requests.Session:
+    import requests            # leniwy import ciężkiej zależności (patrz nagłówek)
     s = requests.Session()
     s.headers.update({
         "User-Agent": UA,

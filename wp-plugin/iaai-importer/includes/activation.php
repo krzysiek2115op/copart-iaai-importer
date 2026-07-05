@@ -104,6 +104,12 @@ function iaai_schema_statements() : array {
  *
  * UWAGA: `status` celowo varchar(10) (nie ENUM) — dbDelta nie radzi sobie z ENUM
  * (każdorazowo próbowałoby ALTER). Wartości active/sold/removed pilnuje kod.
+ *
+ * UWAGA (dual-source, wersja 1.1.0): dbDelta doda brakującą kolumnę `source` i klucze
+ * pomocnicze, ale NIE przebudowuje istniejącego PRIMARY KEY. Świeża instalacja dostaje
+ * PK (source, salvage_id) od razu; baza założona wcześniej (tylko IAAI) zachowa stary PK
+ * (salvage_id) i wymaga jednorazowej MIGRACJI ręcznej — wykrywa to iaai_check_source_pk()
+ * i loguje ostrzeżenie (patrz docs/klient/05 „Aktualizuję istniejącą instalację").
  */
 function iaai_activate() : void {
 	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -268,4 +274,39 @@ function iaai_maybe_upgrade_db() : void {
 	if ( get_option( 'iaai_db_version' ) !== IAAI_DB_VERSION ) {
 		iaai_activate();
 	}
+}
+
+/**
+ * Audyt dual-source: sprawdza, czy PRIMARY KEY tabeli pojazdów zawiera kolumnę `source`.
+ * dbDelta NIE przebudowuje istniejącego PRIMARY KEY, więc bazy założone przed wersją
+ * dwuźródłową (1.1.0) mają stary klucz (sam salvage_id) i wymagają JEDNORAZOWEJ migracji.
+ *
+ * Świadomie NIE robimy automatycznego ALTER na produkcyjnej bazie klienta (ryzyko locka
+ * i downtime na dużej tabeli) — tylko wykrywamy i logujemy technicznie (bez komunikatu dla
+ * odwiedzającego). Migrację uruchamia administrator wg docs/klient/05. Sprawdzenie jest
+ * jednorazowe per wersja schematu (opcja iaai_pk_checked).
+ */
+add_action( 'admin_init', 'iaai_check_source_pk' );
+function iaai_check_source_pk() : void {
+	if ( get_option( 'iaai_pk_checked' ) === IAAI_DB_VERSION ) {
+		return;
+	}
+	global $wpdb;
+	$veh   = $wpdb->prefix . 'iaai_vehicles';
+	$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $veh ) );
+	if ( $found === $veh ) {
+		$pk   = $wpdb->get_results( "SHOW KEYS FROM {$veh} WHERE Key_name = 'PRIMARY'" );
+		$cols = array();
+		foreach ( (array) $pk as $k ) {
+			$cols[] = $k->Column_name;
+		}
+		if ( $pk && ! in_array( 'source', $cols, true ) && function_exists( 'iaai_log' ) ) {
+			iaai_log(
+				'schema: tabela ' . $veh . ' ma stary PRIMARY KEY bez kolumny source — '
+				. 'wymagana jednorazowa migracja dual-source (patrz docs/klient/05).',
+				'warn'
+			);
+		}
+	}
+	update_option( 'iaai_pk_checked', IAAI_DB_VERSION );
 }

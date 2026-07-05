@@ -1,15 +1,21 @@
 # Szczegółowe testy systemu — plugin + automatyzacja
 
-Data: 2026-07-03 · wtyczka **v0.24.0** · zakres: cały system (WordPress plugin + scraper/ETL + wdrożenie).
-Legenda: ✅ zweryfikowane · ⏳ wymaga środowiska docelowego (VPS/MySQL/żywe IAAI) · 🔒 test bezpieczeństwa.
+Data: 2026-07-06 · wtyczka **v0.30.0** (dwa źródła: IAAI + Copart) · zakres: cały system
+(WordPress plugin + scraper/ETL + wdrożenie).
+Legenda: ✅ zweryfikowane · ⏳ wymaga środowiska docelowego (VPS/MySQL/żywe IAAI·Copart) · 🔒 test bezpieczeństwa.
+
+> 🆕 **Sekcja G (na dole)** zbiera testy i AUDYT dodania drugiego źródła (Copart). Znaleziska
+> audytu z tej rundy zostały naprawione w kodzie — patrz G.
 
 ---
 
 ## A. Testy jednostkowe (Python, bez sieci/bazy)
 Komenda: `python -m unittest discover -s scraper/tests`
-- Wynik (ta sesja): **19 testów — 12 przeszło, 7 pominiętych** (pominięte = brak zależności w dev; na VPS przejdą). ✅
+- Wynik (ta sesja): **27 testów — 16 przeszło, 11 pominiętych** (pominięte = brak zależności w dev:
+  pymysql/requests/playwright; na VPS przejdą). ✅
 - Pokrycie: `jednostki` (parsowanie przebiegu, sale_date, key_present), `vin` (maska/status),
-  `match` (deduplikacja), `common` (prefiks tabel, hash), `pokrycie` (segmenty, krytyk kompletności).
+  `match` (deduplikacja), `common` (prefiks tabel, hash), `pokrycie` (segmenty, krytyk kompletności),
+  **`copart` (mapowanie pól + source), `json_agent` (kolumna source w upsert/upsert_image)**.
 
 | # | Test | Oczekiwane | Status |
 |---|------|-----------|--------|
@@ -18,6 +24,10 @@ Komenda: `python -m unittest discover -s scraper/tests`
 | A3 | VIN zamaskowany | `vin_status=masked`, nie grupowany w dedup | ✅ |
 | A4 | `tbl()` prefiks tabel | dokłada `IAAI_DB_TABLE_PREFIX` | ✅ |
 | A5 | krytyk pokrycia | wykrywa segment URWANY (got < ResultCount) | ✅ |
+| A6 | `copart._map_detail` pełny rekord | klucze Copart→wspólny kształt, `source='copart'`, ln/lcy/orr→int | ✅ |
+| A7 | `copart._map_detail` pusty/niepoprawny | brak wyjątku; `salvage_id=None`, `key='No'`, `source='copart'` | ✅ |
+| A8 | `json_agent.ALL_COLS/_IMG_COLS` | zawierają `source` (poz. 1, zaraz po salvage_id) | ⏳ (pymysql) |
+| A9 | `upsert`/`upsert_image` z atrapą kursora | przekazują `source`; `setdefault` nie nadpisuje jawnego | ⏳ (pymysql) |
 
 ## B. Testy wtyczki (runtime WordPress)
 Środowisko testu tej sesji: WordPress (Studio/SQLite), motyw klasyczny „kredyt-kompas" + blokowy „Twenty Twenty-Five".
@@ -75,7 +85,7 @@ Pełny raport: [docs/SECURITY-AUDIT.md](SECURITY-AUDIT.md) (ocena 9/10). Sweep w
 | # | Kontrola | Wynik |
 |---|----------|-------|
 | E1 | `require` → pliki istnieją | ✅ 5/5 |
-| E2 | Wersje spójne (nagłówek/stała/readme) | ✅ 0.24.0 |
+| E2 | Wersje spójne (nagłówek/stała/readme) | ✅ 0.30.0 |
 | E3 | Python kompiluje się | ✅ wszystkie |
 | E4 | `vehicle.schema.json` poprawny | ✅ |
 | E5 | Plugin ZIP | ✅ 11 plików, 0 śmieci, komplet includes+assets+readme |
@@ -90,6 +100,39 @@ Pełny raport: [docs/SECURITY-AUDIT.md](SECURITY-AUDIT.md) (ocena 9/10). Sweep w
 | F4 | Lazy-load zdjęć (`loading="lazy"`), limit zdjęć/kart | szybsze ładowanie | ✅ |
 | F5 | CSS/JS ładowane tylko tam, gdzie potrzebne | brak narzutu na resztę witryny | ✅ |
 
+## G. Dwa źródła — Copart (audyt + testy dual-source) 🆕
+Zakres: kolumna `source` (iaai/copart), klucz `(source, salvage_id)`, plakietka + filtr źródła,
+osobny przebieg scrapera per źródło (`--source`), sesja Member Copart (`COPART_COOKIES`).
+
+### G.1 Znaleziska AUDYTU (naprawione w tej rundzie)
+| # | Waga | Znalezisko | Skutek | Naprawa |
+|---|------|-----------|--------|---------|
+| G-A1 | 🔴 błąd | `iaai_get_image_urls()` (galeria szczegółów) odpytywała po samym `salvage_id` | przy tym samym numerze lotu w IAAI i Copart galeria mieszała zdjęcia z obu źródeł | dodany parametr `$source` + `AND source = %s`; wywołanie pobiera źródło z meta `iaai_source` |
+| G-A2 | 🔴 błąd | `iaai_krytyk_render()` liczył `COUNT(*)` zdjęć po samym `salvage_id` | fałszywy alarm/licznik przy kolizji numerów | `COUNT(*) ... AND source = %s` + `get_image_urls(..., $source)` |
+| G-A3 | 🟡 migracja | dbDelta **nie przebudowuje** istniejącego PRIMARY KEY | świeża instalacja OK; stara baza IAAI zostaje na kluczu `(salvage_id)` — dwa źródła z tym samym lotem by kolidowały | dodane wykrywanie `iaai_check_source_pk()` (log ostrzegawczy, bez ryzykownego auto-ALTER) + instrukcja migracji w docs/klient/05 |
+
+### G.2 Zweryfikowane OK (spójność `source`)
+| # | Element | Oczekiwane | Status |
+|---|---------|-----------|--------|
+| G1 | Schemat 1.1.0 | PK `(source,salvage_id)`; obrazy UNIQUE `(source,image_key)`, KEY `(source,salvage_id,seq)` | ✅ (świeża inst.) |
+| G2 | Publikacja | `iaai_publish_vehicle/find_post_by_salvage/publish_all/unpublish_inactive` operują na parze (source, salvage_id) | ✅ (przegląd) |
+| G3 | Front: miniatury listy | `iaai_first_images_map` łączy po `(source = %s AND salvage_id = %d)` (OR-grupy), klucz `source|salvage_id` | ✅ |
+| G4 | Front: plakietka + filtr | badge IAAI/Copart (`esc_attr/esc_html`); filtr „Źródło" tylko gdy >1 źródło | ✅ |
+| G5 | Import zdjęć (download) | `iaai_import_images` bierze `source` z meta i filtruje `AND source = %s` | ✅ |
+| G6 | Sanityzacja | `source` z whitelisty `{iaai,copart}` (inaczej `iaai`) — brak SQLi/śmieci | ✅ |
+| G7 | Anty-SSRF zdjęć | allowlista hostów obejmuje `copart.com` + `*.copart.com` (i IAAI) | ✅ |
+| G8 | Scraper copart | `_map_detail` → `source='copart'`; zdjęcia `image_key='copart-{lot}-{i}'`, `seq` | ✅ (A6–A7) |
+| G9 | json_agent | `source` w `upsert`/`upsert_image`; reconcile ograniczony `AND v.source = %s` (per źródło) | ✅ (przegląd; A8–A9 na VPS) |
+| G10 | Copart live (żywe dane) | pełne dane/zdjęcia po zalogowaniu (`COPART_COOKIES`); anty-bot Cloudflare | ⏳ (walidacja na VPS, jak IAAI) |
+
+### G.3 Testy wtyczki dual-source (runtime WP — do potwierdzenia na danych 2 źródeł)
+| # | Test | Oczekiwane | Status |
+|---|------|-----------|--------|
+| G-B1 | Dwa źródła na liście | auta IAAI i Copart obok siebie, każde z plakietką źródła | ⏳ (demo statyczne ✅: 9 IAAI + 3 Copart) |
+| G-B2 | Filtr źródła | wybór „Copart" zawęża listę do Copart; „IAAI" do IAAI | ⏳ (demo ✅) |
+| G-B3 | Galeria per źródło | ten sam numer lotu w obu źródłach → galeria pokazuje TYLKO zdjęcia właściwego źródła (regresja G-A1) | ⏳ (MySQL) |
+| G-B4 | Kolizja numeru lotu | rekord IAAI i Copart z identycznym `salvage_id` współistnieją (PK na parze) | ⏳ (MySQL, świeża inst.) |
+
 ---
 
 ## Jak samodzielnie powtórzyć testy wtyczki
@@ -98,4 +141,6 @@ Instrukcja krok po kroku z gotowym seedem: [dev-test/INSTRUKCJA-TEST-LOCAL.md](.
 
 ## Pozostałe do potwierdzenia na środowisku docelowym (⏳)
 Runtime na prawdziwym MySQL/WordPressie i żywym IAAI: C1–C4, C6–C8, C10, B16, B18.
+Dual-source (Copart): A8–A9 (pymysql), G-B1–G-B4, G10 (żywy Copart — wymaga konta Member i sesji
+`COPART_COOKIES`; anty-bot Cloudflare — walidacja na VPS, jak przy IAAI).
 Procedura wdrożenia i uruchomienia: [deploy/README.md](../deploy/README.md) oraz [docs/klient/](klient/).

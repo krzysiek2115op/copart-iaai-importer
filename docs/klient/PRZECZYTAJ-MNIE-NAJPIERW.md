@@ -1,12 +1,13 @@
 ========================================================================
-  📘  INSTRUKCJA OD A DO Z  —  IMPORTER AUT Z IAAI DO WORDPRESS
+  📘  INSTRUKCJA OD A DO Z  —  IMPORTER AUT Z IAAI + COPART DO WORDPRESS
   Przeczytaj mnie NAJPIERW.  Pisane prostym językiem — nie musisz być
   informatykiem. Rób kroki po kolei, od 1 w dół.
 ========================================================================
 
 Witaj! Trzymasz komplet do uruchomienia systemu, który **sam pobiera samochody
-z serwisu aukcyjnego iaai.com i pokazuje je na Twojej stronie WordPress** — przez
-całą dobę, bez Twojego udziału.
+z dwóch serwisów aukcyjnych — iaai.com oraz copart.com — i pokazuje je na Twojej
+stronie WordPress** — przez całą dobę, bez Twojego udziału. Każde auto ma plakietkę
+źródła (IAAI / Copart), a odwiedzający mogą filtrować listę po źródle.
 
 Ta instrukcja przeprowadzi Cię przez wszystko krok po kroku: co gdzie kliknąć,
 jak wgrać wtyczkę, jak sprawdzić, że działa, oraz co zrobić, gdy coś pójdzie nie tak.
@@ -21,13 +22,20 @@ CZĘŚĆ I — CO TO JEST I JAK DZIAŁA (2 minuty czytania)
 
 W skrócie, cały system to trzy elementy:
 
-   IAAI.com  ──►  PROGRAM ZBIERAJĄCY  ──►  BAZA DANYCH  ──►  TWOJA STRONA
-   (źródło aut)     (działa sam 24/7)        (auta)         (klienci widzą auta)
+   IAAI + Copart ──►  PROGRAM ZBIERAJĄCY  ──►  BAZA DANYCH  ──►  TWOJA STRONA
+   (dwa źródła aut)     (działa sam 24/7)        (auta)         (klienci widzą auta)
 
-1. **Program zbierający** („scraper") pilnuje serwisu IAAI i pobiera nowe auta
+1. **Program zbierający** („scraper") pilnuje serwisów IAAI i Copart i pobiera nowe auta
    (zdjęcia + dane: rok, marka, model, przebieg, uszkodzenia itd.).
 2. **Baza danych** przechowuje te auta (to ta sama baza, na której stoi Twój WordPress).
-3. **Wtyczka WordPress** bierze auta z bazy i **pokazuje je na stronie**.
+   Każdy rekord ma **źródło** (IAAI / Copart), więc oba serwisy współistnieją w jednej bazie.
+3. **Wtyczka WordPress** bierze auta z bazy i **pokazuje je na stronie** — z plakietką źródła
+   i filtrem po źródle.
+
+> ℹ️ **Copart uruchamiasz osobno.** IAAI działa od razu. Copart mocniej broni się przed
+> automatami (Cloudflare) i pełne dane/zdjęcia zwykle wymagają **konta Member** (sesja przez
+> `COPART_COOKIES`) — szczegóły w Części III i w 03-uruchom-automatyzacje.md. Bez konta Copart
+> system działa na samym IAAI.
 
 Gdy na aukcji pojawia się nowe auto → trafia na stronę. Gdy auto znika z aukcji →
 znika też u Ciebie (wpis zostaje ukryty, historia się nie kasuje). **Wszystko dzieje
@@ -37,7 +45,7 @@ Co dostajesz w tej paczce (ZIP):
    • iaai-importer.zip         → WTYCZKA do WordPress (gotowa — wgrywasz w panelu)
    • 0-Instrukcja-klienta.pdf  → pełna instrukcja A–Z w jednym ładnym pliku
    • Instrukcje-PDF/           → każdy etap instrukcji jako osobny PDF
-   • scraper/                  → PROGRAM ZBIERAJĄCY (pobiera auta z IAAI, na VPS)
+   • scraper/                  → PROGRAM ZBIERAJĄCY (pobiera auta z IAAI i Copart, na VPS)
    • deploy/                   → INSTALATOR automatyzacji (install.sh) + usługi
    • db/                       → schemat bazy danych (referencja)
 
@@ -170,8 +178,13 @@ Instalator sam: zainstaluje potrzebne programy (Python, przeglądarkę do zbiera
 połączy się z bazą Twojego WordPressa (odczyta dane z `wp-config.php`), włączy
 usługę, która co kilkanaście minut sprawdza IAAI i publikuje nowe auta.
 
+Drugie źródło — COPART — włączasz osobno (wymaga konta Member): uruchamiasz program
+z `--source copart` i ciasteczkami sesji `COPART_COOKIES`. Dane z obu źródeł trafiają do
+tej samej bazy i na tę samą stronę (rozróżnia je kolumna „źródło"). Bez konta Copart
+zostaje samo IAAI — to w porządku.
+
 Szczegółowy opis krok po kroku (co wpisać, co powinno się wyświetlić) jest w:
-   docs/klient/03-uruchom-automatyzacje.md
+   docs/klient/03-uruchom-automatyzacje.md  (sekcja „Drugie źródło — Copart")
 
 
 KROK 10 — Sprawdź, że auta się pojawiają
@@ -243,7 +256,19 @@ O: Nie. Domyślnie zdjęcia są pokazywane bezpośrednio z serwerów IAAI (0 mie
    na dysku). Jest też opcjonalny tryb pobierania zdjęć do WordPressa, jeśli wolisz.
 
 P: Skąd biorą się dane aut?
-O: Z publicznie widocznych ofert na iaai.com. System kopiuje je 1:1 do Twojej bazy.
+O: Z dwóch serwisów aukcyjnych — iaai.com oraz copart.com. System kopiuje oferty 1:1 do Twojej
+   bazy i oznacza źródło (IAAI / Copart).
+
+P: Czym różni się Copart od IAAI w tym systemie?
+O: Działa tak samo (dane, zdjęcia, plakietka, filtr), ale Copart mocniej broni się przed
+   automatami (Cloudflare), a pełne dane/zdjęcia zwykle wymagają konta Member — dlatego Copart
+   uruchamiasz z sesją logowania (COPART_COOKIES). Bez konta zostaje samo IAAI. Realne, ciągłe
+   pobieranie z Copart potwierdza się na Twoim serwerze VPS (tak jak przy IAAI).
+
+P: Mam już działającą instalację z samym IAAI — aktualizacja coś zepsuje?
+O: Dane zostają. Doszła jednak kolumna „źródło" i zmienił się klucz główny tabel. Świeża
+   instalacja/demo robi to sama; istniejącą bazę IAAI trzeba jednorazowo zmigrować — napisz do
+   nas przed aktualizacją, podeślemy gotowe polecenie. Starych aut to nie usuwa.
 
 P: Czy auta same znikają, gdy schodzą z aukcji?
 O: Tak. Wpis jest wtedy ukrywany (przechodzi w „szkic") — nie kasujemy historii.
@@ -280,6 +305,10 @@ CZĘŚĆ VI — SŁOWNICZEK (proste tłumaczenia)
 ────────────────────────────────────────────────────────────────────────
 
 • Wtyczka (plugin) — mały dodatek do WordPressa, który dokłada nową funkcję.
+• Źródło (IAAI / Copart) — z którego serwisu pochodzi dane auto; widać je jako plakietkę na
+  liście, można też po nim filtrować.
+• Konto Member (Copart) / ciasteczka sesji — dane zalogowania do Copart (COPART_COOKIES),
+  dzięki którym program pobiera pełne dane i zdjęcia; z czasem wygasają.
 • Shortcode („krótki kod") — gotowy „klocek" w [nawiasach], który wstawiasz na
   stronę, a on sam coś wyświetla (u nas: siatkę aut).
 • CPT / „Pojazdy" — specjalny typ wpisów WordPressa; tu trafiają auta.
