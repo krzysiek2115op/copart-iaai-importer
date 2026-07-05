@@ -18,31 +18,33 @@ from common import connect, DATA_COLS, to_db_row, compute_hash, tbl
 _T_VEH = tbl("iaai_vehicles")
 _T_IMG = tbl("iaai_vehicle_images")
 
-ALL_COLS = ["salvage_id"] + DATA_COLS + ["raw_hash", "status"]
+# `source` (iaai/copart) jest częścią klucza — wstawiany, ale NIE aktualizowany.
+ALL_COLS = ["salvage_id", "source"] + DATA_COLS + ["raw_hash", "status"]
 UPD_COLS = DATA_COLS + ["raw_hash", "status"]
 _INSERT = (f"INSERT INTO {_T_VEH} ({','.join('`'+c+'`' for c in ALL_COLS)}) "
            f"VALUES ({','.join(['%s'] * len(ALL_COLS))}) "
            f"ON DUPLICATE KEY UPDATE {','.join('`'+c+'`=%s' for c in UPD_COLS)}")
 
 
-def upsert(rec: dict, cur) -> int:
+def upsert(rec: dict, cur, source: str = "iaai") -> int:
     row = to_db_row(rec)
     h = rec.get("raw_hash") or compute_hash(rec)
-    ins = [row["salvage_id"]] + [row[c] for c in DATA_COLS] + [h, "active"]
+    ins = [row["salvage_id"], source] + [row[c] for c in DATA_COLS] + [h, "active"]
     upd = [row[c] for c in DATA_COLS] + [h, "active"]
     cur.execute(_INSERT, ins + upd)
     return cur.rowcount      # 1=insert, 2=update, 0=bez zmian
 
 
-# ---- H1: upsert ZDJĘĆ do iaai_vehicle_images (klucz: image_key UNIQUE) -----
-_IMG_COLS = ["salvage_id", "image_key", "seq", "width", "height", "url"]
+# ---- H1: upsert ZDJĘĆ do iaai_vehicle_images (klucz: source+image_key UNIQUE) -----
+_IMG_COLS = ["salvage_id", "source", "image_key", "seq", "width", "height", "url"]
 _IMG_UPD = ["seq", "width", "height", "url"]
 _IMG_INSERT = (f"INSERT INTO {_T_IMG} ({','.join('`'+c+'`' for c in _IMG_COLS)}) "
                f"VALUES ({','.join(['%s'] * len(_IMG_COLS))}) "
                f"ON DUPLICATE KEY UPDATE {','.join('`'+c+'`=%s' for c in _IMG_UPD)}")
 
 
-def upsert_image(rec: dict, cur) -> int:
+def upsert_image(rec: dict, cur, source: str = "iaai") -> int:
+    rec.setdefault("source", source)
     ins = [rec.get(c) for c in _IMG_COLS]
     upd = [rec.get(c) for c in _IMG_UPD]
     cur.execute(_IMG_INSERT, ins + upd)
@@ -50,11 +52,11 @@ def upsert_image(rec: dict, cur) -> int:
 
 
 # ---- 🔴 KRYTYK: poprawność-json -------------------------------------------
-def krytyk_poprawnosc_json(rec: dict, cur) -> list[str]:
+def krytyk_poprawnosc_json(rec: dict, cur, source: str = "iaai") -> list[str]:
     """Odczyt zwrotny: czy zapis odpowiada intencji (raw_hash + kluczowe pola)."""
     issues = []
-    cur.execute(f"SELECT raw_hash, make, model, odometer FROM {_T_VEH} WHERE salvage_id=%s",
-                (rec.get("salvage_id"),))
+    cur.execute(f"SELECT raw_hash, make, model, odometer FROM {_T_VEH} WHERE salvage_id=%s AND source=%s",
+                (rec.get("salvage_id"), source))
     row = cur.fetchone()
     if row is None:
         return [f"{rec.get('salvage_id')}: brak wiersza po zapisie"]
@@ -75,7 +77,10 @@ def main():
     ap.add_argument("--reconcile", action="store_true",
                     help="M3: po PEŁNYM feedzie oznacz brakujące aktywne loty jako 'removed' "
                          "(używać TYLKO przy full backfill — nie przy live/incremental!)")
+    ap.add_argument("--source", choices=["iaai", "copart"], default="iaai",
+                    help="źródło danych — zapisywane do kolumny `source`; reconcile ograniczony do tego źródła")
     args = ap.parse_args()
+    source = args.source
 
     records = [json.loads(l) for l in args.infile.read_text().splitlines() if l.strip()]
     conn = connect()
@@ -90,12 +95,12 @@ def main():
             if rec.get("_sync_status") == "unchanged" and not args.all:
                 skipped += 1
                 continue
-            n = upsert(rec, cur)
+            n = upsert(rec, cur, source)
             if n == 1:
                 inserted += 1
             elif n == 2:
                 updated += 1
-            all_issues += krytyk_poprawnosc_json(rec, cur)
+            all_issues += krytyk_poprawnosc_json(rec, cur, source)
 
         # H1: zdjęcia -> iaai_vehicle_images (po pojazdach, bo FK)
         img_ins = img_fail = 0
@@ -104,7 +109,7 @@ def main():
                 if not line.strip():
                     continue
                 try:
-                    upsert_image(json.loads(line), cur)
+                    upsert_image(json.loads(line), cur, source)
                     img_ins += 1
                 except Exception:
                     img_fail += 1      # np. brak pojazdu (FK) — pojazd odrzucony/niezapisany
@@ -121,7 +126,8 @@ def main():
                                 [(i,) for i in current])
                 cur.execute(
                     f"UPDATE {_T_VEH} v LEFT JOIN _iaai_seen s ON v.salvage_id = s.salvage_id "
-                    "SET v.status = 'removed' WHERE v.status = 'active' AND s.salvage_id IS NULL")
+                    "SET v.status = 'removed' WHERE v.status = 'active' AND v.source = %s AND s.salvage_id IS NULL",
+                    (source,))
                 removed = cur.rowcount
                 cur.execute("DROP TEMPORARY TABLE _iaai_seen")
     conn.close()

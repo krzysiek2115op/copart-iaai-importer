@@ -131,6 +131,10 @@
 /* Delikatny akcent semantyczny — na bazie akcentu motywu, nie sztywnej barwy. */
 .iaai-badge--rd  { color: color-mix(in srgb, var(--iaai-accent) 80%, currentColor); border-color: currentColor; }
 .iaai-badge--key { color: inherit; }
+/* Plakietka źródła (IAAI / Copart) — wyróżniona, wypełniona. */
+.iaai-badge--src    { color: #fff; border: 0; }
+.iaai-badge--iaai   { background: #0C8D62; }
+.iaai-badge--copart { background: #1e5fb0; }
 
 .iaai-empty { opacity: .7; }
 

@@ -52,6 +52,10 @@ function iaai_sanitize_vehicle( array $v ) : array {
 		$s             = sanitize_key( $v['status'] );
 		$out['status'] = in_array( $s, $allowed, true ) ? $s : 'active';
 	}
+	if ( isset( $v['source'] ) ) {
+		$src           = sanitize_key( (string) $v['source'] );
+		$out['source'] = in_array( $src, array( 'iaai', 'copart' ), true ) ? $src : 'iaai';
+	}
 	return $out;
 }
 
@@ -83,7 +87,7 @@ function iaai_allowed_image_host( string $url ) : bool {
 		return false;
 	}
 	$host    = strtolower( $host );
-	$allowed = apply_filters( 'iaai_allowed_image_hosts', array( 'iaai.com', 'vis.iaai.com' ) );
+	$allowed = apply_filters( 'iaai_allowed_image_hosts', array( 'iaai.com', 'vis.iaai.com', 'copart.com', 'cs.copart.com' ) );
 	foreach ( (array) $allowed as $a ) {
 		$a = strtolower( (string) $a );
 		if ( $host === $a || ( strlen( $host ) > strlen( $a ) && substr( $host, - ( strlen( $a ) + 1 ) ) === '.' . $a ) ) {

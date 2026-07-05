@@ -15,7 +15,7 @@ const IAAI_CPT = 'pojazd';
 
 /** Pola pojazdu -> klucze meta (prefiks iaai_). F4: dodano item_id (Item #). */
 function iaai_meta_keys() : array {
-	return array( 'salvage_id', 'item_id', 'stock_number', 'vin', 'year', 'make', 'model', 'series',
+	return array( 'salvage_id', 'source', 'item_id', 'stock_number', 'vin', 'year', 'make', 'model', 'series',
 		'vehicle_type', 'body_style', 'engine', 'cylinders', 'fuel_type', 'transmission',
 		'drive_line', 'color', 'odometer', 'odometer_uom', 'odometer_brand', 'primary_damage',
 		'secondary_damage', 'loss', 'title', 'run_and_drive', 'key_available',
@@ -58,14 +58,17 @@ function iaai_register_pojazd_meta() : void {
 }
 
 /* ---------- publikacja jednego pojazdu z bazy do CPT --------------------- */
-function iaai_find_post_by_salvage( int $salvage_id ) : int {
+function iaai_find_post_by_salvage( int $salvage_id, string $source = 'iaai' ) : int {
 	$q = get_posts( array(
 		'post_type'   => IAAI_CPT,
-		'meta_key'    => 'iaai_salvage_id',
-		'meta_value'  => $salvage_id,
 		'fields'      => 'ids',
 		'numberposts' => 1,
 		'post_status' => 'any',
+		'meta_query'  => array(
+			'relation' => 'AND',
+			array( 'key' => 'iaai_salvage_id', 'value' => $salvage_id ),
+			array( 'key' => 'iaai_source', 'value' => $source ),
+		),
 	) );
 	return $q ? (int) $q[0] : 0;
 }
@@ -74,17 +77,17 @@ function iaai_find_post_by_salvage( int $salvage_id ) : int {
  * Tworzy lub aktualizuje wpis CPT „pojazd" na podstawie rekordu z bazy.
  * @return int post_id albo 0 przy braku rekordu.
  */
-function iaai_publish_vehicle( int $salvage_id ) : int {
+function iaai_publish_vehicle( int $salvage_id, string $source = 'iaai' ) : int {
 	global $wpdb;
 	$table = $wpdb->prefix . 'iaai_vehicles';
 	$row   = $wpdb->get_row(
-		$wpdb->prepare( "SELECT * FROM {$table} WHERE salvage_id = %d", $salvage_id ),
+		$wpdb->prepare( "SELECT * FROM {$table} WHERE salvage_id = %d AND source = %s", $salvage_id, $source ),
 		ARRAY_A
 	);
 	if ( ! $row ) {
 		return 0;
 	}
-	$row   = iaai_sanitize_vehicle( $row );                       // dział 6
+	$row   = iaai_sanitize_vehicle( $row );                       // dział 6 (zachowuje source)
 	$title = trim( sprintf( '%s %s %s', $row['year'] ?? '', $row['make'] ?? '', $row['model'] ?? '' ) );
 
 	$postarr = array(
@@ -92,7 +95,7 @@ function iaai_publish_vehicle( int $salvage_id ) : int {
 		'post_status' => 'publish',
 		'post_title'  => $title !== '' ? $title : ( 'Pojazd ' . $salvage_id ),
 	);
-	$existing = iaai_find_post_by_salvage( $salvage_id );
+	$existing = iaai_find_post_by_salvage( $salvage_id, $source );
 	if ( $existing ) {
 		$postarr['ID'] = $existing;
 		$post_id       = wp_update_post( $postarr );
@@ -136,19 +139,19 @@ function iaai_publish_all_active( int $batch = 200 ) : int {
 	wp_suspend_cache_addition( true );           // ogranicz narastanie cache (pamięć)
 	try {
 		do {
-			$ids = $wpdb->get_col( $wpdb->prepare(
-				"SELECT salvage_id FROM {$table} WHERE status = %s ORDER BY salvage_id ASC LIMIT %d OFFSET %d",
+			$rows = $wpdb->get_results( $wpdb->prepare(
+				"SELECT salvage_id, source FROM {$table} WHERE status = %s ORDER BY source, salvage_id ASC LIMIT %d OFFSET %d",
 				'active',
 				$batch,
 				$offset
-			) );
-			foreach ( $ids as $sid ) {
-				if ( iaai_publish_vehicle( (int) $sid ) ) {
+			), ARRAY_A );
+			foreach ( $rows as $r ) {
+				if ( iaai_publish_vehicle( (int) $r['salvage_id'], (string) $r['source'] ) ) {
 					$n++;
 				}
 			}
 			$offset += $batch;
-		} while ( count( $ids ) === $batch );
+		} while ( count( $rows ) === $batch );
 
 		iaai_unpublish_inactive();               // F1: zdejmij ze strony auta, których już nie ma
 	} catch ( \Throwable $e ) {
@@ -185,7 +188,7 @@ function iaai_unpublish_inactive( int $batch = 200 ) : int {
 	do {
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT salvage_id, status FROM {$table} WHERE status <> %s ORDER BY salvage_id ASC LIMIT %d OFFSET %d",
+				"SELECT salvage_id, source, status FROM {$table} WHERE status <> %s ORDER BY source, salvage_id ASC LIMIT %d OFFSET %d",
 				'active',
 				$batch,
 				$offset
@@ -193,7 +196,7 @@ function iaai_unpublish_inactive( int $batch = 200 ) : int {
 			ARRAY_A
 		);
 		foreach ( $rows as $r ) {
-			$post_id = iaai_find_post_by_salvage( (int) $r['salvage_id'] );
+			$post_id = iaai_find_post_by_salvage( (int) $r['salvage_id'], (string) $r['source'] );
 			if ( ! $post_id ) {
 				continue;
 			}

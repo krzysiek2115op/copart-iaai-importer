@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Wersja schematu — podbij przy zmianie struktury tabel (wymusza ponowne dbDelta). */
-const IAAI_DB_VERSION = '1.0.0';
+const IAAI_DB_VERSION = '1.1.0';
 
 /**
  * Buduje instrukcje CREATE TABLE (dbDelta-friendly) z prefiksem WP i collation.
@@ -34,6 +34,7 @@ function iaai_schema_statements() : array {
 
 	$sql_veh = "CREATE TABLE {$veh} (
   salvage_id bigint(20) unsigned NOT NULL,
+  source varchar(10) NOT NULL DEFAULT 'iaai',
   stock_number varchar(40) DEFAULT NULL,
   item_id bigint(20) unsigned DEFAULT NULL,
   vin varchar(20) DEFAULT NULL,
@@ -70,8 +71,9 @@ function iaai_schema_statements() : array {
   status varchar(10) NOT NULL DEFAULT 'active',
   captured_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY  (salvage_id),
+  PRIMARY KEY  (source,salvage_id),
   KEY idx_vin (vin),
+  KEY idx_source (source),
   KEY idx_make_model (make,model),
   KEY idx_sale_date (sale_date),
   KEY idx_status (status),
@@ -81,6 +83,7 @@ function iaai_schema_statements() : array {
 	$sql_img = "CREATE TABLE {$img} (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   salvage_id bigint(20) unsigned NOT NULL,
+  source varchar(10) NOT NULL DEFAULT 'iaai',
   image_key varchar(120) NOT NULL,
   seq smallint(5) unsigned NOT NULL,
   width smallint(5) unsigned DEFAULT NULL,
@@ -88,8 +91,8 @@ function iaai_schema_statements() : array {
   url varchar(300) DEFAULT NULL,
   captured_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY  (id),
-  UNIQUE KEY uq_image_key (image_key),
-  KEY idx_img_vehicle (salvage_id,seq)
+  UNIQUE KEY uq_source_image (source,image_key),
+  KEY idx_img_vehicle (source,salvage_id,seq)
 ) {$charset_collate};";
 
 	return array( $sql_veh, $sql_img );

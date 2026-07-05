@@ -78,9 +78,12 @@ function iaai_format_odometer( $value, string $uom = 'mi' ) : string {
  * miniatura (featured), reszta = galeria (meta iaai_gallery).
  * @return int liczba zaimportowanych załączników.
  */
-function iaai_import_images( int $salvage_id, int $post_id ) : int {
+function iaai_import_images( int $salvage_id, int $post_id, string $source = '' ) : int {
 	if ( get_post_meta( $post_id, '_iaai_media_done', true ) ) {
 		return 0;                                   // już zaimportowane
+	}
+	if ( '' === $source ) {
+		$source = (string) ( get_post_meta( $post_id, 'iaai_source', true ) ?: 'iaai' );
 	}
 	require_once ABSPATH . 'wp-admin/includes/media.php';
 	require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -90,8 +93,9 @@ function iaai_import_images( int $salvage_id, int $post_id ) : int {
 	$table = $wpdb->prefix . 'iaai_vehicle_images';
 	$rows  = $wpdb->get_results(
 		$wpdb->prepare(
-			"SELECT url FROM {$table} WHERE salvage_id = %d AND url IS NOT NULL ORDER BY seq ASC LIMIT %d",
+			"SELECT url FROM {$table} WHERE salvage_id = %d AND source = %s AND url IS NOT NULL ORDER BY seq ASC LIMIT %d",
 			$salvage_id,
+			$source,
 			IAAI_MAX_IMAGES
 		),
 		ARRAY_A
@@ -221,6 +225,7 @@ function iaai_render_list( $atts ) : string {
 		'make' => isset( $_GET['iaai_make'] ) ? sanitize_text_field( wp_unslash( $_GET['iaai_make'] ) ) : '',
 		'year' => isset( $_GET['iaai_year'] ) ? absint( wp_unslash( $_GET['iaai_year'] ) ) : 0,
 		'dmg'  => isset( $_GET['iaai_dmg'] ) ? sanitize_text_field( wp_unslash( $_GET['iaai_dmg'] ) ) : '',
+		'src'  => isset( $_GET['iaai_src'] ) ? sanitize_key( wp_unslash( $_GET['iaai_src'] ) ) : '',
 		'sort' => isset( $_GET['iaai_sort'] ) ? sanitize_key( wp_unslash( $_GET['iaai_sort'] ) ) : '',
 	);
 	// Numer strony — własny parametr, by nie kolidować z paginacją treści strony WP.
@@ -246,6 +251,7 @@ function iaai_render_list( $atts ) : string {
 	if ( '' !== $sel['make'] ) { $meta[] = array( 'key' => 'iaai_make', 'value' => $sel['make'] ); }
 	if ( $sel['year'] > 0 )    { $meta[] = array( 'key' => 'iaai_year', 'value' => $sel['year'], 'type' => 'NUMERIC' ); }
 	if ( '' !== $sel['dmg'] )  { $meta[] = array( 'key' => 'iaai_primary_damage', 'value' => $sel['dmg'] ); }
+	if ( in_array( $sel['src'], array( 'iaai', 'copart' ), true ) ) { $meta[] = array( 'key' => 'iaai_source', 'value' => $sel['src'] ); }
 	if ( $meta ) {
 		$meta['relation']    = 'AND';
 		$args['meta_query']  = $meta;
@@ -270,18 +276,22 @@ function iaai_render_list( $atts ) : string {
 	$hotlink = ( 'hotlink' === iaai_image_mode() );
 	$firsts  = array();
 	if ( $hotlink ) {
-		$sids = array();
+		$pairs = array();
 		foreach ( $q->posts as $p ) {
-			$sids[] = (int) get_post_meta( $p->ID, 'iaai_salvage_id', true );
+			$pairs[] = array(
+				'sid'    => (int) get_post_meta( $p->ID, 'iaai_salvage_id', true ),
+				'source' => (string) ( get_post_meta( $p->ID, 'iaai_source', true ) ?: 'iaai' ),
+			);
 		}
-		$firsts = iaai_first_images_map( $sids );
+		$firsts = iaai_first_images_map( $pairs );
 	}
 
 	$out = '<div class="iaai-pojazdy" id="iaai">' . $filters . '<div class="iaai-grid">';
 	while ( $q->have_posts() ) {
 		$q->the_post();
 		$pid   = (int) get_the_ID();
-		$thumb = $hotlink ? ( $firsts[ (int) get_post_meta( $pid, 'iaai_salvage_id', true ) ] ?? '' ) : null;
+		$key   = ( get_post_meta( $pid, 'iaai_source', true ) ?: 'iaai' ) . '|' . (int) get_post_meta( $pid, 'iaai_salvage_id', true );
+		$thumb = $hotlink ? ( $firsts[ $key ] ?? '' ) : null;
 		$out  .= iaai_render_card( $pid, $thumb );
 	}
 	$out .= '</div>';
@@ -295,7 +305,7 @@ function iaai_render_list( $atts ) : string {
 
 /** Distinct wartości pola ze źródłowej tabeli (opcje filtrów). Kolumna z allowlisty. */
 function iaai_distinct_meta( string $col, int $limit = 300 ) : array {
-	$allowed = array( 'make', 'model', 'year', 'primary_damage', 'transmission', 'fuel_type' );
+	$allowed = array( 'make', 'model', 'year', 'primary_damage', 'transmission', 'fuel_type', 'source' );
 	if ( ! in_array( $col, $allowed, true ) ) {
 		return array();
 	}
@@ -338,10 +348,20 @@ function iaai_render_filters( array $sel ) : string {
 	}
 	$sortsel .= '</select>';
 
-	$has   = ( '' !== $sel['make'] || $sel['year'] > 0 || '' !== $sel['dmg'] || '' !== $sel['sort'] );
-	$clear = esc_url( remove_query_arg( array( 'iaai_make', 'iaai_year', 'iaai_dmg', 'iaai_sort', 'iaai_str' ) ) );
+	$srcs  = iaai_distinct_meta( 'source' );
+	$has   = ( '' !== $sel['make'] || $sel['year'] > 0 || '' !== $sel['dmg'] || '' !== $sel['src'] || '' !== $sel['sort'] );
+	$clear = esc_url( remove_query_arg( array( 'iaai_make', 'iaai_year', 'iaai_dmg', 'iaai_src', 'iaai_sort', 'iaai_str' ) ) );
 
 	$html = '<form class="iaai-filters" method="get">';
+	if ( count( $srcs ) > 1 ) {
+		$slabels = array( 'iaai' => 'IAAI', 'copart' => 'Copart' );
+		$html   .= '<select name="iaai_src" onchange="this.form.submit()"><option value="">' . esc_html__( 'Źródło', 'iaai-importer' ) . '</option>';
+		foreach ( $srcs as $sv ) {
+			$lab   = $slabels[ strtolower( (string) $sv ) ] ?? $sv;
+			$html .= '<option value="' . esc_attr( $sv ) . '"' . selected( $sel['src'], $sv, false ) . '>' . esc_html( $lab ) . '</option>';
+		}
+		$html .= '</select>';
+	}
 	if ( $makes ) { $html .= $mk_select( 'iaai_make', $makes, $sel['make'], __( 'Marka', 'iaai-importer' ) ); }
 	if ( $years ) { $html .= $mk_select( 'iaai_year', $years, $sel['year'] ?: '', __( 'Rok', 'iaai-importer' ) ); }
 	if ( $dmgs )  { $html .= $mk_select( 'iaai_dmg', $dmgs, $sel['dmg'], __( 'Uszkodzenie', 'iaai-importer' ) ); }
@@ -395,6 +415,9 @@ function iaai_render_card( int $id, ?string $thumb_url = null ) : string {
 
 	// Plakietki.
 	$badges = '';
+	$src       = strtolower( $m( 'source' ) ) ?: 'iaai';                       // źródło: iaai/copart
+	$src_label = ( 'copart' === $src ) ? 'Copart' : 'IAAI';
+	$badges   .= '<span class="iaai-badge iaai-badge--src iaai-badge--' . esc_attr( $src ) . '">' . esc_html( $src_label ) . '</span>';
 	$rd = strtolower( $m( 'run_and_drive' ) );
 	if ( false !== strpos( $rd, 'run' ) || false !== strpos( $rd, 'drive' ) ) {
 		$badges .= '<span class="iaai-badge iaai-badge--rd">' . esc_html__( 'Run &amp; Drive', 'iaai-importer' ) . '</span>';
@@ -415,29 +438,41 @@ function iaai_render_card( int $id, ?string $thumb_url = null ) : string {
 }
 
 /** Pierwsze (najniższy seq) BEZPIECZNE URL-e zdjęć dla wielu aut — JEDNYM zapytaniem.
- * @param int[] $sids  lista salvage_id.
- * @return array<int,string>  salvage_id => bezpieczny URL miniatury. */
-function iaai_first_images_map( array $sids ) : array {
-	$sids = array_values( array_unique( array_filter( array_map( 'intval', $sids ) ) ) );
-	if ( ! $sids ) {
+ * @param array<int,array{sid:int,source:string}> $pairs  pary (salvage_id, source).
+ * @return array<string,string>  "source|salvage_id" => bezpieczny URL miniatury. */
+function iaai_first_images_map( array $pairs ) : array {
+	$uniq = array();
+	foreach ( $pairs as $p ) {
+		$sid = (int) ( $p['sid'] ?? 0 );
+		$src = (string) ( $p['source'] ?? 'iaai' );
+		if ( $sid > 0 ) {
+			$uniq[ $src . '|' . $sid ] = array( $src, $sid );
+		}
+	}
+	if ( ! $uniq ) {
 		return array();
 	}
 	global $wpdb;
 	$table = $wpdb->prefix . 'iaai_vehicle_images';
-	$ph    = implode( ',', array_fill( 0, count( $sids ), '%d' ) );
-	$rows  = $wpdb->get_results( $wpdb->prepare(
-		"SELECT salvage_id, url, seq FROM {$table} WHERE salvage_id IN ({$ph}) AND url IS NOT NULL ORDER BY salvage_id ASC, seq ASC",
-		...$sids
-	), ARRAY_A );
+	$where = array();
+	$vals  = array();
+	foreach ( $uniq as $pair ) {
+		$where[] = '(source = %s AND salvage_id = %d)';
+		$vals[]  = $pair[0];
+		$vals[]  = $pair[1];
+	}
+	$sql  = "SELECT source, salvage_id, url, seq FROM {$table} WHERE ( " . implode( ' OR ', $where )
+		. " ) AND url IS NOT NULL ORDER BY source ASC, salvage_id ASC, seq ASC";
+	$rows = $wpdb->get_results( $wpdb->prepare( $sql, ...$vals ), ARRAY_A );
 	$map = array();
 	foreach ( (array) $rows as $r ) {
-		$sid = (int) $r['salvage_id'];
-		if ( isset( $map[ $sid ] ) ) {
+		$key = (string) $r['source'] . '|' . (int) $r['salvage_id'];
+		if ( isset( $map[ $key ] ) ) {
 			continue;   // pierwszy (najniższy seq) wygrywa
 		}
-		$safe = iaai_safe_image_url( (string) $r['url'] );   // SSRF: tylko host IAAI
+		$safe = iaai_safe_image_url( (string) $r['url'] );   // SSRF: tylko hosty IAAI/Copart
 		if ( '' !== $safe ) {
-			$map[ $sid ] = $safe;
+			$map[ $key ] = $safe;
 		}
 	}
 	return $map;

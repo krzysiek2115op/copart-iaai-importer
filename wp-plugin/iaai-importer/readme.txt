@@ -1,21 +1,23 @@
-=== IAAI Importer ===
+=== Importer Aukcji (IAAI + Copart) ===
 Contributors: iaai-importer
-Tags: iaai, vehicles, auctions, import, cpt
+Tags: iaai, copart, vehicles, auctions, import, cpt
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 0.24.0
+Stable tag: 0.30.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Import danych i zdjęć pojazdów z IAAI do WordPressa (CPT „Pojazd") — z automatyczną
-podstroną, responsywnym wyglądem dziedziczącym motyw i optymalizacją SEO.
+Import danych i zdjęć pojazdów z aukcji IAAI oraz Copart do WordPressa (CPT „Pojazd") —
+z automatyczną podstroną, plakietką źródła, filtrem źródła i wyglądem dziedziczącym motyw.
 
 == Description ==
 
-Wtyczka pokazuje na stronie WordPress pojazdy z serwisu aukcyjnego IAAI. Dane i zdjęcia
-wkłada do bazy osobny program zbierający (Python/systemd, dział 1–5); wtyczka odczytuje je
-z tych samych tabel ({prefix}iaai_vehicles) i prezentuje jako wpisy typu „Pojazd".
+Wtyczka pokazuje na stronie WordPress pojazdy z serwisów aukcyjnych IAAI oraz Copart. Dane
+i zdjęcia wkłada do bazy osobny program zbierający (Python/systemd, dział 1–5, po jednym
+źródle na przebieg: --source iaai|copart); wtyczka odczytuje je z tych samych tabel
+({prefix}iaai_vehicles, z kolumną `source`) i prezentuje jako wpisy typu „Pojazd" z plakietką
+źródła (IAAI/Copart) i filtrem źródła.
 
 Główne cechy:
 
@@ -53,6 +55,9 @@ dane strukturalne pojazdu.
 Sama wtyczka działa na zwykłym WordPressie. Automatyzacja pobierania aut wymaga VPS z SSH.
 
 == Changelog ==
+
+= 0.30.0 =
+* DRUGIE ŹRÓDŁO — Copart. Baza: kolumna `source` (iaai/copart), klucz (source, salvage_id) w pojazdach i zdjęciach (dbDelta 1.1.0). Wtyczka: publikacja/wyszukiwanie/zdjęcia po parze (source, salvage_id), plakietka źródła (IAAI/Copart) i filtr źródła na liście, allowlist zdjęć Copart. Scraper: moduł 01_pobieranie/copart.py (listingi/szczegoly/zdjecia) + run_pipeline `--source iaai|copart` + json_agent zapis `source` i reconcile per źródło. Neutralna nazwa wtyczki „Importer Aukcji (IAAI + Copart)".
 
 = 0.24.0 =
 * Optymalizacja: pierwsze zdjęcia listy jednym zapytaniem (N+1 → 1), wyłączony zbędny cache termów. Debug całości. Instrukcja edycji podstrony i dopasowania do motywu (docs/klient/06). Szczegółowe testy systemu (docs/TESTY-SZCZEGOLOWE.md).

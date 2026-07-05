@@ -25,7 +25,8 @@ SET time_zone = '+00:00';
 --  POJAZD — jeden wiersz na lot IAAI, pola 1:1 jak u nich
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `iaai_vehicles` (
-  `salvage_id`        BIGINT UNSIGNED NOT NULL,   -- ID lotu (z /VehicleDetail/{id}~US)
+  `salvage_id`        BIGINT UNSIGNED NOT NULL,   -- ID lotu (IAAI: /VehicleDetail/{id}~US ; Copart: lot number)
+  `source`            VARCHAR(10)  NOT NULL DEFAULT 'iaai', -- zrodlo: 'iaai' | 'copart'
   `stock_number`      VARCHAR(40)  NULL,          -- Stock #
   `item_id`           BIGINT UNSIGNED NULL,       -- Item #
   `vin`               VARCHAR(20)  NULL,          -- VIN
@@ -77,8 +78,9 @@ CREATE TABLE IF NOT EXISTS `iaai_vehicles` (
   `updated_at`        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                         ON UPDATE CURRENT_TIMESTAMP,
 
-  PRIMARY KEY (`salvage_id`),
+  PRIMARY KEY (`source`, `salvage_id`),
   KEY `idx_vin` (`vin`),
+  KEY `idx_source` (`source`),
   KEY `idx_make_model` (`make`, `model`),
   KEY `idx_sale_date` (`sale_date`),
   KEY `idx_status` (`status`),
@@ -91,15 +93,16 @@ CREATE TABLE IF NOT EXISTS `iaai_vehicles` (
 CREATE TABLE IF NOT EXISTS `iaai_vehicle_images` (
   `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `salvage_id`    BIGINT UNSIGNED NOT NULL,       -- FK -> iaai_vehicles
-  `image_key`     VARCHAR(120) NOT NULL,          -- keys[].K (klucz vis.iaai.com)
+  `source`        VARCHAR(10) NOT NULL DEFAULT 'iaai', -- zrodlo: 'iaai' | 'copart'
+  `image_key`     VARCHAR(120) NOT NULL,          -- IAAI: keys[].K (vis.iaai.com) ; Copart: klucz zdjecia
   `seq`           SMALLINT UNSIGNED NOT NULL,     -- keys[].IN (kolejność)
   `width`         SMALLINT UNSIGNED NULL,         -- keys[].W
   `height`        SMALLINT UNSIGNED NULL,         -- keys[].H
   `url`           VARCHAR(300) NULL,              -- gotowy URL (resizer) do wyświetlenia
   `captured_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_image_key` (`image_key`),        -- brak duplikatów zdjęć
-  KEY `idx_img_vehicle` (`salvage_id`, `seq`),
-  CONSTRAINT `fk_image_vehicle` FOREIGN KEY (`salvage_id`)
-      REFERENCES `iaai_vehicles` (`salvage_id`) ON DELETE CASCADE
+  UNIQUE KEY `uq_source_image` (`source`, `image_key`), -- brak duplikatów zdjęć (per źródło)
+  KEY `idx_img_vehicle` (`source`, `salvage_id`, `seq`),
+  CONSTRAINT `fk_image_vehicle` FOREIGN KEY (`source`, `salvage_id`)
+      REFERENCES `iaai_vehicles` (`source`, `salvage_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
