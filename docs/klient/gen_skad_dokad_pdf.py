@@ -70,28 +70,39 @@ def foot(txt):
 def proof_p1():
     s = page_open()
     s += header("Skąd pochodzą Twoje dane — i gdzie trafiają",
-                "Dowód: te same auta z aukcji IAAI (i tak samo z Copart) pojawiają się na Twojej stronie.")
-    iw, ih = 352.0, 352.0*516/1100
-    y0 = 120; lx, rx = 40, W-40-iw
-    s += num_badge(lx+13, y0-16, "1"); s += T(lx+34, y0-11, "ŹRÓDŁO — IAAI.com (aukcje w USA)", size=12, color=NAVY, weight="bold")
-    s += num_badge(rx+13, y0-16, "2"); s += T(rx+34, y0-11, "TWOJA STRONA — „Nasze auta”", size=12, color=NAVY, weight="bold")
-    s += rect(lx-4, y0-4, iw+8, ih+8, r=8, fill=CARD, stroke=LINE) + img(os.path.join(IMG, "iaai-zrodlo.jpg"), lx, y0, iw, ih)
-    s += rect(rx-4, y0-4, iw+8, ih+8, r=8, fill=CARD, stroke=EM, sw=1.5) + img(os.path.join(IMG, "nasza-strona.jpg"), rx, y0, iw, ih)
-    midy = y0 + ih/2
-    s += arrow(lx+iw+10, midy, rx-10)
-    s += T((lx+iw+rx)/2, midy-12, "automat", size=10, color=EMD, weight="bold", anchor="middle")
-    s += T((lx+iw+rx)/2, midy+20, "pobiera", size=10, color=EMD, weight="bold", anchor="middle")
-    by = y0+ih+34
-    s += rect(40, by, W-80, 140, r=10, fill=CLOUD, stroke=LINE)
-    s += T(58, by+28, "Co to znaczy — po ludzku:", size=13, color=NAVY, weight="bold")
+                "Dowód: te same auta z aukcji IAAI i Copart pojawiają się na Twojej stronie.")
+    sw = 340.0
+    lx, rx = 40.0, W-40-sw
+    src_h = 126.0
+    # --- LEWA KOLUMNA: DWA źródła (IAAI + Copart) ---
+    s += num_badge(lx+13, 96, "1"); s += T(lx+34, 101, "ŹRÓDŁA — IAAI.com i Copart.com (aukcje w USA)", size=12, color=NAVY, weight="bold")
+    iy1 = 118.0
+    s += T(lx+2, iy1-3, "IAAI.com", size=9.5, color=EMD, weight="bold")
+    s += rect(lx-4, iy1, sw+8, src_h+8, r=8, fill=CARD, stroke=LINE) + img(os.path.join(IMG, "iaai-zrodlo.jpg"), lx, iy1+4, sw, src_h)
+    iy2 = iy1 + src_h + 34
+    s += T(lx+2, iy2-3, "Copart.com", size=9.5, color="#1e5fb0", weight="bold")
+    s += T(lx+74, iy2-3, "— nowe, drugie źródło (zrzut z dziś)", size=8.6, color=MUT)
+    s += rect(lx-4, iy2, sw+8, src_h+8, r=8, fill=CARD, stroke=LINE) + img(os.path.join(IMG, "copart-zrodlo.jpg"), lx, iy2+4, sw, src_h)
+    # --- PRAWA KOLUMNA: nasza strona ---
+    ny, nh = 150.0, 250.0
+    s += num_badge(rx+13, 96, "2"); s += T(rx+34, 101, "TWOJA STRONA — „Nasze auta”", size=12, color=NAVY, weight="bold")
+    s += rect(rx-4, ny-4, sw+8, nh+8, r=8, fill=CARD, stroke=EM, sw=1.5) + img(os.path.join(IMG, "nasza-strona.jpg"), rx, ny, sw, nh)
+    # --- strzałka „automat pobiera” (z obu źródeł na stronę) ---
+    midy = (iy1 + iy2 + src_h) / 2 + 4
+    s += arrow(lx+sw+10, midy, rx-10)
+    s += T((lx+sw+rx)/2, midy-12, "automat", size=10, color=EMD, weight="bold", anchor="middle")
+    s += T((lx+sw+rx)/2, midy+20, "pobiera", size=10, color=EMD, weight="bold", anchor="middle")
+    # --- box „po ludzku” ---
+    by = 438.0
+    s += rect(40, by, W-80, 125, r=10, fill=CLOUD, stroke=LINE)
+    s += T(58, by+26, "Co to znaczy — po ludzku:", size=13, color=NAVY, weight="bold")
     for i, ln in enumerate([
-        "•  Po lewej: oryginalne ogłoszenia na IAAI.com (amerykański serwis aukcyjny aut powypadkowych).",
+        "•  Po lewej: oryginalne ogłoszenia z DWÓCH aukcji w USA — IAAI.com i Copart.com.",
         "•  Po prawej: te same pojazdy — automatycznie przeniesione na Twoją stronę, w Twoim wyglądzie.",
-        "•  Nic nie przepisujesz ręcznie. Program sam pobiera zdjęcia i dane, a strona pokazuje je klientom.",
-        "•  Tak samo działa drugie źródło — Copart. Na stronie każde auto ma plakietkę: IAAI albo Copart.",
-        "•  Szczegóły, jak jedno ogłoszenie zamienia się w kartę — na następnej stronie."]):
-        s += T(58, by+52+i*20, ln, size=11, color=INK)
-    s += foot("Kredyt Kompas · IAAI Importer — skąd pochodzą dane (1/2)")
+        "•  Nic nie przepisujesz ręcznie. Program sam pobiera zdjęcia i dane z obu źródeł.",
+        "•  Na stronie każde auto ma plakietkę źródła: IAAI albo Copart (można też filtrować)."]):
+        s += T(58, by+50+i*18, ln, size=11, color=INK)
+    s += foot("Kredyt Kompas · Importer Aukcji (IAAI + Copart) — skąd pochodzą dane (1/2)")
     return s + "</svg>"
 
 # =================== PROOF — strona 2: mapowanie pól =======================
@@ -137,7 +148,7 @@ def proof_p2():
         "•  Zdjęcia, cena, przebieg, skrzynia, kluczyk i uszkodzenia — nic nie wpisujesz ręcznie.",
         "•  Dodatkowo przeliczamy przebieg z mil na kilometry, żeby był czytelny dla polskiego klienta."]):
         s += T(58, 494+i*20, ln, size=11, color=INK)
-    s += foot("Kredyt Kompas · IAAI Importer — skąd pochodzą dane (2/2)")
+    s += foot("Kredyt Kompas · Importer Aukcji (IAAI + Copart) — skąd pochodzą dane (2/2)")
     return s + "</svg>"
 
 # =================== DIAGRAM — strona 1: przepływ + strefy + cykl ==========
