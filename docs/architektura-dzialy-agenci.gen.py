@@ -5,13 +5,7 @@ def esc(s): return html.escape(s, quote=True)
 
 # Dane: (numer, nazwa, tech, doc, [(agent, co_robi, krytyk), ...])
 DZIALY = [
- ("1","POBIERANIE","Python","playwright-python.md + copart-api.md",[
-    ("pokrycie","iteruje filtry/segmenty, scala ofertę (per źródło)","kompletność-pokrycia"),
-    ("listingi","IAAI: karty wyników + paginacja (Playwright/Knockout)","kompletność-listy"),
-    ("szczegóły","IAAI: otwiera stronę lotu (render JS), uzupełnia pola","kompletność-pól"),
-    ("zdjęcia","IAAI: lista zdjęć z vis.iaai.com (klucze + URL-e)","kompletność-zdjęć"),
-    ("copart","COPART: API lotdetails/solr + lotImages (Member)","kompletność-copart"),
- ]),
+ # DZIAŁ 1 (POBIERANIE) jest ROZDZIELONY per źródło — patrz DZIAL1_IAAI / DZIAL1_COPART niżej.
  ("7","ZGODNOŚĆ","Python","robots-rfc9309.md",[
     ("zgody","respektuje robots.txt, trzyma rate-limit, wykrywa blokady","blokady"),
  ]),
@@ -43,6 +37,19 @@ DZIALY = [
  ]),
 ]
 
+# DZIAŁ 1 ROZDZIELONY per źródło — każdy ma WŁASNY kanał AJAX (zasada: dział = AJAX + 1 wyjście).
+DZIAL1_IAAI = ("1", "POBIERANIE — IAAI", "Python", "playwright.md", [
+    ("pokrycie", "filtry/segmenty → cała oferta IAAI", "kompletność-pokrycia"),
+    ("listingi", "karty wyników + paginacja (Playwright)", "kompletność-listy"),
+    ("szczegóły", "strona lotu (render JS), pola", "kompletność-pól"),
+    ("zdjęcia", "vis.iaai.com (klucze + URL-e)", "kompletność-zdjęć"),
+])
+DZIAL1_COPART = ("1", "POBIERANIE — Copart", "Python", "copart-api.md", [
+    ("pokrycie", "wyszukiwarka Copart per filtr", "kompletność-pokrycia"),
+    ("copart", "API lotdetails/solr (konto Member)", "kompletność-copart"),
+    ("zdjęcia", "lotImages → cs.copart.com", "kompletność-zdjęć"),
+])
+
 W = 960
 LINE_H = 30
 HEAD_H = 52
@@ -59,12 +66,16 @@ y = 0
 TOP = 176           # nagłówek (tytuł + podtytuł + legenda + licznik AJAX/JSON)
 y = TOP
 # część 1 header + 6 kart (1,7,2,3,4,5) + baza band + część2 header + 3 karty + strona band
-sec1 = DZIALY[:6]
-sec2 = DZIALY[6:]
+sec1 = DZIALY[:5]   # wspólny pipeline: działy 7,2,3,4,5
+sec2 = DZIALY[5:]   # WordPress: działy 6,8,9
 def section_height(cards):
     return sum(card_h(c)+GAP for c in cards)
+def narrow_h(d):    # węższa karta Działu 1 (agent + krytyk POD nim, bo wąsko)
+    return 46 + len(d[4])*34 + 14
 SEC_HDR=46; BAND=70; CAP=26
-SBOX=72; SNOTE=22; AJAXZONE=56; SRCBLK = SBOX + AJAXZONE + SNOTE   # dwa źródła --AJAX--> Dział 1
+SBOX=72; AJ=44; MERGE=100; SNOTE=22   # MERGE = 30(strzałki)+34(węzeł)+GAP+6(nota)
+D1H = max(narrow_h(DZIAL1_IAAI), narrow_h(DZIAL1_COPART))
+SRCBLK = SBOX + AJ + D1H + MERGE   # źródła → AJAX (pionowo) → dwa Działy 1 → scalenie strumieni
 total = (TOP + SEC_HDR + SRCBLK + section_height(sec1) + BAND + CAP + GAP
          + SEC_HDR + section_height(sec2) + BAND + 60)
 
@@ -83,8 +94,8 @@ add(f'<rect x="{lx+490}" y="105" width="16" height="15" rx="3" fill="#ede7f6" st
 # Pasek licznika: ile AJAX, ile JSON
 add(f'<rect x="120" y="134" width="{W-240}" height="30" rx="8" fill="#f4f7fb" stroke="#c7d2e0"/>')
 add(f'<text x="{W/2}" y="153" text-anchor="middle" font-size="12.5" fill="#334">'
-    f'<tspan font-weight="bold" fill="#1e5fb0">AJAX do źródeł: 2 kanały = 6 żądań</tspan> (IAAI 3 · Copart 3)'
-    f'   •   <tspan font-weight="bold" fill="#2e7d32">JSON</tspan>: źródła→JSON, pipeline→JSONL (5 działów) → 1 wspólna baza</text>')
+    f'<tspan font-weight="bold" fill="#1e5fb0">AJAX: 2 kanały, każdy do WŁASNEGO Działu 1</tspan> (6 żądań: IAAI 3 · Copart 3)'
+    f'   •   <tspan font-weight="bold" fill="#2e7d32">JSON</tspan>: strumienie łączą się → wspólny pipeline → 1 baza</text>')
 
 def draw_card(d, y):
     n,name,tech,doc,agents = d
@@ -114,6 +125,21 @@ def draw_card(d, y):
         ly += LINE_H
     return h
 
+def draw_card_narrow(d, x, w, y, h):
+    """Węższa karta Działu 1 (per źródło): krytyk POD agentem, bo mało miejsca w poziomie."""
+    n,name,tech,doc,agents = d
+    add(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="12" fill="#eef4ff" stroke="#4f7cff" stroke-width="2"/>')
+    add(f'<text x="{x+18}" y="{y+27}" font-size="14.5" font-weight="bold" fill="#1a3a8f">DZIAŁ {esc(n)} · {esc(name)}</text>')
+    add(f'<text x="{x+w-14}" y="{y+27}" text-anchor="end" font-size="10" fill="#7e57c2">dok: {esc(doc)}</text>')
+    ly = y+52
+    for (ag,desc,kr) in agents:
+        add(f'<circle cx="{x+20}" cy="{ly-4}" r="5.5" fill="#2f6fed"/>')
+        add(f'<text x="{x+32}" y="{ly}" font-size="12.5"><tspan font-weight="bold" fill="#173a8f">{esc(ag)}</tspan><tspan fill="#444"> — {esc(desc)}</tspan></text>')
+        add(f'<circle cx="{x+34}" cy="{ly+12}" r="4.5" fill="#e23b3b"/>')
+        add(f'<text x="{x+44}" y="{ly+16}" font-size="10.5" fill="#555">krytyk: <tspan font-weight="bold" fill="#a31818">{esc(kr)}</tspan></text>')
+        ly += 34
+    return h
+
 def band(y, text, fill, stroke, tcol):
     add(f'<rect x="200" y="{y}" width="{W-400}" height="52" rx="10" fill="{fill}" stroke="{stroke}" stroke-width="2"/>')
     add(f'<text x="{W/2}" y="{y+32}" text-anchor="middle" font-size="16" font-weight="bold" fill="{tcol}">{esc(text)}</text>')
@@ -138,15 +164,29 @@ add(f'<text x="{cxx+srcw/2}" y="{y+23}" text-anchor="middle" font-size="14.5" fo
 add(f'<text x="{cxx+srcw/2}" y="{y+41}" text-anchor="middle" font-size="10.5" fill="#4a76a8">ich baza — brak dostępu; API po zalogowaniu (Member)</text>')
 add(f'<text x="{cxx+srcw/2}" y="{y+58}" text-anchor="middle" font-size="10.5" fill="#3f6da3">search-results · lotdetails/solr · lotImages</text>')
 y += SBOX
-# strzałki AJAX zbiegające do środka (wejście do Działu 1)
-midx = W/2; ajy = y + AJAXZONE - 6
-add(f'<line x1="{ix+srcw/2}" y1="{y+2}" x2="{midx-6}" y2="{ajy}" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>')
-add(f'<line x1="{cxx+srcw/2}" y1="{y+2}" x2="{midx+6}" y2="{ajy}" stroke="#1e5fb0" stroke-width="2.5" marker-end="url(#arr)"/>')
-add(f'<text x="{ix+srcw/2}" y="{y+32}" text-anchor="middle" font-size="12" font-style="italic" fill="#777">AJAX ① — render Playwright (HTML→dane)</text>')
-add(f'<text x="{cxx+srcw/2}" y="{y+32}" text-anchor="middle" font-size="12" font-style="italic" fill="#1e5fb0">AJAX ② — JSON API + cookies Member</text>')
-y += AJAXZONE
-add(f'<text x="{W/2}" y="{y+2}" text-anchor="middle" font-size="11.5" font-style="italic" fill="#777">Dział 1 pobiera z OBU źródeł — osobny przebieg na źródło: run_pipeline.py --source iaai | copart</text>')
-y += SNOTE
+# AJAX PIONOWO — każde źródło do WŁASNEGO Działu 1 (proste w dół, bez krzyżowania; 1 AJAX na dział)
+cxi = ix + srcw/2; cxc = cxx + srcw/2
+d1y = y + AJ
+add(f'<line x1="{cxi}" y1="{y}" x2="{cxi}" y2="{d1y-4}" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>')
+add(f'<line x1="{cxc}" y1="{y}" x2="{cxc}" y2="{d1y-4}" stroke="#1e5fb0" stroke-width="2.5" marker-end="url(#arr)"/>')
+add(f'<text x="{cxi-12}" y="{y+27}" text-anchor="end" font-size="12.5" font-weight="bold" font-style="italic" fill="#555">AJAX ① · Playwright</text>')
+add(f'<text x="{cxc+12}" y="{y+27}" text-anchor="start" font-size="12.5" font-weight="bold" font-style="italic" fill="#1e5fb0">AJAX ② · API + cookies</text>')
+y = d1y
+# Dwa Działy 1 (per źródło) — każdy dokładnie pod swoim źródłem (ta sama oś X co AJAX)
+d1w = 400
+draw_card_narrow(DZIAL1_IAAI, cxi - d1w/2, d1w, y, D1H)
+draw_card_narrow(DZIAL1_COPART, cxc - d1w/2, d1w, y, D1H)
+# json z obu Działów 1 → WĘZEŁ SCALENIA (to NIE „dział", tylko bufor → może mieć 2 wejścia)
+mtop = y + D1H + 30
+add(f'<line x1="{cxi}" y1="{y+D1H}" x2="{W/2-74}" y2="{mtop}" stroke="#666" stroke-width="2.2" marker-end="url(#arr)"/>')
+add(f'<line x1="{cxc}" y1="{y+D1H}" x2="{W/2+74}" y2="{mtop}" stroke="#1e5fb0" stroke-width="2.2" marker-end="url(#arr)"/>')
+add(f'<rect x="{W/2-168}" y="{mtop}" width="336" height="34" rx="9" fill="#fff7e6" stroke="#e0a92e" stroke-width="1.6"/>')
+add(f'<text x="{W/2}" y="{mtop+14}" text-anchor="middle" font-size="12" font-weight="bold" fill="#8a6d1a">łączenie strumieni JSONL (oba źródła → jeden)</text>')
+add(f'<text x="{W/2}" y="{mtop+28}" text-anchor="middle" font-size="9.5" fill="#a07d1a">to bufor/kolejka, nie „dział" — dlatego wolno mu mieć 2 wejścia</text>')
+y = mtop + 34
+arrow(y, "wspólny strumień"); y += GAP
+add(f'<text x="{W/2}" y="{y-1}" text-anchor="middle" font-size="11" font-style="italic" fill="#777">dalej OBA źródła przez TEN SAM pipeline (uruchamiany osobno per źródło: --source iaai | copart)</text>')
+y += 6
 for i,d in enumerate(sec1):
     h = draw_card(d, y)
     y += h
