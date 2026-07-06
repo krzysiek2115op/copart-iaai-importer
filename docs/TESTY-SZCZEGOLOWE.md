@@ -123,7 +123,8 @@ osobny przebieg scrapera per źródło (`--source`), sesja Member Copart (`COPAR
 | G7 | Anty-SSRF zdjęć | allowlista hostów obejmuje `copart.com` + `*.copart.com` (i IAAI) | ✅ |
 | G8 | Scraper copart | `_map_detail` → `source='copart'`; zdjęcia `image_key='copart-{lot}-{i}'`, `seq` | ✅ (A6–A7) |
 | G9 | json_agent | `source` w `upsert`/`upsert_image`; reconcile ograniczony `AND v.source = %s` (per źródło) | ✅ (przegląd; A8–A9 na VPS) |
-| G10 | Copart live (żywe dane) | pełne dane/zdjęcia po zalogowaniu (`COPART_COOKIES`); anty-bot Cloudflare | ⏳ (walidacja na VPS, jak IAAI) |
+| G10 | Copart live (żywe dane) | pełne dane/zdjęcia po zalogowaniu (`COPART_COOKIES`); anty-bot | 🔎 **potwierdzone empirycznie**: anonimowo Copart oddaje stronę Incapsula/Imperva (nie dane) → wymaga konta Member. Test: `scraper/tools/copart_selftest.py` (część A). Pełny live na VPS z sesją. |
+| G11 | Copart mapowanie → karta | rekord `lotdetails/solr` → `_map_detail` → komplet pól na karcie (mile→km, cena, plakietka) | ✅ `copart_selftest.py` część B: 2018 FORD ESCAPE SE, 72150 mi → 116114 km, plakietka COPART |
 
 ### G.3 Testy wtyczki dual-source (runtime WP — do potwierdzenia na danych 2 źródeł)
 | # | Test | Oczekiwane | Status |
