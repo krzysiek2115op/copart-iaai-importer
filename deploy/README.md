@@ -1,8 +1,9 @@
 # Wdrożenie na VPS klienta — automatyzacja always-on
 
 Cel: scraper Python chodzi **sam, cały czas** na tym samym VPS co WordPress klienta,
-wyłapuje nowe auta z IAAI, zapisuje do **bazy WordPressa** i publikuje je na stronie —
-bez udziału operatora. (Patrz STATUS.md sekcja 1: wymóg always-on + model wdrożenia.)
+wyłapuje nowe auta z **IAAI oraz (opcjonalnie) Copart**, zapisuje do **bazy WordPressa**
+(wspólne tabele, kolumna `source`) i publikuje je na stronie — bez udziału operatora.
+(Patrz STATUS.md sekcja 1: wymóg always-on + model wdrożenia.)
 
 ```
 VPS klienta:
@@ -60,8 +61,26 @@ systemctl list-timers 'iaai-importer-*'             # kiedy następne odpalenie
 wp eval 'global $wpdb; var_dump($wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}iaai_vehicles"));' --path=/var/www/html
 ```
 
+## Drugie źródło — Copart (opcjonalnie)
+Domyślny cykl (kroki 5–7) obsługuje **IAAI**. Copart to drugie źródło do tej samej bazy
+(rozróżniane kolumną `source`), uruchamiane **osobnym przebiegiem** — wymaga zalogowanej sesji
+Member (silna ochrona Cloudflare; anonimowo Copart oddaje niepełne dane):
+```bash
+# jednorazowy cykl Copart (ciasteczka sesji Member w ENV):
+COPART_COOKIES="<cookies zalogowanej sesji copart.com>" \
+  .venv/bin/python scraper/run_pipeline.py --source copart --mode live
+wp eval 'iaai_publish_all_active();' --path=/var/www/html
+```
+Aby chodził always-on jak IAAI: skopiuj `iaai-importer-live.{service,timer}` pod nazwą
+`...-copart-*`, dołóż do `ExecStart` `--source copart` i wskaż `COPART_COOKIES` w
+`/etc/iaai-importer.env` (ciasteczka **wygasają** — trzeba je odświeżać). Reconcile jest
+per źródło (`--source copart` oznacza jako `removed` tylko znikłe loty Copart, nie rusza IAAI).
+Realne, ciągłe pobieranie z Copart **waliduj na VPS** (jak IAAI). Bez konta Member — zostaw samo IAAI.
+
 ## Dostrojenie
 - **Interwał live:** `OnUnitInactiveSec` w `iaai-importer-live.timer` (domyślnie 15 min).
-- **Zakres oferty:** `IAAI_BASE` w `/etc/iaai-importer.env` (można zawęzić filtrami wyszukiwarki).
+- **Zakres oferty:** `IAAI_BASE` w `/etc/iaai-importer.env` (można zawęzić filtrami wyszukiwarki);
+  dla Copart analogicznie `COPART_BASE` (słowo kluczowe/URL wyszukiwarki Copart).
 - **Rate-limit / zgodność:** dział 7 (zgody) pilnuje robots + tempa; przy blokadach krytyk zgłasza.
-- **Uwaga prawna:** scraping `/Search` IAAI to decyzja biznesowo-prawna (ToS) właściciela projektu.
+- **Uwaga prawna:** scraping wyszukiwarek IAAI (`/Search`) i Copart to decyzja biznesowo-prawna
+  (ToS obu serwisów) właściciela projektu; Copart dodatkowo wymaga zgodnego z regulaminem konta Member.

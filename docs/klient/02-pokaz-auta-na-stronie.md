@@ -55,7 +55,9 @@ Jeśli mimo to nie ma jej na pasku, dodaj raz ręcznie:
 > wstawić link „Nasze auta" ręcznie w edytorze tego motywu/buildera (jednorazowo).
 
 ## Dobrze wiedzieć
-- **Zdjęcia** ładują się wprost z serwerów IAAI (nie zajmują miejsca na Twoim hostingu).
+- **Dwa źródła:** auta pochodzą z IAAI oraz (opcjonalnie) z Copart — każde ma **plakietkę źródła**
+  (IAAI / Copart), a odwiedzający mogą **filtrować listę po źródle**.
+- **Zdjęcia** ładują się wprost z serwerów IAAI/Copart (nie zajmują miejsca na Twoim hostingu).
 - Auta **pojawiają się i znikają same** — gdy auto schodzi z aukcji, jego wpis znika ze strony
   (zostaje ukryty jako szkic, nie kasujemy historii).
 - Każde auto ma też własny adres (WordPress robi je automatycznie pod `/pojazdy/...`).

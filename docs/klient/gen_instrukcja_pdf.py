@@ -299,7 +299,7 @@ CONTENT = [
     ("step", 9, "Uruchom instalator", [
         "W terminalu, w folderze projektu:  sudo bash deploy/install.sh /var/www/html",
         "(zamień /var/www/html na katalog Twojego WordPressa). Instalator sam zainstaluje",
-        "potrzebne programy, połączy się z bazą i włączy usługę sprawdzającą IAAI co kilkanaście minut.",
+        "potrzebne programy, połączy się z bazą i włączy usługę sprawdzającą IAAI (a opcjonalnie też Copart) co kilkanaście minut.",
         "Szczegóły: docs/klient/03-uruchom-automatyzacje.md",
     ]),
     ("callout", True, [
@@ -343,7 +343,7 @@ CONTENT = [
         "   (page-buildery: Elementor/Divi) nie używają menu WP → link dodaj raz w edytorze motywu.",
         "Auta się nie pokazują → jeśli nie zrobiłeś automatyzacji, to oczekiwane; jeśli działa,",
         "   daj jej kilkanaście minut na pierwszy przebieg.",
-        "Zdjęcia się nie ładują → sprawdź łącze serwera i dostępność IAAI.",
+        "Zdjęcia się nie ładują → sprawdź łącze serwera i dostępność IAAI/Copart.",
         "Brak VPS → sama wtyczka działa; automatyzacja wymaga VPS z SSH.",
     ]),
 
@@ -418,9 +418,9 @@ def cover_page(total):
     s.append(rect(0, 0, PW, PH, "#ffffff", rx=0))
     s.append(rect(0, 0, PW, 300, DARK, rx=0))
     s.append(rect(0, 297, PW, 6, BLUE, rx=0))
-    s.append(text(MX, 120, "IAAI Importer", size=40, color="#ffffff", weight="bold"))
+    s.append(text(MX, 120, "Importer Aukcji", size=40, color="#ffffff", weight="bold"))
     s.append(text(MX, 165, "Instrukcja klienta — od A do Z", size=20, color="#aebfd8"))
-    s.append(text(MX, 215, "Jak wgrać wtyczkę i uruchomić import aut z IAAI", size=13, color="#8ea3c8"))
+    s.append(text(MX, 215, "Jak wgrać wtyczkę i uruchomić import aut z IAAI i Copart", size=13, color="#8ea3c8"))
     s.append(text(MX, 235, "do strony WordPress. Dla osoby nietechnicznej.", size=13, color="#8ea3c8"))
     # kafelki
     tiles = [

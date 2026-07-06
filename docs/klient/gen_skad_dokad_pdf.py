@@ -112,6 +112,10 @@ def our_card(x, y, w):
     s += rect(x, y, w, 262, r=12, fill=CARD, stroke=EM, sw=1.4)
     s += f'<clipPath id="cc"><rect x="{x+1:.1f}" y="{y+1:.1f}" width="{w-2:.1f}" height="{ih:.1f}" rx="11"/></clipPath>'
     s += f'<g clip-path="url(#cc)">' + img(os.path.join(IMG, "accord-photo.jpg"), x+1, y+1, w-2, ih, par="xMidYMid slice") + '</g>'
+    # plakietka ŹRÓDŁA na zdjęciu — dokładnie jak na prawdziwej karcie w systemie
+    # (kolor zielony = IAAI wg iaai.css; auta z Copart mają plakietkę niebieską „Copart”).
+    s += rect(x+w-62, y+9, 53, 19, r=9, fill=EMD, stroke=EMD, sw=0)
+    s += T(x+w-35, y+22, "IAAI", size=9, color="#fff", weight="bold", anchor="middle")
     tx = x+14
     s += T(tx, y+ih+26, "2004 Honda Accord 2.4 EX", size=11.5, color=NAVY, weight="bold")
     s += T(tx, y+ih+48, "Buy Now: USD 1 000", size=11, color=EMD, weight="bold")
@@ -124,30 +128,32 @@ def our_card(x, y, w):
 def proof_p2():
     s = page_open()
     s += header("To samo auto — pole po polu",
-                "Jak jedno ogłoszenie z IAAI zamienia się w kartę na Twojej stronie (przykład: Honda Accord).")
-    # lewa: karta IAAI (zrzut), prawa: nasza karta (SVG)
+                "Przykład: Honda Accord z IAAI. Auta z Copart trafiają identycznie — różni je tylko plakietka źródła.")
+    # lewa: karta z aukcji (zrzut IAAI), prawa: nasza karta (SVG)
     lcw = 200.0; lch = 200.0*520/430          # ~242
     lx, ly = 60, 130
     rx, ry = W-60-210, 130
-    s += num_badge(lx+13, ly-14, "1"); s += T(lx+32, ly-9, "Karta na IAAI.com", size=11, color=NAVY, weight="bold")
+    s += num_badge(lx+13, ly-14, "1"); s += T(lx+32, ly-9, "Karta na aukcji (IAAI / Copart)", size=11, color=NAVY, weight="bold")
     s += num_badge(rx+13, ry-14, "2"); s += T(rx+32, ry-9, "Karta na Twojej stronie", size=11, color=NAVY, weight="bold")
     s += rect(lx-4, ly-4, lcw+8, lch+8, r=8, fill=CARD, stroke=LINE) + img(os.path.join(IMG, "iaai-accord.jpg"), lx, ly, lcw, lch)
     s += our_card(rx, ry, 210)
-    # srodkowe pola z liniami do obu kart
+    # srodkowe pola z liniami do obu kart (w tym plakietka źródła — jak w systemie)
     cx = (lx+lcw + rx)/2
-    fields = ["Zdjęcie auta", "Nazwa i rocznik", "Cena „Buy Now”", "Przebieg (mile → km)", "Skrzynia biegów", "Kluczyk / stan"]
-    pw = 176; ys = [150, 198, 246, 294, 342, 388]
+    fields = ["Zdjęcie auta", "Nazwa i rocznik", "Cena „Buy Now”", "Przebieg (mile → km)",
+              "Skrzynia biegów", "Kluczyk / stan", "Źródło: IAAI / Copart"]
+    pw = 178; ys = [150, 190, 230, 270, 310, 350, 389]
     for f, yy in zip(fields, ys):
         s += line(lx+lcw+4, yy, cx-pw/2, yy, color=EM, sw=1)
         s += line(cx+pw/2, yy, rx-4, yy, color=EM, sw=1)
-        s += rect(cx-pw/2, yy-13, pw, 26, r=13, fill="#fff", stroke=EM, sw=1.2)
-        s += T(cx, yy+4, f, size=9.6, color=NAVY, weight="bold", anchor="middle")
-    s += rect(40, 445, W-80, 92, r=10, fill=CLOUD, stroke=LINE)
-    s += T(58, 470, "Każde pole trafia automatycznie:", size=12.5, color=NAVY, weight="bold")
+        s += rect(cx-pw/2, yy-12, pw, 24, r=12, fill="#fff", stroke=EM, sw=1.2)
+        s += T(cx, yy+4, f, size=9.4, color=NAVY, weight="bold", anchor="middle")
+    s += rect(40, 442, W-80, 112, r=10, fill=CLOUD, stroke=LINE)
+    s += T(58, 466, "Każde pole trafia automatycznie:", size=12.5, color=NAVY, weight="bold")
     for i, ln in enumerate([
         "•  Zdjęcia, cena, przebieg, skrzynia, kluczyk i uszkodzenia — nic nie wpisujesz ręcznie.",
-        "•  Dodatkowo przeliczamy przebieg z mil na kilometry, żeby był czytelny dla polskiego klienta."]):
-        s += T(58, 494+i*20, ln, size=11, color=INK)
+        "•  Przeliczamy przebieg z mil na kilometry, żeby był czytelny dla polskiego klienta.",
+        "•  Każde auto dostaje plakietkę źródła (IAAI albo Copart) — klient widzi, skąd pochodzi, i może filtrować."]):
+        s += T(58, 488+i*20, ln, size=11, color=INK)
     s += foot("Kredyt Kompas · Importer Aukcji (IAAI + Copart) — skąd pochodzą dane (2/2)")
     return s + "</svg>"
 
@@ -201,11 +207,11 @@ def diag_p1():
     s += rect(30, 430, W-60, 92, r=10, fill=CLOUD, stroke=LINE)
     s += T(48, 456, "Najprościej:", size=12.5, color=NAVY, weight="bold")
     for i, ln in enumerate([
-        "•  Auto wędruje z lewej na prawą: z aukcji IAAI, przez Twój serwer, aż na stronę — samo.",
+        "•  Auto wędruje z lewej na prawą: z aukcji IAAI lub Copart, przez Twój serwer, aż na stronę — samo.",
         "•  Automat i baza żyją na Twoim serwerze (VPS); wtyczka i strona to Twój WordPress.",
         "•  Cały cykl powtarza się w kółko co ~60 minut, całą dobę — Ty nie robisz nic."]):
         s += T(48, 478+i*18, ln, size=10.5, color=INK)
-    s += foot("Kredyt Kompas · IAAI Importer — jak to działa (1/2)")
+    s += foot("Kredyt Kompas · Importer Aukcji (IAAI + Copart) — jak to działa (1/2)")
     return s + "</svg>"
 
 # =================== DIAGRAM — strona 2: decyzje + dane + niezawodność =====
@@ -248,7 +254,7 @@ def diag_p2():
     s += T(30, 342, "③  Niezawodność i bezpieczeństwo:", size=12.5, color=NAVY, weight="bold")
     ry, rh = 352, 74; rbw = (W-60-3*14)/4
     rel = [("Nie dubluje pracy","blokada podwójnego\nuruchomienia"),
-           ("Tylko z IAAI","zdjęcia z zaufanego\nźródła"),
+           ("IAAI + Copart","zdjęcia z dwóch\nzaufanych źródeł"),
            ("Log na serwerze","każdy krok\nzapisany"),
            ("Sprzedane znikają","oferta zawsze\naktualna")]
     for i, (t, u) in enumerate(rel):
@@ -259,7 +265,7 @@ def diag_p2():
             s += T(x+rbw/2, ry+44+j*13, part, size=8.5, color=EMD, anchor="middle")
     s += T(40, H-30, "W tej wersji demonstracyjnej dane i zdjęcia aut są przykładowe — pokazują sam sposób działania.",
            size=10, color=MUT)
-    s += foot("Kredyt Kompas · IAAI Importer — jak to działa (2/2)")
+    s += foot("Kredyt Kompas · Importer Aukcji (IAAI + Copart) — jak to działa (2/2)")
     return s + "</svg>"
 
 # =================== budowa =================================================
