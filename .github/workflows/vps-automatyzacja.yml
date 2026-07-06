@@ -74,7 +74,10 @@ jobs:
           mysql -h 127.0.0.1 -uroot -proot iaai \
             -e "SELECT source, salvage_id, year, make, model, odometer, buy_now FROM iaai_vehicles ORDER BY source, salvage_id LIMIT 20;" \
             | tee -a artefakty/podsumowanie.txt
-          mysqldump -h 127.0.0.1 -uroot -proot iaai iaai_vehicles iaai_vehicle_images > artefakty/nasze-auta.sql
+          # --column-statistics=0: runner ma klienta MySQL 8, baza to MariaDB (brak tabeli
+          # information_schema.COLUMN_STATISTICS) — bez tej flagi mysqldump pada z błędem 1109.
+          mysqldump --column-statistics=0 --no-tablespaces \
+            -h 127.0.0.1 -uroot -proot iaai iaai_vehicles iaai_vehicle_images > artefakty/nasze-auta.sql
 
       - name: Wynik do pobrania
         uses: actions/upload-artifact@v4
