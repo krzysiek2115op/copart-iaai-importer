@@ -161,18 +161,21 @@ function iaai_demo_seed_cars() : void {
 	$img = $wpdb->prefix . 'iaai_vehicle_images';
 
 	foreach ( iaai_demo_cars() as $c ) {
+		$src = (string) ( $c['v']['source'] ?? 'iaai' );   // domyślnie IAAI; auta Copart mają source=copart
+		$c['v']['source'] = $src;
 		$wpdb->replace( $veh, $c['v'] );
 		foreach ( $c['img'] as $seq => $url ) {
 			$wpdb->replace( $img, array(
 				'salvage_id' => $c['v']['salvage_id'],
-				'image_key'  => 't' . $c['v']['salvage_id'] . '-' . ( $seq + 1 ),
+				'source'     => $src,
+				'image_key'  => 'demo-' . $src . '-' . $c['v']['salvage_id'] . '-' . ( $seq + 1 ),
 				'seq'        => $seq + 1,
 				'width'      => 700,
 				'height'     => 500,
 				'url'        => $url,
 			) );
 		}
-		iaai_publish_vehicle( (int) $c['v']['salvage_id'] );
+		iaai_publish_vehicle( (int) $c['v']['salvage_id'], $src );   // dual-source: publikuj wg źródła
 	}
 }
 
@@ -256,5 +259,30 @@ function iaai_demo_cars() : array {
 			'key_available' => 'Yes', 'run_and_drive' => 'Run and Drive', 'title' => 'Salvage', 'selling_branch' => 'AZ - Phoenix',
 			'buy_now' => 5400, 'current_bid' => 3300, 'detail_url' => 'https://www.iaai.com/VehicleDetail/900009', 'status' => 'active',
 		), 'img' => array( $ph( '5b4b8a', 'VW Jetta' ), $ph( '332b52', 'Jetta - tyl' ) ) ),
+
+		// ——— DRUGIE ŹRÓDŁO: COPART (plakietka „Copart" + filtr źródła na liście) ———
+		array( 'v' => array(
+			'salvage_id' => 800001, 'source' => 'copart', 'vin' => '1C4RJFAG5FC601234', 'year' => 2018, 'make' => 'Jeep', 'model' => 'Grand Cherokee',
+			'body_style' => 'SUV', 'odometer' => 61240, 'odometer_uom' => 'mi', 'primary_damage' => 'Front End',
+			'color' => 'Black', 'fuel_type' => 'Gasoline', 'transmission' => 'Automatic', 'drive_line' => '4WD',
+			'key_available' => 'Yes', 'run_and_drive' => 'Run and Drive', 'title' => 'Salvage', 'selling_branch' => 'TX - Dallas (Copart)',
+			'buy_now' => 12800, 'current_bid' => 8600, 'detail_url' => 'https://www.copart.com/lot/800001', 'status' => 'active',
+		), 'img' => array( $ph( '1e5fb0', 'Jeep Grand Cherokee' ), $ph( '133b6e', 'Grand Cherokee - bok' ) ) ),
+
+		array( 'v' => array(
+			'salvage_id' => 800002, 'source' => 'copart', 'vin' => '5NPD84LF2JH123456', 'year' => 2018, 'make' => 'Hyundai', 'model' => 'Elantra',
+			'body_style' => 'Sedan', 'odometer' => 44500, 'odometer_uom' => 'mi', 'primary_damage' => 'Rear End',
+			'color' => 'White', 'fuel_type' => 'Gasoline', 'transmission' => 'Automatic', 'drive_line' => 'FWD',
+			'key_available' => 'Yes', 'run_and_drive' => 'Run and Drive', 'title' => 'Clean', 'selling_branch' => 'CA - Los Angeles (Copart)',
+			'buy_now' => 7600, 'current_bid' => 5200, 'detail_url' => 'https://www.copart.com/lot/800002', 'status' => 'active',
+		), 'img' => array( $ph( '1e5fb0', 'Hyundai Elantra' ) ) ),
+
+		array( 'v' => array(
+			'salvage_id' => 800003, 'source' => 'copart', 'vin' => '1C6RR7GT6JS123456', 'year' => 2019, 'make' => 'Ram', 'model' => '1500',
+			'body_style' => 'Pickup', 'odometer' => 38700, 'odometer_uom' => 'mi', 'primary_damage' => 'Side',
+			'color' => 'Silver', 'fuel_type' => 'Gasoline', 'transmission' => 'Automatic', 'drive_line' => '4WD',
+			'key_available' => 'Yes', 'run_and_drive' => 'Run and Drive', 'title' => 'Salvage', 'selling_branch' => 'FL - Miami (Copart)',
+			'buy_now' => 19900, 'current_bid' => 14500, 'detail_url' => 'https://www.copart.com/lot/800003', 'status' => 'active',
+		), 'img' => array( $ph( '1e5fb0', 'Ram 1500' ), $ph( '123a63', 'Ram 1500 - tyl' ) ) ),
 	);
 }
