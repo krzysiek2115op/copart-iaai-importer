@@ -218,13 +218,13 @@ def draw(b, x, y):
 
 def header(title, pno):
     s = [R(0, 0, PW, 60, DARK, 0), R(0, 57, PW, 3, BLUE, 0),
-         T(MX, 26, "IAAI Importer", 13, "#fff", "bold"),
+         T(MX, 26, "Importer Aukcji (IAAI + Copart)", 13, "#fff", "bold"),
          T(MX, 46, title[:70], 10, "#aebfd8"),
          T(PW - MX, 38, "instrukcja klienta", 9.5, "#aebfd8", anchor="end")]
     return "".join(s)
 def footer(pno, total):
     return (f'<line x1="{MX}" y1="808" x2="{PW-MX}" y2="808" stroke="{GRAYBORDER}" stroke-width="1"/>'
-            + T(MX, 822, "IAAI Importer — importer aut z IAAI do WordPress", 8.5, MUTED)
+            + T(MX, 822, "Importer Aukcji — auta z IAAI i Copart do WordPress", 8.5, MUTED)
             + T(PW - MX, 822, f"Strona {pno} / {total}", 8.5, MUTED, anchor="end"))
 
 def render_doc(title, blocks):

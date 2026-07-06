@@ -73,17 +73,49 @@ Copart to **drugie źródło** aut. Działa tak samo jak IAAI (te same dane, zdj
 2. **Pełne dane i zdjęcia zwykle wymagają zalogowania na konto Member.** Dlatego Copart
    uruchamiamy z **ciasteczkami sesji** zalogowanego konta (zmienna `COPART_COOKIES`).
 
-**Jak włączyć Copart (gdy masz konto Copart Member):**
+### Krok po kroku — dla osoby nietechnicznej
+
+**A. Załóż konto Member na Copart**
+1. Wejdź na **https://www.copart.com** → kliknij **„Register" / „Sign Up"** (Zarejestruj się).
+2. Wypełnij dane, wybierz rodzaj konta, potwierdź e-mail i zaloguj się.
+
+> ⚠️ **Uczciwie, żebyś wiedział(a) z góry:** pełny podgląd danych i zdjęć na Copart bywa
+> dostępny dopiero dla **konta Member** (czasem płatny plan „Premier"/roczny), a część aukcji
+> w USA wymaga **rejestracji biznesowej** (dealer/broker) albo pośrednika z licencją. Jeśli już
+> sprowadzasz auta z USA — zwykle masz takie konto lub brokera, który je ma. **Bez konta Member
+> po prostu zostaw samo IAAI** — strona i tak działa normalnie, Copart dołączysz później.
+
+**B. Pobierz „ciasteczka sesji" (to jak przepustka zalogowania)**
+Program musi „udawać" Ciebie zalogowanego na Copart — służą do tego *ciasteczka sesji*.
+Najprościej pobrać je wtyczką do przeglądarki (ok. 5 minut, bez wiedzy technicznej):
+1. Zaloguj się na **copart.com** w przeglądarce (Chrome lub Edge).
+2. Zainstaluj darmowe rozszerzenie **„Cookie-Editor"** (ze sklepu rozszerzeń przeglądarki).
+3. Będąc **na stronie copart.com** kliknij ikonę wtyczki → **„Export"** → **„Header string"**
+   (lub „Copy"). Skopiuje się długi tekst — to Twoje ciasteczka.
+4. **Przekaż ten tekst administratorowi/informatykowi**, który wklei go do ustawień programu
+   (pole `COPART_COOKIES`).
+
+> 🔒 **Traktuj ciasteczka jak hasło** — dają dostęp do Twojego konta Copart. Nie wysyłaj ich
+> publicznie, mailem „w ciemno" ani nie wklejaj na czacie/forum. Tylko do zaufanego administratora.
+
+**C. Odświeżanie (co jakiś czas)**
+Ciasteczka z czasem **wygasają** (po wylogowaniu albo po kilku dniach). Gdy zauważysz, że Copart
+przestał dokładać auta — powtórz **krok B** (zaloguj się ponownie i podaj nowe ciasteczka).
+
+---
+
+**Jak uruchomić (dla administratora):**
 ```
-# 1) Zaloguj się na copart.com w przeglądarce, skopiuj ciasteczka sesji
-#    (Narzędzia deweloperskie → Application/Storage → Cookies) do jednej linii.
+# 1) Ciasteczka sesji Member z kroku B (jako jedna linia).
 # 2) Uruchom przebieg dla źródła "copart" z tymi ciasteczkami:
 COPART_COOKIES="tu-wklej-ciasteczka" \
   python3 scraper/run_pipeline.py --source copart --mode live
 ```
 Ten sam program obsługuje oba źródła — dla IAAI uruchamiasz go z `--source iaai` (to robi
-instalator automatycznie), dla Copart z `--source copart`. Dane z obu źródeł trafiają do
-**tej samej bazy** (rozróżnia je kolumna „źródło") i na **tę samą stronę**.
+instalator automatycznie), dla Copart z `--source copart`. Aby Copart chodził **sam, całą dobę**
+(jak IAAI), administrator dokłada analogiczną usługę systemd z `--source copart` i ustawia
+`COPART_COOKIES` w `/etc/iaai-importer.env` (szczegóły: `deploy/README.md`). Dane z obu źródeł
+trafiają do **tej samej bazy** (rozróżnia je kolumna „źródło") i na **tę samą stronę**.
 
 > ⚠️ **Ważne (uczciwie):** moduł Copart jest gotowy od strony programu, ale — z uwagi na
 > ochronę Cloudflare i wymóg logowania — **realne, ciągłe pobieranie z Copart trzeba
