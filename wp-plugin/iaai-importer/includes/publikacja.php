@@ -217,9 +217,9 @@ function iaai_unpublish_inactive( int $batch = 200 ) : int {
  * poprawność-meta: po publikacji kluczowe meta (iaai_make, iaai_model, iaai_year,
  *   iaai_odometer) są ustawione i równe wartościom z bazy.
  * Funkcja kontrolna do uruchomienia po imporcie: */
-function iaai_krytyk_publikacja( int $salvage_id ) : array {
+function iaai_krytyk_publikacja( int $salvage_id, string $source = 'iaai' ) : array {
 	$issues  = array();
-	$post_id = iaai_find_post_by_salvage( $salvage_id );
+	$post_id = iaai_find_post_by_salvage( $salvage_id, $source );
 	if ( ! $post_id ) {
 		$issues[] = "poprawność-CPT: brak wpisu dla salvage_id {$salvage_id}";
 		return $issues;

@@ -77,7 +77,7 @@ function iaai_seo_description( array $d ) : string {
 		$parts[] = 'oddział ' . $d['branch'];
 	}
 	$desc = implode( ', ', $parts );
-	$desc = $desc !== '' ? $desc . '. Auto z aukcji IAAI — zdjęcia i pełne dane.' : '';
+	$desc = $desc !== '' ? $desc . '. Auto z aukcji samochodowych w USA (IAAI / Copart) — zdjęcia i pełne dane.' : '';
 	if ( function_exists( 'mb_substr' ) && mb_strlen( $desc ) > 160 ) {
 		$desc = rtrim( mb_substr( $desc, 0, 157 ) ) . '…';
 	}
@@ -97,7 +97,7 @@ function iaai_seo_head() : void {
 	$is_landing = is_page() && function_exists( 'iaai_get_landing_page_id' )
 		&& get_the_ID() === iaai_get_landing_page_id();
 	if ( ( is_post_type_archive( IAAI_CPT ) || $is_landing ) && ! iaai_seo_plugin_active() ) {
-		$desc = esc_attr__( 'Aktualna oferta pojazdów z aukcji IAAI — zdjęcia, przebieg, zakres uszkodzeń i pełne dane techniczne. Oferta odświeża się automatycznie.', 'iaai-importer' );
+		$desc = esc_attr__( 'Aktualna oferta pojazdów z aukcji IAAI i Copart — zdjęcia, przebieg, zakres uszkodzeń i pełne dane techniczne. Oferta odświeża się automatycznie.', 'iaai-importer' );
 		echo '<meta name="description" content="' . $desc . "\" />\n";
 		return;
 	}
