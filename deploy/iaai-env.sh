@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Importer Aukcji (IAAI + Copart).
+# Licencja: GNU GPL v2 lub pozniejsza - pelny tekst w pliku LICENSE.
 # =====================================================================
 #  iaai-env.sh — MOST KONFIGURACJI: scraper Python pisze do TEJ SAMEJ
 #  bazy MySQL, której używa WordPress klienta (blok A, pkt 3/4).

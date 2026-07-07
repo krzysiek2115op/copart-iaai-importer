@@ -1,4 +1,5 @@
 name: VPS (symulacja) — automatyzacja importera IAAI + Copart
+# SPDX-License-Identifier: GPL-2.0-or-later (patrz plik LICENSE w repo)
 
 # „Udawany VPS": ten workflow robi to, co na serwerze robi timer systemd —
 #   1) stawia bazę (jak MySQL WordPressa),

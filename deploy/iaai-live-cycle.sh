@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Importer Aukcji (IAAI + Copart).
+# Licencja: GNU GPL v2 lub pozniejsza - pelny tekst w pliku LICENSE.
 # =====================================================================
 #  iaai-live-cycle.sh — JEDEN CYKL automatyzacji always-on (blok A, pkt 1/5).
 #
