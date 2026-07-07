@@ -22,6 +22,19 @@ add_filter( 'iaai_allowed_image_hosts', function ( $hosts ) {
 	return $hosts;
 } );
 
+/* Demo: wyglad marki Kredyt Kompas — fonty (Sora / IBM Plex) + design system
+   (demo/pages/assets/styles.css skopiowany jako wp-content/kredyt-kompas.css).
+   Enqueue site-wide, priorytet 20 (po stylach motywu), by nadpisac tlo/typografie. */
+add_action( 'wp_enqueue_scripts', function () {
+	wp_enqueue_style(
+		'kk-fonts',
+		'https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap',
+		array(),
+		null
+	);
+	wp_enqueue_style( 'kk-brand', content_url( 'kredyt-kompas.css' ), array( 'kk-fonts' ), '1' );
+}, 20 );
+
 add_action( 'init', 'iaai_demo_seed_now', 99 );
 
 /** Jednorazowy seed całej strony demonstracyjnej. */

@@ -1,9 +1,5 @@
 {
 	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
-	"meta": {
-		"title": "Kredyt Kompas — demo z wtyczka IAAI Importer",
-		"description": "Strona Kredyt Kompas (Start, Kredyty, Kalkulator, O nas, FAQ, Kontakt) z wtyczka IAAI Importer i podstrona 'Nasze auta' w gornym menu — oferta pojazdow (filtry, karty, paginacja)."
-	},
 	"landingPage": "/",
 	"preferredVersions": { "php": "8.2", "wp": "latest" },
 	"login": true,
@@ -27,6 +23,14 @@
 			"data": {
 				"resource": "url",
 				"url": "https://raw.githubusercontent.com/krzysiek2115op/iaai-importer-demo/main/kredyt-kompas-content.php"
+			}
+		},
+		{
+			"step": "writeFile",
+			"path": "/wordpress/wp-content/kredyt-kompas.css",
+			"data": {
+				"resource": "url",
+				"url": "https://raw.githubusercontent.com/krzysiek2115op/iaai-importer-demo/main/kredyt-kompas.css"
 			}
 		},
 		{ "step": "mkdir", "path": "/wordpress/wp-content/mu-plugins" },
