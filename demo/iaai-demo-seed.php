@@ -22,6 +22,11 @@ add_filter( 'iaai_allowed_image_hosts', function ( $hosts ) {
 	return $hosts;
 } );
 
+/* Demo: motyw blokowy ma prawdziwe menu WP (seed buduje je nizej), wiec wylacz
+   front-endowa „siatke bezpieczenstwa" wtyczki (JS doklejajacy „Nasze auta" w
+   motywach bez menu) — inaczej pozycja pokazuje sie DWA razy. Tylko dla demo. */
+add_filter( 'iaai_auto_menu', '__return_false' );
+
 /* Demo: wyglad marki Kredyt Kompas — fonty (Sora / IBM Plex) + design system
    (demo/pages/assets/styles.css skopiowany jako wp-content/kredyt-kompas.css).
    Enqueue site-wide, priorytet 20 (po stylach motywu), by nadpisac tlo/typografie. */
