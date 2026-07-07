@@ -29,38 +29,43 @@ Ich baza — brak dostępu; czytamy przez publiczne strony (HTTP).
 
 ## CZĘŚĆ 1 — SCRAPER (Python): zbiera dane i zapisuje do bazy `polea_*`
 
-### DZIAŁ 1 · POBIERANIE — dok: `poleasingowe-html.md`
-Kanał HTTP do serwera poleasingowe.pl (server-side HTML, bez JS).
+### DZIAŁ 1A · POBIERANIE LISTY — dok: [`dzialy/1A-pobieranie-lista.md`](dzialy/1A-pobieranie-lista.md)
+Crawl kategorii (server-side HTML, bez JS): *co istnieje*.
 | Agent | Zadanie | Krytyk |
 |---|---|---|
 | pokrycie | przejście całej kategorii `ecr_motorcycles` po stronach (`?page=N`) → cała oferta | kompletność-pokrycia |
-| listingi | karty wyników + paginacja; **odfiltrowanie reklam partnerów** (~2/stronę) | kompletność-listy |
+| listingi | karty wyników + paginacja; **odfiltrowanie reklam partnerów** (~2/stronę) → stuby lotów | kompletność-listy |
+
+### DZIAŁ 1B · POBIERANIE SZCZEGÓŁÓW — dok: [`dzialy/1B-pobieranie-szczegoly.md`](dzialy/1B-pobieranie-szczegoly.md)
+Deep fetch per lot: *pełne pola + zdjęcia*.
+| Agent | Zadanie | Krytyk |
+|---|---|---|
 | szczegóły | strona `/details/<slug>/<lot_id>`, wszystkie pola z kontraktu danych | kompletność-pól |
 | zdjęcia | `sgallery_<UUID>` → `image_key` + URL-e, kolejność | kompletność-zdjęć |
 
-### DZIAŁ 7 · ZGODNOŚĆ — dok: `robots-rfc9309.md`
+### DZIAŁ 7 · ZGODNOŚĆ — dok: [`dzialy/7-zgodnosc.md`](dzialy/7-zgodnosc.md)
 | Agent | Zadanie | Krytyk |
 |---|---|---|
 | zgody | respektuje robots.txt, rate-limit (import co kilka godzin + odstęp między żądaniami), User-Agent, wykrywa blokady/429 | blokady |
 
-### DZIAŁ 2 · NORMALIZACJA — dok: `normalizacja-pl.md`
+### DZIAŁ 2 · NORMALIZACJA — dok: [`dzialy/2-normalizacja.md`](dzialy/2-normalizacja.md)
 | Agent | Zadanie | Krytyk |
 |---|---|---|
 | VIN | format 17 znaków + cyfra kontrolna, maska (bez odpytywania NHTSA) | poprawność-VIN |
 | jednostki | `"17 460 PLN"`→liczba, `"3708 km"`→int, `"76 KM"`→int, `"754 ccm"`→int, daty→ISO, `"10 godzin (2026-07-08)"`→`termin_zakonczenia` DATETIME | jakość-jednostek |
 
-### DZIAŁ 3 · DEDUPLIKACJA — dok: `dedup.md`
+### DZIAŁ 3 · DEDUPLIKACJA — dok: [`dzialy/3-deduplikacja.md`](dzialy/3-deduplikacja.md)
 | Agent | Zadanie | Krytyk |
 |---|---|---|
 | match | usuwa duplikaty po `lot_id`; wykrywa relist po **pełnym VIN** (ten sam motocykl, nowy `lot_id`) | fałszywe-trafienia |
 
-### DZIAŁ 4 · SYNCHRONIZACJA — dok: `mysql-upsert.md`
+### DZIAŁ 4 · SYNCHRONIZACJA — dok: [`dzialy/4-synchronizacja.md`](dzialy/4-synchronizacja.md)
 | Agent | Zadanie | Krytyk |
 |---|---|---|
 | diff | `raw_hash`: new / changed / unchanged | spójność |
 | zapis | upsert do `polea_*` (PyMySQL) + reconcile: aukcje zniknięte/po terminie → `status` (zakonczona/usunieta) | poprawność-zapisu |
 
-### DZIAŁ 5 · AUDYT — dok: `walidacja.md`
+### DZIAŁ 5 · AUDYT — dok: [`dzialy/5-audyt.md`](dzialy/5-audyt.md)
 | Agent | Zadanie | Krytyk |
 |---|---|---|
 | walidacja | reguły pól (VIN 17 znaków, `cena_pln`>0, `rok_produkcji` sensowny, wymagane pola) | poprawność |
@@ -72,33 +77,46 @@ Zapis SQL upsert (PyMySQL). Wtyczka WordPress czyta tę bazę (osobne połączen
 
 ## CZĘŚĆ 2 — WORDPRESS (wtyczka PHP): pokazuje motocykle z bazy na stronie
 
-### DZIAŁ 6 · BEZPIECZEŃSTWO — dok: `wordpress-security.md`
+### DZIAŁ 6 · BEZPIECZEŃSTWO — dok: [`dzialy/6-bezpieczenstwo.md`](dzialy/6-bezpieczenstwo.md)
 | Agent | Zadanie | Krytyk |
 |---|---|---|
 | sanityzacja | escape/prepare danych wchodzących do WP; bezpieczne przechowanie poświadczeń osobnej bazy | podatności |
 | nonce | ochrona akcji admina (CSRF), capability checks | podatności |
 
-### DZIAŁ 8 · PUBLIKACJA — dok: `wordpress-cpt.md`
+### DZIAŁ 8 · PUBLIKACJA — dok: [`dzialy/8-publikacja.md`](dzialy/8-publikacja.md)
 | Agent | Zadanie | Krytyk |
 |---|---|---|
 | CPT | typ treści `motocykl` w WordPress | poprawność-publikacji |
 | meta | pola (VIN, rok, cena, przebieg, pojemność, moc, paliwo, lokalizacja, termin…) | poprawność-publikacji |
 
-### DZIAŁ 9 · FRONT I MEDIA — dok: `wordpress-media.md`
+### DZIAŁ 9 · FRONT I MEDIA — dok: [`dzialy/9-front-media.md`](dzialy/9-front-media.md)
 | Agent | Zadanie | Krytyk |
 |---|---|---|
-| front | lista + strona motocykla (dane escapowane), filtry marka/rok/cena; **podstrona „Nasze motory" auto-tworzona i dopasowana do motywu** (block + classic) | render |
-| media | zdjęcia hotlink z `poleasingowe.pl/images` | render |
+| front | lista + strona motocykla (dane escapowane), filtry marka/rok/cena/paliwo (allowlist), cache | render |
+| media | zdjęcia hotlink z `poleasingowe.pl/images`, lazy-load, fallback | render |
+
+### DZIAŁ 10 · PODSTRONA I MOTYW — dok: [`dzialy/10-podstrona-motyw.md`](dzialy/10-podstrona-motyw.md)
+Sztandarowe wymaganie klienta (wydzielone z Działu 9).
+| Agent | Zadanie | Krytyk |
+|---|---|---|
+| podstrona | auto-tworzenie „Nasze motory" (idempotentnie) + wpięcie w menu (block: `wp_navigation`; classic: menu location) | zgodność-wizualna |
+| motyw | dziedziczenie wyglądu aktywnego motywu (bez sztywnych stylów) → pasuje do dowolnego motywu | zgodność-wizualna |
 
 ### → STRONA WORDPRESS → klienci widzą motocykle
 
 ---
 
-## Mapa dokumentacji (do uzupełnienia w Etapie 3–4)
-- `poleasingowe-html.md` — endpointy, selektory HTML, paginacja, filtr reklam
-- `robots-rfc9309.md` — zasady zgodności, rate-limit
-- `normalizacja-pl.md` — parsowanie PL (PLN, km, KM, ccm, daty, terminy)
-- `dedup.md` — logika lot_id + relist po VIN
-- `mysql-upsert.md` — upsert + reconcile
-- `walidacja.md` — reguły audytu pól
-- `wordpress-security.md`, `wordpress-cpt.md`, `wordpress-media.md` — warstwa WP
+## Mapa dokumentacji — [`docs/dzialy/`](dzialy/)
+| Dział | Dokument |
+|---|---|
+| 1A Pobieranie listy | [1A-pobieranie-lista.md](dzialy/1A-pobieranie-lista.md) |
+| 1B Pobieranie szczegółów | [1B-pobieranie-szczegoly.md](dzialy/1B-pobieranie-szczegoly.md) |
+| 7 Zgodność | [7-zgodnosc.md](dzialy/7-zgodnosc.md) |
+| 2 Normalizacja | [2-normalizacja.md](dzialy/2-normalizacja.md) |
+| 3 Deduplikacja | [3-deduplikacja.md](dzialy/3-deduplikacja.md) |
+| 4 Synchronizacja | [4-synchronizacja.md](dzialy/4-synchronizacja.md) |
+| 5 Audyt | [5-audyt.md](dzialy/5-audyt.md) |
+| 6 Bezpieczeństwo | [6-bezpieczenstwo.md](dzialy/6-bezpieczenstwo.md) |
+| 8 Publikacja | [8-publikacja.md](dzialy/8-publikacja.md) |
+| 9 Front i media | [9-front-media.md](dzialy/9-front-media.md) |
+| 10 Podstrona i motyw | [10-podstrona-motyw.md](dzialy/10-podstrona-motyw.md) |
