@@ -1,0 +1,5 @@
+# Scraper poleasingowe.pl — zaleznosci runtime.
+# Rdzen (parsowanie/normalizacja/dedup/audyt) dziala na stdlib; ponizsze sa
+# potrzebne tylko do realnego pobierania (requests) i zapisu do bazy (PyMySQL).
+requests>=2.31
+PyMySQL>=1.1
