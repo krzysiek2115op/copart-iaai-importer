@@ -2,10 +2,10 @@
 /**
  * Plugin Name:       Importer Motocykli (poleasingowe.pl)
  * Description:       Podstrona „Nasze motory" z aukcjami motocykli z poleasingowe.pl, automatycznie dopasowana do motywu. Dane z osobnej bazy MySQL (polea_*).
- * Version:           0.7.1
+ * Version:           0.7.2
  * Requires at least: 6.0
  * Requires PHP:      7.4
- * Author:            Kredyt Kompas
+ * Author:            Krzysztof Leszczyński
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       motocykle-poleasingowe
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('POLEA_VERSION', '0.7.1');
+define('POLEA_VERSION', '0.7.2');
 define('POLEA_FILE', __FILE__);
 define('POLEA_DIR', plugin_dir_path(__FILE__));
 define('POLEA_URL', plugin_dir_url(__FILE__));

@@ -5,7 +5,7 @@ Generator kompletnej dokumentacji systemu (PDF) dla klienta — plugin-2.
 Bez zaleznosci zewnetrznych: sklad wlasny SVG -> PDF przez `rsvg-convert`,
 scalanie stron przez `gs`. Szerokosci glifow czytane wprost z plikow czcionek
 DejaVu (parser TTF w czystym Pythonie) -> poprawne zawijanie tekstu bez
-wychodzenia poza margines. BEZ diagramow/grafik (te powstaja w draw.io).
+wychodzenia poza margines. BEZ diagramow/grafik (dostarczane osobno jako zalaczniki).
 
 Wynik: docs/klient/pdf/dokumentacja-systemu.pdf
 """
@@ -15,6 +15,7 @@ import struct
 import shutil
 import tempfile
 import subprocess
+from datetime import date
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUTDIR = os.path.join(HERE, "pdf")
@@ -338,25 +339,27 @@ class Doc:
         bg, bar, ink = pal
         pad = 9
         maxw = CW - 2 * pad - 6
+        # Każdy blok to lista "runs" z GOTOWYM stylem — dzięki temu tytuł jest MIERZONY
+        # jako bold (a nie mierzony jako reg i dopiero rysowany bold -> to powodowało
+        # nachodzenie/„zlewanie” liter i zanik spacji).
         blocks = []
         if title:
-            blocks.append(("bold", title))
+            blocks.append([(title, "bold")])
         for para in text.split("\n"):
-            blocks.append(("reg", para))
+            blocks.append(parse_inline(para))
         lines = []
-        for style0, tx in blocks:
-            for ln in layout_runs(parse_inline(tx), BODY, maxw):
-                lines.append((style0, ln))
+        for runs in blocks:
+            for ln in layout_runs(runs, BODY, maxw):
+                lines.append(ln)
         bh = len(lines) * LH + 2 * pad
         self._need(bh + 4)
         self.frags.append(rect(ML, self.y, CW, bh, bg, rx=4))
         self.frags.append(rect(ML, self.y, 4, bh, bar, rx=0))
         yy = self.y + pad
-        for style0, ln in lines:
+        for ln in lines:
             base = yy + BODY
             for word, style, xoff in ln:
-                st = "bold" if style0 == "bold" and style == "reg" else style
-                self.frags.append(T(ML + pad + 6 + xoff, base, word, BODY, st, ink))
+                self.frags.append(T(ML + pad + 6 + xoff, base, word, BODY, style, ink))
             yy += LH
         self.y += bh + 6
 
@@ -421,7 +424,7 @@ def page_svg(frags, label, pageno, total, cover=False):
     body.append(line(ML, 50, PW - MR, 50, RULE, 0.8))
     # stopka
     body.append(line(ML, 800, PW - MR, 800, RULE, 0.8))
-    body.append(T(ML, 813, "Wersja wtyczki 0.7.1 • Kredyt Kompas • GPL-2.0-or-later", 7.6, "reg", MUTE))
+    body.append(T(ML, 813, "Wersja wtyczki 0.7.2 • Krzysztof Leszczyński • GPL-2.0-or-later", 7.6, "reg", MUTE))
     body.append(T(PW - MR, 813, "Strona %d / %d" % (pageno, total), 7.6, "reg", MUTE, anchor="end"))
     body += frags
     body.append("</svg>")
@@ -440,10 +443,9 @@ def build_cover():
     y = 340
     meta = [
         ("Produkt", "Podstrona „Nasze motory” z aukcjami motocykli z poleasingowe.pl"),
-        ("Wersja wtyczki", "0.7.1"),
-        ("Autor / właściciel", "Kredyt Kompas"),
+        ("Wersja wtyczki", "0.7.2"),
+        ("Autor", "Krzysztof Leszczyński"),
         ("Licencja", "GPL-2.0-or-later"),
-        ("Repozytorium", "copart-iaai-importer (branch plugin-2)"),
         ("Wymagania", "WordPress 6.0+ / PHP 7.4+ • MySQL 5.7+/MariaDB 10.2+ • Python 3 (VPS)"),
     ]
     for k, v in meta:
@@ -453,23 +455,7 @@ def build_cover():
                 f.append(T(ML + 140 + xoff, y, word, 9.5, style, INK))
             y += 15
         y += 4
-    # ramka informacyjna o diagramach
-    y += 8
-    bx, bw = ML, CW
-    lines = layout_runs(parse_inline("Zgodnie z ustaleniami dokument **nie zawiera diagramów ani grafik** — "
-                                     "schematy architektury zostaną wykonane oddzielnie w narzędziu draw.io. "
-                                     "Wszystkie fakty w dokumencie wynikają z kodu źródłowego projektu; miejsca "
-                                     "wymagające decyzji wdrożeniowej oznaczono jako „Wymaga potwierdzenia przez zespół projektowy”."),
-                         9.3, bw - 30)
-    bh = len(lines) * 14 + 20
-    f.append(rect(bx, y, bw, bh, "#eff6ff", rx=5))
-    f.append(rect(bx, y, 4, bh, "#3b82f6"))
-    yy = y + 10
-    for ln in lines:
-        for word, style, xoff in ln:
-            f.append(T(bx + 16 + xoff, yy + 9.3, word, 9.3, style, "#1e3a8a"))
-        yy += 14
-    f.append(T(ML, PH - 60, "Dokument wygenerowany automatycznie na podstawie brancha plugin-2.", 8.5, "ital", MUTE))
+    f.append(T(ML, PH - 60, "Wygenerowano: " + date.today().isoformat(), 8.5, "ital", MUTE))
     return f
 
 
@@ -614,7 +600,8 @@ def build_body(d):
     ])
     d.para("Przepływ danych: **poleasingowe.pl → scraper (pipeline działów) → MySQL `polea_*` → wtyczka → "
            "podstrona „Nasze motory”**. Projekt jest zorganizowany w „działy” z rolami agent (wykonanie) "
-           "i krytyk (weryfikacja) — szczegółowy schemat powstanie w draw.io.")
+           "i krytyk (weryfikacja) — szczegółowy schemat architektury dostarczany jest jako "
+           "osobny załącznik graficzny.")
     d.note("info", "Kluczowa decyzja projektowa",
            "Wtyczka NIE tworzy własnych wpisów/typów treści (CPT) w WordPressie. Aukcje są czasowe, a ich "
            "właścicielem jest scraper, dlatego front działa bezpośrednio na osobnej bazie (rozwiązanie "
@@ -781,7 +768,7 @@ def build_body(d):
 
     d.h2("13. Wtyczka WordPress — moduły")
     d.h3("Plik główny (motocykle-poleasingowe.php)")
-    d.para("Definiuje stałe: `POLEA_VERSION` (0.7.1), `POLEA_PAGE_OPTION`, `POLEA_CACHE_TTL` (5 minut). "
+    d.para("Definiuje stałe: `POLEA_VERSION` (0.7.2), `POLEA_PAGE_OPTION`, `POLEA_CACHE_TTL` (5 minut). "
            "Rejestruje hooki aktywacji/dezaktywacji, shortcode (`init`) oraz styl frontu ładowany na żądanie.")
     d.h3("Warstwa danych — Polea_DB (includes/class-db.php)")
     d.bullets([
@@ -1032,8 +1019,8 @@ def build_body(d):
         "`scraper/README.md`, `wp-plugin/motocykle-poleasingowe/README.md` — skrócone instrukcje modułów.",
     ])
     d.note("info", "Diagramy",
-           "Zgodnie z ustaleniami dokument nie zawiera diagramów — schematy architektury i przepływu danych "
-           "zostaną wykonane ręcznie w draw.io na podstawie rozdziałów 8–14.")
+           "Schematy architektury i przepływu danych dostarczane są jako osobne załączniki graficzne "
+           "(uzupełniają rozdziały 8–14).")
 
 
 # --------------------------------------------------------------------- montaż
