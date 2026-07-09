@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 2242" width="960" height="2242" font-family="DejaVu Sans, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 2290" width="960" height="2290" font-family="DejaVu Sans, Arial, sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#666"/></marker></defs>
-<rect x="0" y="0" width="960" height="2242" fill="#ffffff"/>
+<rect x="0" y="0" width="960" height="2290" fill="#ffffff"/>
 <text x="480.0" y="54" text-anchor="middle" font-size="29" font-weight="bold" fill="#1a1a1a">Importer motocykli poleasingowe.pl — działy, agenci, krytycy</text>
 <text x="480.0" y="85" text-anchor="middle" font-size="15" fill="#555">1 źródło (poleasingowe.pl · motocykle) · 11 działów · każdy ma agentów (wykonują) i krytyka (sprawdza) · 1 dokumentacja na dział</text>
 <circle cx="180.0" cy="112" r="7" fill="#2f6fed"/><text x="194.0" y="117" font-size="13.5" fill="#333">agent — wykonuje zadanie</text>
@@ -15,7 +15,7 @@
 <text x="480.0" y="287" text-anchor="middle" font-size="11" fill="#616161">/pl/auctions/list/pub/all/ecr_motorcycles · /pl/auctions/details/&lt;id&gt; · images/sgallery_*.png</text>
 <line x1="480.0" y1="302" x2="480.0" y2="312" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
 <rect x="200.0" y="316" width="560" height="36" rx="9" fill="#e6eef7" stroke="#1e5fb0" stroke-width="1.8"/>
-<text x="480.0" y="332" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e5fb0">AJAX · łącznik pobierający dane z serwera źródła</text>
+<text x="480.0" y="332" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e5fb0">AJAX ① · łącznik pobierający dane z serwera źródła</text>
 <text x="480.0" y="346" text-anchor="middle" font-size="10" fill="#4a6f9c">przepuszcza dane ze źródła do działów, które sprawdzają ich poprawność (przez HTTP, bez JS)</text>
 <line x1="480.0" y1="352" x2="480.0" y2="374" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
 <rect x="30" y="380" width="900" height="96" rx="12" fill="#eef4ff" stroke="#4f7cff" stroke-width="2"/>
@@ -107,58 +107,61 @@
 <rect x="200" y="1382" width="560" height="52" rx="10" fill="#e8f5e9" stroke="#43a047" stroke-width="2"/>
 <text x="480.0" y="1414" text-anchor="middle" font-size="16" font-weight="bold" fill="#2e7d32">OSOBNA BAZA MySQL  ·  polea_motocykle + polea_zdjecia  ·  klucz: lot_id</text>
 <text x="480.0" y="1452" text-anchor="middle" font-size="11.5" fill="#777">nie miesza się z bazą WordPressa ani z plugin-1 (inny prefix polea_) · scraper jest właścicielem danych (zapis: upsert PyMySQL)</text>
-<line x1="480.0" y1="1460" x2="480.0" y2="1484" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<text x="496.0" y="1477.0" font-size="12.5" font-style="italic" fill="#777">wtyczka czyta bazę (mysqli, tylko odczyt)</text>
-<text x="48" y="1520" font-size="18" font-weight="bold" fill="#333">▼ CZĘŚĆ 2 — WORDPRESS (wtyczka PHP): pokazuje motocykle z bazy na podstronie</text>
-<rect x="30" y="1536" width="900" height="126" rx="12" fill="#fff4ec" stroke="#ff8a3d" stroke-width="2"/>
-<text x="52" y="1566" font-size="17" font-weight="bold" fill="#9c4a00">DZIAŁ 6 · BEZPIECZEŃSTWO<tspan font-size="12" font-weight="normal" fill="#888">   ·   PHP/WP</tspan></text>
-<rect x="726.5" y="1548" width="185.5" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
-<text x="819.25" y="1564" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: 6-bezpieczenstwo.md</text>
-<circle cx="62" cy="1594" r="6.5" fill="#2f6fed"/>
-<text x="76" y="1598" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">połączenie</tspan><tspan fill="#444"> — mysqli z obsługą błędów — nie wpdb (brak wp_die)</tspan></text>
-<circle cx="640" cy="1594" r="6.5" fill="#e23b3b"/>
-<text x="654" y="1598" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">odporność</tspan></text>
-<circle cx="62" cy="1624" r="6.5" fill="#2f6fed"/>
-<text x="76" y="1628" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">sanityzacja</tspan><tspan fill="#444"> — prepared + escape wyjścia + nonce w adminie</tspan></text>
-<circle cx="640" cy="1624" r="6.5" fill="#e23b3b"/>
-<text x="654" y="1628" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">podatności</tspan></text>
-<line x1="480.0" y1="1662" x2="480.0" y2="1686" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<rect x="30" y="1692" width="900" height="96" rx="12" fill="#fff4ec" stroke="#ff8a3d" stroke-width="2"/>
-<text x="52" y="1722" font-size="17" font-weight="bold" fill="#9c4a00">DZIAŁ 8 · PUBLIKACJA (REPO)<tspan font-size="12" font-weight="normal" fill="#888">   ·   PHP/WP</tspan></text>
-<rect x="760.5" y="1704" width="151.5" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
-<text x="836.25" y="1720" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: 8-publikacja.md</text>
-<circle cx="62" cy="1750" r="6.5" fill="#2f6fed"/>
-<text x="76" y="1754" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">repo</tspan><tspan fill="#444"> — Polea_DB czyta polea_* (read-only) — bez CPT/postów WP</tspan></text>
-<circle cx="640" cy="1750" r="6.5" fill="#e23b3b"/>
-<text x="654" y="1754" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">poprawność-odczytu</tspan></text>
-<line x1="480.0" y1="1788" x2="480.0" y2="1812" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<rect x="30" y="1818" width="900" height="126" rx="12" fill="#fff4ec" stroke="#ff8a3d" stroke-width="2"/>
-<text x="52" y="1848" font-size="17" font-weight="bold" fill="#9c4a00">DZIAŁ 9 · FRONT I MEDIA<tspan font-size="12" font-weight="normal" fill="#888">   ·   PHP/WP</tspan></text>
-<rect x="752.0" y="1830" width="160.0" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
-<text x="832.0" y="1846" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: 9-front-media.md</text>
-<circle cx="62" cy="1876" r="6.5" fill="#2f6fed"/>
-<text x="76" y="1880" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">front</tspan><tspan fill="#444"> — lista + szczegóły + filtry (marka/paliwo/rok/cena) + cache 5 min</tspan></text>
-<circle cx="640" cy="1876" r="6.5" fill="#e23b3b"/>
-<text x="654" y="1880" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">render</tspan></text>
-<circle cx="62" cy="1906" r="6.5" fill="#2f6fed"/>
-<text x="76" y="1910" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">media</tspan><tspan fill="#444"> — zdjęcia HOTLINK ze źródła; miniatury 1 zapytaniem (bez N+1)</tspan></text>
-<circle cx="640" cy="1906" r="6.5" fill="#e23b3b"/>
-<text x="654" y="1910" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">render</tspan></text>
-<line x1="480.0" y1="1944" x2="480.0" y2="1968" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<rect x="30" y="1974" width="900" height="126" rx="12" fill="#fff4ec" stroke="#ff8a3d" stroke-width="2"/>
-<text x="52" y="2004" font-size="17" font-weight="bold" fill="#9c4a00">DZIAŁ 10 · PODSTRONA I MOTYW<tspan font-size="12" font-weight="normal" fill="#888">   ·   PHP/WP</tspan></text>
-<rect x="709.5" y="1986" width="202.5" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
-<text x="810.75" y="2002" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: 10-podstrona-motyw.md</text>
-<circle cx="62" cy="2032" r="6.5" fill="#2f6fed"/>
-<text x="76" y="2036" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">podstrona</tspan><tspan fill="#444"> — auto-tworzy „Nasze motory&quot; + wpina w menu</tspan></text>
-<circle cx="640" cy="2032" r="6.5" fill="#e23b3b"/>
-<text x="654" y="2036" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">kompletność-wpięcia</tspan></text>
-<circle cx="62" cy="2062" r="6.5" fill="#2f6fed"/>
-<text x="76" y="2066" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">motyw</tspan><tspan fill="#444"> — dziedziczy fonty/kolory motywu (currentColor + color-mix)</tspan></text>
-<circle cx="640" cy="2062" r="6.5" fill="#e23b3b"/>
-<text x="654" y="2066" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">dopasowanie-motywu</tspan></text>
-<line x1="480.0" y1="2100" x2="480.0" y2="2124" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
-<rect x="200" y="2130" width="560" height="52" rx="10" fill="#e1f5fe" stroke="#039be5" stroke-width="2"/>
-<text x="480.0" y="2162" text-anchor="middle" font-size="16" font-weight="bold" fill="#0277bd">PODSTRONA „NASZE MOTORY&quot;  →  klienci widzą motocykle w motywie ich strony</text>
-<text x="480.0" y="2220" text-anchor="middle" font-size="11.5" fill="#999">Importer motocykli poleasingowe.pl → WordPress · diagram architektury (działy / agenci / krytycy / dokumentacja)</text>
+<line x1="480.0" y1="1460" x2="480.0" y2="1470" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="200.0" y="1474" width="560" height="36" rx="9" fill="#e6eef7" stroke="#1e5fb0" stroke-width="1.8"/>
+<text x="480.0" y="1490" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e5fb0">AJAX ② · łącznik czytający dane z bazy</text>
+<text x="480.0" y="1504" text-anchor="middle" font-size="10" fill="#4a6f9c">wtyczka pobiera rekordy z bazy polea_* do wyświetlenia (mysqli, tylko odczyt)</text>
+<line x1="480.0" y1="1510" x2="480.0" y2="1532" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<text x="48" y="1568" font-size="18" font-weight="bold" fill="#333">▼ CZĘŚĆ 2 — WORDPRESS (wtyczka PHP): pokazuje motocykle z bazy na podstronie</text>
+<rect x="30" y="1584" width="900" height="126" rx="12" fill="#fff4ec" stroke="#ff8a3d" stroke-width="2"/>
+<text x="52" y="1614" font-size="17" font-weight="bold" fill="#9c4a00">DZIAŁ 6 · BEZPIECZEŃSTWO<tspan font-size="12" font-weight="normal" fill="#888">   ·   PHP/WP</tspan></text>
+<rect x="726.5" y="1596" width="185.5" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
+<text x="819.25" y="1612" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: 6-bezpieczenstwo.md</text>
+<circle cx="62" cy="1642" r="6.5" fill="#2f6fed"/>
+<text x="76" y="1646" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">połączenie</tspan><tspan fill="#444"> — mysqli z obsługą błędów — nie wpdb (brak wp_die)</tspan></text>
+<circle cx="640" cy="1642" r="6.5" fill="#e23b3b"/>
+<text x="654" y="1646" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">odporność</tspan></text>
+<circle cx="62" cy="1672" r="6.5" fill="#2f6fed"/>
+<text x="76" y="1676" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">sanityzacja</tspan><tspan fill="#444"> — prepared + escape wyjścia + nonce w adminie</tspan></text>
+<circle cx="640" cy="1672" r="6.5" fill="#e23b3b"/>
+<text x="654" y="1676" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">podatności</tspan></text>
+<line x1="480.0" y1="1710" x2="480.0" y2="1734" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="30" y="1740" width="900" height="96" rx="12" fill="#fff4ec" stroke="#ff8a3d" stroke-width="2"/>
+<text x="52" y="1770" font-size="17" font-weight="bold" fill="#9c4a00">DZIAŁ 8 · PUBLIKACJA (REPO)<tspan font-size="12" font-weight="normal" fill="#888">   ·   PHP/WP</tspan></text>
+<rect x="760.5" y="1752" width="151.5" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
+<text x="836.25" y="1768" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: 8-publikacja.md</text>
+<circle cx="62" cy="1798" r="6.5" fill="#2f6fed"/>
+<text x="76" y="1802" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">repo</tspan><tspan fill="#444"> — Polea_DB czyta polea_* (read-only) — bez CPT/postów WP</tspan></text>
+<circle cx="640" cy="1798" r="6.5" fill="#e23b3b"/>
+<text x="654" y="1802" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">poprawność-odczytu</tspan></text>
+<line x1="480.0" y1="1836" x2="480.0" y2="1860" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="30" y="1866" width="900" height="126" rx="12" fill="#fff4ec" stroke="#ff8a3d" stroke-width="2"/>
+<text x="52" y="1896" font-size="17" font-weight="bold" fill="#9c4a00">DZIAŁ 9 · FRONT I MEDIA<tspan font-size="12" font-weight="normal" fill="#888">   ·   PHP/WP</tspan></text>
+<rect x="752.0" y="1878" width="160.0" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
+<text x="832.0" y="1894" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: 9-front-media.md</text>
+<circle cx="62" cy="1924" r="6.5" fill="#2f6fed"/>
+<text x="76" y="1928" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">front</tspan><tspan fill="#444"> — lista + szczegóły + filtry (marka/paliwo/rok/cena) + cache 5 min</tspan></text>
+<circle cx="640" cy="1924" r="6.5" fill="#e23b3b"/>
+<text x="654" y="1928" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">render</tspan></text>
+<circle cx="62" cy="1954" r="6.5" fill="#2f6fed"/>
+<text x="76" y="1958" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">media</tspan><tspan fill="#444"> — zdjęcia HOTLINK ze źródła; miniatury 1 zapytaniem (bez N+1)</tspan></text>
+<circle cx="640" cy="1954" r="6.5" fill="#e23b3b"/>
+<text x="654" y="1958" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">render</tspan></text>
+<line x1="480.0" y1="1992" x2="480.0" y2="2016" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="30" y="2022" width="900" height="126" rx="12" fill="#fff4ec" stroke="#ff8a3d" stroke-width="2"/>
+<text x="52" y="2052" font-size="17" font-weight="bold" fill="#9c4a00">DZIAŁ 10 · PODSTRONA I MOTYW<tspan font-size="12" font-weight="normal" fill="#888">   ·   PHP/WP</tspan></text>
+<rect x="709.5" y="2034" width="202.5" height="24" rx="6" fill="#ede7f6" stroke="#7e57c2"/>
+<text x="810.75" y="2050" text-anchor="middle" font-size="12.5" fill="#5e35b1">dok: 10-podstrona-motyw.md</text>
+<circle cx="62" cy="2080" r="6.5" fill="#2f6fed"/>
+<text x="76" y="2084" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">podstrona</tspan><tspan fill="#444"> — auto-tworzy „Nasze motory&quot; + wpina w menu</tspan></text>
+<circle cx="640" cy="2080" r="6.5" fill="#e23b3b"/>
+<text x="654" y="2084" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">kompletność-wpięcia</tspan></text>
+<circle cx="62" cy="2110" r="6.5" fill="#2f6fed"/>
+<text x="76" y="2114" font-size="14.5"><tspan font-weight="bold" fill="#173a8f">motyw</tspan><tspan fill="#444"> — dziedziczy fonty/kolory motywu (currentColor + color-mix)</tspan></text>
+<circle cx="640" cy="2110" r="6.5" fill="#e23b3b"/>
+<text x="654" y="2114" font-size="13.5" fill="#333">krytyk: <tspan font-weight="bold" fill="#a31818">dopasowanie-motywu</tspan></text>
+<line x1="480.0" y1="2148" x2="480.0" y2="2172" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="200" y="2178" width="560" height="52" rx="10" fill="#e1f5fe" stroke="#039be5" stroke-width="2"/>
+<text x="480.0" y="2210" text-anchor="middle" font-size="16" font-weight="bold" fill="#0277bd">PODSTRONA „NASZE MOTORY&quot;  →  klienci widzą motocykle w motywie ich strony</text>
+<text x="480.0" y="2268" text-anchor="middle" font-size="11.5" fill="#999">Importer motocykli poleasingowe.pl → WordPress · diagram architektury (działy / agenci / krytycy / dokumentacja)</text>
 </svg>

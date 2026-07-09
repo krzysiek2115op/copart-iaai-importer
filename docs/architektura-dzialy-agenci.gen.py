@@ -71,9 +71,9 @@ TOP = 176
 def section_height(cards):
     return sum(card_h(c)+GAP for c in cards)
 SEC_HDR=46; BAND=52; CAP=26
-SBOX=80; AJ=78
+SBOX=80; AJ=78; AJ2=78
 SRCBLK = SBOX + AJ
-total = (TOP + SEC_HDR + SRCBLK + section_height(SEC1) + BAND + CAP + GAP
+total = (TOP + SEC_HDR + SRCBLK + section_height(SEC1) + BAND + CAP + AJ2
          + SEC_HDR + section_height(SEC2) + BAND + 60)
 
 add(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {total}" width="{W}" height="{total}" font-family="DejaVu Sans, Arial, sans-serif">')
@@ -127,6 +127,18 @@ def arrow(y, label=None):
     if label:
         add(f'<text x="{W/2+16}" y="{y+GAP/2+2}" font-size="12.5" font-style="italic" fill="#777">{esc(label)}</text>')
 
+def ajax_pill(y, height, title, subtitle):
+    """Łącznik AJAX: strzałka w dół → pigułka → strzałka w dół (zajmuje 'height' px)."""
+    pill_y = y + 14
+    pill_h = 36
+    pill_w = 560
+    px = W/2 - pill_w/2
+    add(f'<line x1="{W/2}" y1="{y}" x2="{W/2}" y2="{pill_y-4}" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>')
+    add(f'<rect x="{px}" y="{pill_y}" width="{pill_w}" height="{pill_h}" rx="9" fill="#e6eef7" stroke="#1e5fb0" stroke-width="1.8"/>')
+    add(f'<text x="{W/2}" y="{pill_y+16}" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e5fb0">{esc(title)}</text>')
+    add(f'<text x="{W/2}" y="{pill_y+30}" text-anchor="middle" font-size="10" fill="#4a6f9c">{esc(subtitle)}</text>')
+    add(f'<line x1="{W/2}" y1="{pill_y+pill_h}" x2="{W/2}" y2="{y+height-6}" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>')
+
 y = TOP
 # Sekcja 1
 add(f'<text x="48" y="{y+30}" font-size="18" font-weight="bold" fill="#333">▼ CZĘŚĆ 1 — SCRAPER (Python): pobiera motocykle z poleasingowe.pl, zapisuje do osobnej bazy</text>')
@@ -138,16 +150,9 @@ add(f'<text x="{W/2}" y="{y+26}" text-anchor="middle" font-size="15" font-weight
 add(f'<text x="{W/2}" y="{y+46}" text-anchor="middle" font-size="11" fill="#616161">ich serwer — brak dostępu do bazy; czytamy publiczny HTML aukcji</text>')
 add(f'<text x="{W/2}" y="{y+65}" text-anchor="middle" font-size="11" fill="#616161">/pl/auctions/list/pub/all/ecr_motorcycles · /pl/auctions/details/&lt;id&gt; · images/sgallery_*.png</text>')
 y += SBOX
-# ŁĄCZNIK AJAX — pobiera dane z serwera źródła i przepuszcza je do sprawdzenia (działy/krytycy)
-pill_y = y + 14
-pill_h = 36
-pill_w = 560
-px = W/2 - pill_w/2
-add(f'<line x1="{W/2}" y1="{y}" x2="{W/2}" y2="{pill_y-4}" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>')
-add(f'<rect x="{px}" y="{pill_y}" width="{pill_w}" height="{pill_h}" rx="9" fill="#e6eef7" stroke="#1e5fb0" stroke-width="1.8"/>')
-add(f'<text x="{W/2}" y="{pill_y+16}" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e5fb0">AJAX · łącznik pobierający dane z serwera źródła</text>')
-add(f'<text x="{W/2}" y="{pill_y+30}" text-anchor="middle" font-size="10" fill="#4a6f9c">przepuszcza dane ze źródła do działów, które sprawdzają ich poprawność (przez HTTP, bez JS)</text>')
-add(f'<line x1="{W/2}" y1="{pill_y+pill_h}" x2="{W/2}" y2="{y+AJ-6}" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>')
+# ŁĄCZNIK AJAX ① — pobiera dane z serwera źródła i przepuszcza je do sprawdzenia (działy/krytycy)
+ajax_pill(y, AJ, "AJAX ① · łącznik pobierający dane z serwera źródła",
+          "przepuszcza dane ze źródła do działów, które sprawdzają ich poprawność (przez HTTP, bez JS)")
 y += AJ
 for d in SEC1:
     h = draw_card(d, y)
@@ -158,7 +163,10 @@ band(y, "OSOBNA BAZA MySQL  ·  polea_motocykle + polea_zdjecia  ·  klucz: lot_
 y += 52
 add(f'<text x="{W/2}" y="{y+18}" text-anchor="middle" font-size="11.5" fill="#777">nie miesza się z bazą WordPressa ani z plugin-1 (inny prefix polea_) · scraper jest właścicielem danych (zapis: upsert PyMySQL)</text>')
 y += CAP
-arrow(y, "wtyczka czyta bazę (mysqli, tylko odczyt)"); y += GAP
+# ŁĄCZNIK AJAX ② — czyta dane z bazy i podaje je do wtyczki WordPress (must have)
+ajax_pill(y, AJ2, "AJAX ② · łącznik czytający dane z bazy",
+          "wtyczka pobiera rekordy z bazy polea_* do wyświetlenia (mysqli, tylko odczyt)")
+y += AJ2
 
 # Sekcja 2
 add(f'<text x="48" y="{y+30}" font-size="18" font-weight="bold" fill="#333">▼ CZĘŚĆ 2 — WORDPRESS (wtyczka PHP): pokazuje motocykle z bazy na podstronie</text>')
