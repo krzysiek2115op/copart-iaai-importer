@@ -2,6 +2,7 @@
 """Orkiestrator pipeline'u: 1A crawl -> 1B szczegoly -> 2 norm -> 5 audyt -> 3 dedup -> 4 zapis."""
 import argparse
 import logging
+import os
 
 from . import config
 from .dzial1a_lista import crawl_list
@@ -52,17 +53,42 @@ def run(limit=None, dry_run=False):
     return records
 
 
+def _acquire_lock():
+    """Blokada pojedynczej instancji (cron) — flock nieblokujacy. None gdy juz dziala inny import."""
+    import fcntl
+    f = open(config.LOCK_PATH, "w")
+    try:
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        f.close()
+        return None
+    f.write(str(os.getpid()))
+    f.flush()
+    return f  # trzymamy referencje otwarta -> lock aktywny do konca procesu
+
+
 def main():
     ap = argparse.ArgumentParser(description="Importer motocykli poleasingowe.pl -> baza polea_*")
     ap.add_argument("--limit", type=int, default=None, help="pobierz max N lotow (test)")
     ap.add_argument("--dry-run", action="store_true", help="bez zapisu do bazy")
+    ap.add_argument("--no-lock", action="store_true", help="pomin blokade pojedynczej instancji")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     logging.basicConfig(
         level=logging.DEBUG if a.verbose else logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    run(limit=a.limit, dry_run=a.dry_run)
+    lock = None
+    if not a.no_lock:
+        lock = _acquire_lock()
+        if lock is None:
+            log.error("Inny import juz dziala (lock %s) — przerywam.", config.LOCK_PATH)
+            raise SystemExit(1)
+    try:
+        run(limit=a.limit, dry_run=a.dry_run)
+    finally:
+        if lock is not None:
+            lock.close()
 
 
 if __name__ == "__main__":

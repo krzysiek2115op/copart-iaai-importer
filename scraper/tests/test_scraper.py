@@ -7,6 +7,7 @@ from scraper.dzial1b_szczegoly import parse_detail
 from scraper.dzial2_normalizacja import normalize, vin_valid
 from scraper.dzial3_deduplikacja import deduplicate
 from scraper.dzial5_audyt import audit
+from scraper.dzial7_zgodnosc import url_allowed
 
 DETAIL = '''<html><head>
 <meta property="og:description" content="Numer aukcji: 3110/BZ/AU/2026, cena: 17 460 PLN netto"/>
@@ -110,6 +111,33 @@ class TestAudyt(unittest.TestCase):
         ok, errs = audit(rec)
         self.assertFalse(ok)
         self.assertTrue(any(m == "cena_pln <= 0" for _, m in errs))
+
+
+class TestSSRF(unittest.TestCase):
+    """Bramka anty-SSRF (Dzial 7): tylko host z allowlisty i schemat http/https."""
+
+    def test_dozwolony_host(self):
+        ok, _ = url_allowed("https://poleasingowe.pl/pl/auctions/details/x/1", resolve=False)
+        self.assertTrue(ok)
+
+    def test_obcy_host_odrzucony(self):
+        ok, why = url_allowed("https://evil.example.com/x", resolve=False)
+        self.assertFalse(ok)
+        self.assertEqual(why, "host spoza allowlisty")
+
+    def test_localhost_odrzucony(self):
+        ok, _ = url_allowed("http://127.0.0.1/x", resolve=False)
+        self.assertFalse(ok)
+
+    def test_metadane_cloud_odrzucone(self):
+        ok, _ = url_allowed("http://169.254.169.254/latest/meta-data/", resolve=False)
+        self.assertFalse(ok)
+
+    def test_zly_schemat_odrzucony(self):
+        for u in ("file:///etc/passwd", "gopher://poleasingowe.pl/", "javascript:alert(1)"):
+            ok, why = url_allowed(u, resolve=False)
+            self.assertFalse(ok, u)
+            self.assertEqual(why, "niedozwolony schemat")
 
 
 if __name__ == "__main__":

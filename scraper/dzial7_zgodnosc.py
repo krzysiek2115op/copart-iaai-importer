@@ -1,16 +1,53 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Dzial 7 — Zgodnosc: robots.txt, rate-limit, detekcja blokad. Brama dla wszystkich zadan."""
+"""Dzial 7 — Zgodnosc: robots.txt, rate-limit, anty-SSRF, detekcja blokad. Brama dla wszystkich zadan."""
 import time
 import random
+import socket
 import logging
+import ipaddress
 import urllib.robotparser as robotparser
+from urllib.parse import urlsplit, urljoin
 from . import config
 
 log = logging.getLogger("polea.zgodnosc")
 
+_REDIRECT_CODES = (301, 302, 303, 307, 308)
+
 
 class BlockedError(RuntimeError):
-    """Zadanie zablokowane (robots.txt / 403 / wyczerpane proby)."""
+    """Zadanie zablokowane (robots.txt / 403 / SSRF / wyczerpane proby)."""
+
+
+def _host_is_private(host):
+    """True gdy host wskazuje na adres prywatny/lokalny/metadanych (anty-SSRF).
+    Bezpieczny fail-closed: gdy nie da sie rozwiazac -> traktujemy jako niebezpieczny."""
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except OSError:
+        return True
+    for info in infos:
+        try:
+            addr = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            return True
+        if (addr.is_private or addr.is_loopback or addr.is_link_local
+                or addr.is_reserved or addr.is_multicast or addr.is_unspecified):
+            return True
+    return False
+
+
+def url_allowed(url, resolve=True):
+    """Zwraca (ok, powod). Wymusza https/http, host z allowlisty i publiczny adres IP.
+    resolve=False pomija sprawdzenie DNS (do testow offline)."""
+    parts = urlsplit(url)
+    if parts.scheme not in ("http", "https"):
+        return False, "niedozwolony schemat"
+    host = (parts.hostname or "").lower()
+    if host not in config.ALLOWED_HOSTS:
+        return False, "host spoza allowlisty"
+    if resolve and _host_is_private(host):
+        return False, "adres prywatny/lokalny"
+    return True, ""
 
 
 class Fetcher:
@@ -34,6 +71,14 @@ class Fetcher:
     def allowed(self, url):
         return True if self.rp is None else self.rp.can_fetch(config.USER_AGENT, url)
 
+    def _check(self, url):
+        """Bramka: allowlista/anty-SSRF + robots.txt. Rzuca BlockedError gdy niedozwolone."""
+        ok, why = url_allowed(url)
+        if not ok:
+            raise BlockedError(f"URL odrzucony ({why}): {url}")
+        if not self.allowed(url):
+            raise BlockedError(f"robots.txt zabrania: {url}")
+
     def _throttle(self):
         wait = config.REQUEST_DELAY + random.uniform(0, config.REQUEST_JITTER)
         dt = time.monotonic() - self._last
@@ -41,26 +86,58 @@ class Fetcher:
             time.sleep(wait - dt)
         self._last = time.monotonic()
 
+    def _read_capped(self, r):
+        """Czyta tresc strumieniowo z twardym limitem bajtow (po dekompresji) — anty-DoS/bomba."""
+        limit = config.MAX_RESPONSE_BYTES
+        chunks, total = [], 0
+        for chunk in r.iter_content(chunk_size=65536):
+            total += len(chunk)
+            if total > limit:
+                raise BlockedError(f"Odpowiedz przekracza limit {limit} B: {r.url}")
+            chunks.append(chunk)
+        enc = r.encoding or r.apparent_encoding or "utf-8"
+        return b"".join(chunks).decode(enc, errors="replace")
+
     def get(self, url):
-        if not self.allowed(url):
-            raise BlockedError(f"robots.txt zabrania: {url}")
+        """Pobiera URL z allowlisty. Przekierowania obslugiwane RECZNIE i walidowane per skok
+        (allow_redirects=False) — 302 na localhost/metadane/obcy host jest odrzucany."""
+        self._check(url)
+        current = url
+        redirects = 0
+        attempt = 0
         last = None
-        for attempt in range(1, config.MAX_RETRIES + 1):
+        while True:
+            attempt += 1
+            if attempt > config.MAX_RETRIES:
+                raise BlockedError(f"Nie pobrano po {config.MAX_RETRIES} probach: {url} ({last})")
             self._throttle()
             try:
-                r = self.s.get(url, timeout=config.TIMEOUT)
+                r = self.s.get(current, timeout=config.TIMEOUT,
+                               allow_redirects=False, stream=True)
             except self._requests.RequestException as e:
                 last = e
-                log.warning("Blad sieci (%s/%s) %s: %s", attempt, config.MAX_RETRIES, url, e)
+                log.warning("Blad sieci (%s/%s) %s: %s", attempt, config.MAX_RETRIES, current, e)
                 time.sleep(2 ** attempt)
                 continue
-            if r.status_code in (429, 503):
-                back = (2 ** attempt) * config.REQUEST_DELAY
-                log.warning("HTTP %s — backoff %.0fs (%s)", r.status_code, back, url)
-                time.sleep(back)
-                continue
-            if r.status_code == 403:
-                raise BlockedError(f"HTTP 403 (mozliwa blokada): {url}")
-            r.raise_for_status()
-            return r.text
-        raise BlockedError(f"Nie pobrano po {config.MAX_RETRIES} probach: {url} ({last})")
+            try:
+                code = r.status_code
+                if code in _REDIRECT_CODES:
+                    nxt = urljoin(current, r.headers.get("Location", ""))
+                    self._check(nxt)  # waliduje host/allowlist/prywatne IP + robots
+                    redirects += 1
+                    if redirects > config.MAX_REDIRECTS:
+                        raise BlockedError(f"Za duzo przekierowan ({redirects}): {url}")
+                    current = nxt
+                    attempt = 0  # przekierowanie nie liczy sie jako nieudana proba
+                    continue
+                if code in (429, 503):
+                    back = (2 ** attempt) * config.REQUEST_DELAY
+                    log.warning("HTTP %s — backoff %.0fs (%s)", code, back, current)
+                    time.sleep(back)
+                    continue
+                if code == 403:
+                    raise BlockedError(f"HTTP 403 (mozliwa blokada): {current}")
+                r.raise_for_status()
+                return self._read_capped(r)
+            finally:
+                r.close()
