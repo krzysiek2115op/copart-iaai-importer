@@ -71,7 +71,7 @@ TOP = 176
 def section_height(cards):
     return sum(card_h(c)+GAP for c in cards)
 SEC_HDR=46; BAND=52; CAP=26
-SBOX=80; AJ=44
+SBOX=80; AJ=78
 SRCBLK = SBOX + AJ
 total = (TOP + SEC_HDR + SRCBLK + section_height(SEC1) + BAND + CAP + GAP
          + SEC_HDR + section_height(SEC2) + BAND + 60)
@@ -138,14 +138,21 @@ add(f'<text x="{W/2}" y="{y+26}" text-anchor="middle" font-size="15" font-weight
 add(f'<text x="{W/2}" y="{y+46}" text-anchor="middle" font-size="11" fill="#616161">ich serwer — brak dostępu do bazy; czytamy publiczny HTML aukcji</text>')
 add(f'<text x="{W/2}" y="{y+65}" text-anchor="middle" font-size="11" fill="#616161">/pl/auctions/list/pub/all/ecr_motorcycles · /pl/auctions/details/&lt;id&gt; · images/sgallery_*.png</text>')
 y += SBOX
-# HTTP w dół
-add(f'<line x1="{W/2}" y1="{y}" x2="{W/2}" y2="{y+AJ-6}" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>')
-add(f'<text x="{W/2+14}" y="{y+27}" text-anchor="start" font-size="12.5" font-weight="bold" font-style="italic" fill="#555">HTTP GET · requests (bez JS)</text>')
+# ŁĄCZNIK AJAX — pobiera dane z serwera źródła i przepuszcza je do sprawdzenia (działy/krytycy)
+pill_y = y + 14
+pill_h = 36
+pill_w = 560
+px = W/2 - pill_w/2
+add(f'<line x1="{W/2}" y1="{y}" x2="{W/2}" y2="{pill_y-4}" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>')
+add(f'<rect x="{px}" y="{pill_y}" width="{pill_w}" height="{pill_h}" rx="9" fill="#e6eef7" stroke="#1e5fb0" stroke-width="1.8"/>')
+add(f'<text x="{W/2}" y="{pill_y+16}" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e5fb0">AJAX · łącznik pobierający dane z serwera źródła</text>')
+add(f'<text x="{W/2}" y="{pill_y+30}" text-anchor="middle" font-size="10" fill="#4a6f9c">przepuszcza dane ze źródła do działów, które sprawdzają ich poprawność (przez HTTP, bez JS)</text>')
+add(f'<line x1="{W/2}" y1="{pill_y+pill_h}" x2="{W/2}" y2="{y+AJ-6}" stroke="#666" stroke-width="2.5" marker-end="url(#arr)"/>')
 y += AJ
 for d in SEC1:
     h = draw_card(d, y)
     y += h
-    arrow(y, "rekordy (dict)"); y += GAP
+    arrow(y, "json"); y += GAP
 # Baza
 band(y, "OSOBNA BAZA MySQL  ·  polea_motocykle + polea_zdjecia  ·  klucz: lot_id", "#e8f5e9","#43a047","#2e7d32")
 y += 52
