@@ -1,7 +1,9 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 # Dział 8 · PUBLIKACJA (WordPress)
 
-**Cel:** wystawić dane z bazy jako treść WordPress (CPT + meta).
+**Cel:** udostępnić dane z bazy warstwie frontu WordPress.
+
+> **REWIZJA (Etap 4):** zamiast CPT + postów WP używamy **repozytorium** (`Polea_DB`) czytającego osobną bazę `polea_*` **tylko do odczytu**. Powód: scraper jest właścicielem danych, a aukcje są **czasowe** (wygasają) — duplikowanie ich do `wp_posts` tworzyłoby „trupy" i podwójną synchronizację. Poniższe agenty „CPT/meta" pozostają jako *opis mapowania pól*, realizowany przez repo + shortcode, nie przez `register_post_type`.
 
 ## Agenci
 ### agent: CPT

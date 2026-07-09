@@ -1,0 +1,74 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Dział 10 — styl frontu: minimalny, dziedziczy typografię i kolory motywu.
+   Bez sztywnych fontów/kolorów; linie i tła liczone z currentColor -> pasuje do dowolnego motywu. */
+
+.polea-wrap {
+    --polea-gap: 1.25rem;
+    --polea-radius: 10px;
+    --polea-line: color-mix(in srgb, currentColor 15%, transparent);
+    --polea-fill: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.polea-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--polea-gap);
+}
+
+.polea-card {
+    border: 1px solid var(--polea-line);
+    border-radius: var(--polea-radius);
+    overflow: hidden;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+.polea-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--polea-line); }
+.polea-card__link { display: block; color: inherit; text-decoration: none; }
+.polea-card__media {
+    aspect-ratio: 4 / 3;
+    background: var(--polea-fill);
+    display: flex; align-items: center; justify-content: center;
+}
+.polea-card__media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.polea-card__noimg { opacity: .6; font-size: .85em; }
+.polea-card__body { padding: .85rem 1rem 1.1rem; }
+.polea-card__title { margin: .1rem 0 .35rem; font-size: 1.05em; line-height: 1.25; }
+.polea-card__price { margin: .15rem 0 .6rem; font-weight: 700; }
+.polea-card__specs { list-style: none; margin: 0; padding: 0; font-size: .9em; opacity: .85; display: grid; gap: .15rem; }
+.polea-card__specs li span { opacity: .7; }
+
+.polea-filters { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; margin: 0 0 1.5rem; }
+.polea-filters label { display: grid; gap: .25rem; font-size: .85em; }
+.polea-filters select,
+.polea-filters input {
+    padding: .4rem .5rem; border: 1px solid var(--polea-line);
+    border-radius: 6px; background: transparent; color: inherit; font: inherit;
+}
+.polea-filters__btn, .polea-source {
+    cursor: pointer; padding: .5rem 1rem; border: 1px solid currentColor;
+    border-radius: 6px; background: transparent; color: inherit; font: inherit;
+    text-decoration: none; display: inline-block;
+}
+.polea-filters__btn:hover, .polea-source:hover { background: var(--polea-fill); }
+
+.polea-pager { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: 1.5rem; }
+.polea-pager a, .polea-pager__cur {
+    padding: .35rem .7rem; border: 1px solid var(--polea-line);
+    border-radius: 6px; text-decoration: none; color: inherit;
+}
+.polea-pager__cur { font-weight: 700; border-color: currentColor; }
+
+.polea-empty { opacity: .75; padding: 2rem 0; }
+
+.polea-single__grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 2rem; }
+.polea-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; align-content: start; }
+.polea-gallery img { width: 100%; border-radius: 8px; display: block; }
+.polea-single__price { font-size: 1.3em; font-weight: 700; margin: .2rem 0 1rem; }
+.polea-specs { width: 100%; border-collapse: collapse; }
+.polea-specs th { text-align: left; opacity: .7; font-weight: 500; padding: .35rem .75rem .35rem 0; vertical-align: top; white-space: nowrap; }
+.polea-specs td { padding: .35rem 0; }
+.polea-back { display: inline-block; margin-bottom: 1rem; color: inherit; opacity: .8; text-decoration: none; }
+.polea-source { margin-top: 1.25rem; }
+
+@media (max-width: 640px) {
+    .polea-single__grid { grid-template-columns: 1fr; }
+}

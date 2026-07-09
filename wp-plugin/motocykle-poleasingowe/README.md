@@ -1,0 +1,24 @@
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+# Importer Motocykli (poleasingowe.pl) — wtyczka WordPress
+
+Wyświetla motocykle z aukcji poleasingowe.pl na podstronie **„Nasze motory"**, automatycznie dopasowanej do motywu klienta. Dane czytane **tylko do odczytu** z osobnej bazy MySQL (`polea_*`), którą zasila [scraper](../../scraper/).
+
+## Architektura (Działy 6, 8, 9, 10)
+- **6 Bezpieczeństwo** — połączenie z bazą przez `mysqli` z obsługą błędów (nie `wpdb` → brak ryzyka `wp_die`); wszystkie zapytania prepared; wyjście escapowane; nonce+capability w adminie.
+- **8 Repo** — `Polea_DB` (odczyt `polea_motocykle` / `polea_zdjecia`). *Świadoma rewizja: brak CPT/postów WP — aukcje są czasowe, scraper jest właścicielem danych.*
+- **9 Front i media** — shortcode `[motocykle]`: siatka + szczegóły + filtry (marka/paliwo/rok/cena) + paginacja + cache (5 min); zdjęcia **hotlink**.
+- **10 Podstrona i motyw** — auto-tworzenie „Nasze motory" + wpięcie w menu (block: `wp_navigation`, classic: menu location); styl dziedziczy fonty/kolory motywu (`currentColor`, `color-mix`).
+
+## Instalacja
+1. Wgraj katalog `motocykle-poleasingowe/` do `wp-content/plugins/` i aktywuj.
+2. Dodaj poświadczenia osobnej bazy do `wp-config.php`:
+   ```php
+   define('POLEA_DB_HOST', '127.0.0.1');
+   define('POLEA_DB_NAME', 'polea');
+   define('POLEA_DB_USER', 'polea');
+   define('POLEA_DB_PASSWORD', 'TWOJE_HASLO');
+   // opcjonalnie: define('POLEA_DB_PORT', 3306);
+   ```
+3. Status połączenia sprawdzisz w **Ustawienia → Motocykle**.
+
+Podstrona „Nasze motory" tworzy się sama przy aktywacji. Pojedynczy motocykl: `?motocykl=<lot_id>` w obrębie tej samej (motywowanej) strony.
