@@ -34,6 +34,31 @@ function polea_sanitize_filters() {
     );
 }
 
+/**
+ * Ogranicza filtry do REALNYCH wartości ze źródła (allowlista z bazy) + kubełkuje cenę.
+ * Cel: bramka przeciw zaśmiecaniu cache transientów nieograniczoną przestrzenią kluczy
+ * (storage DoS) oraz ignorowanie śmieciowych wartości. Listy wartości są cache'owane.
+ */
+function polea_constrain_filters($f) {
+    if ($f['marka'] !== '' && !in_array($f['marka'], Polea_DB::distinct('marka'), true)) {
+        $f['marka'] = '';
+    }
+    if ($f['paliwo'] !== '' && !in_array($f['paliwo'], Polea_DB::distinct('paliwo'), true)) {
+        $f['paliwo'] = '';
+    }
+    if ($f['rok'] !== '' && !in_array((int) $f['rok'], array_map('intval', Polea_DB::distinct('rok_produkcji')), true)) {
+        $f['rok'] = '';
+    }
+    foreach (array('cena_min', 'cena_max') as $ck) {
+        if ($f[$ck] !== '') {
+            $v = min(10000000.0, max(0.0, (float) $f[$ck]));
+            $f[$ck] = round($v / 500) * 500; // krok 500 = skończona liczba kubełków
+        }
+    }
+    $f['paged'] = min(500, max(1, (int) $f['paged']));
+    return $f;
+}
+
 /** Bezpieczny lot_id z $_GET['motocykl'] (alfanumeryczny) lub '' gdy brak/niepoprawny. */
 function polea_current_lot_id() {
     if (empty($_GET['motocykl'])) {
@@ -48,8 +73,11 @@ function polea_cache_key($args) {
     return 'polea_list_' . md5(wp_json_encode($args));
 }
 
-/** Czyści cache list (transienty). Wołane po ręcznym odświeżeniu / dezaktywacji. */
+/** Czyści cache list + listy wartości filtrów (transienty). Po ręcznym odświeżeniu / dezaktywacji. */
 function polea_flush_cache() {
+    foreach (array('marka', 'paliwo', 'rok_produkcji') as $col) {
+        delete_transient('polea_distinct_' . $col);
+    }
     global $wpdb;
     $wpdb->query(
         "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_polea\\_list\\_%' " .

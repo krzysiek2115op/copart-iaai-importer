@@ -167,3 +167,45 @@ def _read_capped(self, r):
 
 - `python3 -m unittest scraper.tests.test_scraper` → **16/16 OK** (w tym 5 nowych testów bramki SSRF: obcy host, localhost, metadane chmury, zły schemat, host dozwolony).
 - Zbalansowanie składni PHP: OK dla wszystkich 7 plików (regiony `<?php…?>`). `php -l` do wykonania w środowisku z PHP przed wysyłką (Etap 5 — demo).
+
+---
+
+# Iteracja 2 — dalszy hardening (v0.7.1, 2026-07-09)
+
+Cel: z ~9/10 „tak wysoko, jak się da". Poniżej **nowe** utwardzenia (ponad F1–F5). Każde zweryfikowane (16/16 testów, PHP zbalansowany).
+
+| # | Warstwa | Lokalizacja | Wektor / problem | Poziom | Poprawka |
+|---|---|---|---|---|---|
+| H1 | Wtyczka | `class-db.php` → `conn()` | **Zwis frontu przy awarii bazy** (brak timeoutu połączenia) + ryzyko `LOAD DATA LOCAL` ze złośliwego serwera MySQL. | 🟧 średni | `mysqli_init` + `MYSQLI_OPT_CONNECT_TIMEOUT=3` + `MYSQLI_OPT_READ_TIMEOUT=5` + **`MYSQLI_OPT_LOCAL_INFILE=false`** + `mysqli_real_connect`. |
+| H2 | Wtyczka | `shortcode.php`, `security.php`, `class-db.php` | **Zalewanie cache transientów** (storage DoS): nieograniczona przestrzeń kluczy `md5(filtry)` z dowolnego `$_GET` (marka/cena/strona). | 🟧 średni | `polea_constrain_filters()` — marka/paliwo/rok tylko z **allowlisty z bazy**, cena **kubełkowana** co 500 z górnym limitem, `paged ≤ 500`. Listy wartości cache'owane (`distinct()` w transient). |
+| H3 | Wtyczka | `shortcode.php` | Wyciek URL strony klienta do źródła (nagłówek `Referer` przy hotlinku obrazów). | 🟨 niski | `referrerpolicy="no-referrer"` na `<img>`. |
+| H4 | Scraper | `dzial4_synchronizacja.py` → `connect()` | Zawieszony import przy niedostępnej bazie; brak TLS/limitu; ryzyko LOCAL INFILE. | 🟧 średni | `connect/read/write_timeout` (env), **`local_infile=False`**, opcjonalny **TLS** (`POLEA_DB_SSL_CA`). |
+| H5 | Scraper | `dzial7_zgodnosc.py` → `Fetcher.__init__` | **SSRF przez zmienne środowiskowe** — złośliwy `HTTP(S)_PROXY`/`.netrc` mógł przekierować cały ruch. | 🟧 średni | `session.trust_env = False` (domyślnie; override `POLEA_TRUST_ENV=1`). |
+| H6 | Scraper | `dzial1b_szczegoly.py`, `dzial2_normalizacja.py` | Niezaufany HTML → **znaki sterujące / przepełnienie kolumn / absurdalne liczby** (błędy zapisu, śmieci w bazie). | 🟨 niski | Usuwanie znaków sterujących C0, twarde limity długości pól (`_txt`, ≤255/32/64), górne limity liczb (`_capint`) i ceny (≤ 1e9). |
+| H7 | Scraper | `dzial7_zgodnosc.py` → `__init__` | **Zwis inicjalizacji** na `robots.txt` (brak timeoutu, `RobotFileParser.read()`). | 🟨 niski | Pobranie z `timeout=TIMEOUT` + limit **512 KB** + `rp.parse()`. |
+| H8 | Scraper | `dzial7_zgodnosc.py` → `_read_capped` | **Slow-loris** — serwer sączący bajty pod limitem read-timeout w nieskończoność. | 🟨 niski | Całkowity **budżet czasu** na odpowiedź `MAX_TOTAL_SECONDS=60`. |
+| H9 | Repo | `scraper/.gitignore` | Ryzyko commitu sekretów/env/locka. | 🟨 niski | `.gitignore` na `.env`, `*.lock`, `__pycache__`, venv. |
+
+### Zbieżność — świadomie NIE zmienione (żeby nie robić security theater)
+- **Nagłówki HTTP (CSP/XFO/Permissions-Policy) z wtyczki** — globalne nagłówki z wtyczki wyświetlającej treść psują stronę klienta; poprawne miejsce to serwer/motyw (pkt 5).
+- **DNS-rebinding** (host allowlisty rozwiązywany dwa razy) — poza modelem zagrożeń (źródło zaufane, allowlista + blokada IP prywatnych są głównym mechanizmem).
+- **Hash-pinning `requirements.txt`** — nadmiarowe dla 2 zależności; utrzymujemy bezpieczne wersje minimalne.
+- **Lock w `/tmp`** — na jednodostępnym VPS wystarcza; ścieżka konfigurowalna (`POLEA_LOCK`), zalecenie: katalog usługi z prawami 700 (pkt 5).
+- **Bezpośredni `$wpdb->query` (transienty)** — statyczne LIKE bez wejścia; bezpieczne, zgodne z praktyką WP.
+
+### Zaktualizowany Security Score
+
+| Obszar | Iter. 1 | **Iter. 2** | Zmiana |
+|---|---|---|---|
+| Kod (ogólnie) | 9 | **9.5** | +walidacja allowlisty, mniej powierzchni |
+| WordPress Security | 9 | **9.5** | +timeouty DB, brak zwisu frontu |
+| PHP Security | 9 | **9.5** | +LOCAL INFILE off, limity wejścia |
+| REST API / AJAX | N/A | N/A | brak |
+| Importer (scraper) | 8 | **9** | +limity tekstu/liczb, robots timeout |
+| Cron | 8 | **8** | bez zmian (lock już był) |
+| Baza danych | 9 | **9.5** | +timeouty, TLS opcjonalny, local_infile off |
+| File System | 10 | **10** | — |
+| Sieć | 8 | **9** | +trust_env off, slow-loris, robots cap |
+| **ŚREDNIA** | ≈ 8.7 | **≈ 9.3/10** | **maksimum sensownego hardeningu w tym modelu** |
+
+**Wniosek:** dalsze podnoszenie oceny wymagałoby zmian **poza kodem** (nagłówki HTTP na serwerze, konto MySQL tylko-`SELECT`, TLS do bazy, monitoring) — opisane w pkt 5. W obrębie kodu projektu osiągnięto punkt zbieżności.

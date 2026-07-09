@@ -34,8 +34,22 @@ class Polea_DB {
         if (function_exists('mysqli_report')) {
             mysqli_report(MYSQLI_REPORT_OFF); // sami obsługujemy błędy, bez wyjątków
         }
-        $m = @mysqli_connect(POLEA_DB_HOST, POLEA_DB_USER, POLEA_DB_PASSWORD, POLEA_DB_NAME, $port);
+        $m = mysqli_init();
         if (!$m) {
+            self::$m = false;
+            return null;
+        }
+        // Twardy timeout połączenia — awaria/spowolnienie bazy nie może zawiesić strony klienta.
+        @mysqli_options($m, MYSQLI_OPT_CONNECT_TIMEOUT, 3);
+        if (defined('MYSQLI_OPT_READ_TIMEOUT')) {
+            @mysqli_options($m, MYSQLI_OPT_READ_TIMEOUT, 5);
+        }
+        // Wyłącz LOCAL INFILE — obrona przed złośliwym/zmanipulowanym serwerem MySQL czytającym pliki klienta.
+        if (defined('MYSQLI_OPT_LOCAL_INFILE')) {
+            @mysqli_options($m, MYSQLI_OPT_LOCAL_INFILE, false);
+        }
+        if (!@mysqli_real_connect($m, POLEA_DB_HOST, POLEA_DB_USER, POLEA_DB_PASSWORD, POLEA_DB_NAME, $port)) {
+            @mysqli_close($m);
             self::$m = false;
             return null;
         }
@@ -145,17 +159,25 @@ class Polea_DB {
         return $map;
     }
 
-    /** Wartości do filtrów (kolumna z allowlisty). */
+    /** Wartości do filtrów (kolumna z allowlisty). Cache w transient — używane też do
+     *  walidacji wejścia (bramkuje zaśmiecanie cache listy), więc nie może dokładać zapytań. */
     public static function distinct($col) {
         $allow = array('marka', 'paliwo', 'rok_produkcji');
         if (!in_array($col, $allow, true)) {
             return array();
         }
+        $tkey   = 'polea_distinct_' . $col;
+        $cached = get_transient($tkey);
+        if (is_array($cached)) {
+            return $cached;
+        }
         $rows = self::q(
             "SELECT DISTINCT {$col} AS v FROM polea_motocykle " .
             "WHERE status = 'aktywna' AND {$col} IS NOT NULL AND {$col} <> '' ORDER BY {$col}"
         );
-        return array_map(static function ($r) { return $r['v']; }, $rows);
+        $vals = array_map(static function ($r) { return $r['v']; }, $rows);
+        set_transient($tkey, $vals, HOUR_IN_SECONDS);
+        return $vals;
     }
 
     /** Status połączenia dla panelu admina. */

@@ -1,0 +1,10 @@
+# Sekrety i artefakty runtime — NIGDY do repo.
+.env
+*.env
+.env.*
+*.lock
+polea_import.lock
+__pycache__/
+*.pyc
+.venv/
+venv/

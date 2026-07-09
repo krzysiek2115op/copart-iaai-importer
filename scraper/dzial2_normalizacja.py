@@ -25,11 +25,29 @@ def vin_valid(vin):
     return vin[8] == ('X' if check == 10 else str(check))
 
 
+_CTRL = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')
+
+
+def _txt(s, maxlen=255):
+    """Tekst do bazy: usuwa znaki sterujace i przycina do dlugosci kolumny."""
+    if s is None:
+        return None
+    s = _CTRL.sub('', str(s)).strip()
+    return s[:maxlen] if s else None
+
+
 def _int(s):
     if not s:
         return None
     m = re.search(r'\d[\d\s\xa0]*', s)
     return int(re.sub(r'[\s\xa0]', '', m.group(0))) if m else None
+
+
+def _capint(v, hi):
+    """Zdroworozsadkowy gorny limit (anty-absurd/overflow); None gdy brak."""
+    if v is None:
+        return None
+    return v if v <= hi else hi
 
 
 def _date(s):
@@ -45,6 +63,8 @@ def normalize(raw):
     og = raw.get("_og_description", "")
     cm = re.search(r'cena:\s*([\d\s\xa0]+)\s*PLN', og)
     cena = float(re.sub(r'[\s\xa0]', '', cm.group(1))) if cm else None
+    if cena is not None:
+        cena = min(cena, 1_000_000_000.0)  # gorny limit ceny (anty-absurd/overflow)
     netto = 1 if 'netto' in og.lower() else 0
 
     st = raw.get("_status_text", "")
@@ -58,32 +78,32 @@ def normalize(raw):
             term = m2.group(1)
 
     return {
-        "lot_id": raw.get("lot_id"),
-        "numer_aukcji": g("Numer aukcji"),
-        "slug": raw.get("slug"),
-        "url": raw.get("url"),
-        "marka": g("Marka"),
-        "model": g("Model"),
-        "typ": g("Typ"),
+        "lot_id": _txt(raw.get("lot_id"), 32),
+        "numer_aukcji": _txt(g("Numer aukcji"), 64),
+        "slug": _txt(raw.get("slug"), 191),
+        "url": _txt(raw.get("url"), 512),
+        "marka": _txt(g("Marka")),
+        "model": _txt(g("Model")),
+        "typ": _txt(g("Typ")),
         "rok_produkcji": _int(g("Rok produkcji")),
         "data_pierwszej_rej": _date(g("Data pierwszej rejestracji")),
-        "vin": vin,
+        "vin": _txt(vin, 32),
         "vin_valid": vin_valid(vin) if vin else False,
-        "nr_rej": g("Nr rejestracyjny"),
-        "naped": g("Rodzaj napędu"),
-        "skrzynia": g("Skrzynia biegów"),
-        "moc_km": _int(g("Moc silnika")),
-        "pojemnosc_ccm": _int(g("Pojemność silnika")),
-        "paliwo": g("Paliwo"),
-        "przebieg_km": _int(g("Przebieg")),
-        "kolor": g("Kolor"),
-        "ilosc_kluczykow": _int(g("Ilość kluczyków")),
-        "forma_sprzedazy": g("Forma sprzedaży"),
+        "nr_rej": _txt(g("Nr rejestracyjny"), 32),
+        "naped": _txt(g("Rodzaj napędu")),
+        "skrzynia": _txt(g("Skrzynia biegów")),
+        "moc_km": _capint(_int(g("Moc silnika")), 100000),
+        "pojemnosc_ccm": _capint(_int(g("Pojemność silnika")), 1000000),
+        "paliwo": _txt(g("Paliwo")),
+        "przebieg_km": _capint(_int(g("Przebieg")), 100000000),
+        "kolor": _txt(g("Kolor")),
+        "ilosc_kluczykow": _capint(_int(g("Ilość kluczyków")), 100),
+        "forma_sprzedazy": _txt(g("Forma sprzedaży")),
         "cena_pln": cena,
         "cena_netto": netto,
         "najnizsza_cena_30d": None,
         "tryb_licytacji": None,
-        "lokalizacja": raw.get("_lokalizacja") or None,
+        "lokalizacja": _txt(raw.get("_lokalizacja")),
         "termin_zakonczenia": term,
         "status": status,
         "liczba_ofert": 0,

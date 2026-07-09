@@ -5,6 +5,7 @@ import random
 import socket
 import logging
 import ipaddress
+import urllib.request
 import urllib.robotparser as robotparser
 from urllib.parse import urlsplit, urljoin
 from . import config
@@ -55,6 +56,9 @@ class Fetcher:
         import requests  # leniwy import — potrzebny tylko przy realnym pobieraniu
         self._requests = requests
         self.s = requests.Session()
+        # Ignoruj proxy/.netrc ze srodowiska (anty-SSRF: zlosliwy HTTP(S)_PROXY nie przekieruje ruchu).
+        self.s.trust_env = config.TRUST_ENV
+        self.s.max_redirects = config.MAX_REDIRECTS
         self.s.headers.update({
             "User-Agent": config.USER_AGENT,
             "Accept-Language": "pl-PL,pl;q=0.9",
@@ -62,8 +66,14 @@ class Fetcher:
         self._last = 0.0
         self.rp = robotparser.RobotFileParser()
         try:
-            self.rp.set_url(config.BASE_URL + "/robots.txt")
-            self.rp.read()
+            # Pobranie robots.txt z TWARDYM timeoutem i limitem rozmiaru (init nie moze zawisnac).
+            req = urllib.request.Request(
+                config.BASE_URL + "/robots.txt",
+                headers={"User-Agent": config.USER_AGENT},
+            )
+            with urllib.request.urlopen(req, timeout=config.TIMEOUT) as resp:
+                data = resp.read(512 * 1024).decode("utf-8", "replace")
+            self.rp.parse(data.splitlines())
         except Exception as e:  # brak robots -> nie blokujemy, ale logujemy
             log.warning("Nie udalo sie wczytac robots.txt: %s", e)
             self.rp = None
@@ -87,10 +97,14 @@ class Fetcher:
         self._last = time.monotonic()
 
     def _read_capped(self, r):
-        """Czyta tresc strumieniowo z twardym limitem bajtow (po dekompresji) — anty-DoS/bomba."""
+        """Czyta tresc strumieniowo z limitem bajtow (po dekompresji) i CALKOWITYM budzetem czasu.
+        Chroni przed bomba dekompresyjna oraz slow-loris (serwer saczacy bajty w nieskonczonosc)."""
         limit = config.MAX_RESPONSE_BYTES
+        deadline = time.monotonic() + config.MAX_TOTAL_SECONDS
         chunks, total = [], 0
         for chunk in r.iter_content(chunk_size=65536):
+            if time.monotonic() > deadline:
+                raise BlockedError(f"Przekroczono budzet czasu odpowiedzi: {r.url}")
             total += len(chunk)
             if total > limit:
                 raise BlockedError(f"Odpowiedz przekracza limit {limit} B: {r.url}")

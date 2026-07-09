@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Dzial 4 — Synchronizacja: raw_hash (diff) + upsert + reconcile do bazy polea_*."""
+import os
 import hashlib
 import json
 import logging
@@ -25,7 +26,19 @@ def raw_hash(rec):
 
 def connect():
     import pymysql  # leniwy import — potrzebny tylko przy realnym zapisie
-    return pymysql.connect(charset="utf8mb4", autocommit=False, **config.DB)
+    kw = dict(
+        charset="utf8mb4",
+        autocommit=False,
+        local_infile=False,  # obrona przed LOAD DATA LOCAL ze zlosliwego serwera
+        connect_timeout=int(os.environ.get("POLEA_DB_CONNECT_TIMEOUT", "10")),
+        read_timeout=int(os.environ.get("POLEA_DB_READ_TIMEOUT", "30")),
+        write_timeout=int(os.environ.get("POLEA_DB_WRITE_TIMEOUT", "30")),
+        **config.DB,
+    )
+    ca = os.environ.get("POLEA_DB_SSL_CA")
+    if ca:  # opcjonalny TLS do zdalnej bazy
+        kw["ssl"] = {"ca": ca}
+    return pymysql.connect(**kw)
 
 
 def sync(records, conn=None):

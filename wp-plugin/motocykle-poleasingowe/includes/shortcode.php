@@ -25,8 +25,9 @@ function polea_shortcode($atts) {
 
 function polea_render_list($atts) {
     $a       = shortcode_atts(array('ile' => 12), $atts, 'motocykle');
-    $filters = polea_sanitize_filters();
-    $args    = array_merge($filters, array('per_page' => (int) $a['ile'], 'paged' => $filters['paged']));
+    $filters = polea_constrain_filters(polea_sanitize_filters());
+    $per     = max(1, min(60, (int) $a['ile']));
+    $args    = array_merge($filters, array('per_page' => $per, 'paged' => $filters['paged']));
 
     $key  = polea_cache_key($args);
     $data = get_transient($key);
@@ -65,7 +66,7 @@ function polea_render_card($m, $thumb = '') {
         <a class="polea-card__link" href="<?php echo esc_url($url); ?>">
             <div class="polea-card__media">
                 <?php if ($thumb) : ?>
-                    <img loading="lazy" src="<?php echo esc_url($thumb); ?>" alt="<?php echo esc_attr($title); ?>">
+                    <img loading="lazy" referrerpolicy="no-referrer" src="<?php echo esc_url($thumb); ?>" alt="<?php echo esc_attr($title); ?>">
                 <?php else : ?>
                     <span class="polea-card__noimg">brak zdjęcia</span>
                 <?php endif; ?>
@@ -171,7 +172,7 @@ function polea_render_single($lot) {
         <div class="polea-single__grid">
             <div class="polea-gallery">
                 <?php if ($imgs) : foreach ($imgs as $i => $u) : ?>
-                    <img loading="lazy" src="<?php echo esc_url($u); ?>" alt="<?php echo esc_attr($title . ' — zdjęcie ' . ($i + 1)); ?>">
+                    <img loading="lazy" referrerpolicy="no-referrer" src="<?php echo esc_url($u); ?>" alt="<?php echo esc_attr($title . ' — zdjęcie ' . ($i + 1)); ?>">
                 <?php endforeach; else : ?>
                     <span class="polea-card__noimg">brak zdjęć</span>
                 <?php endif; ?>

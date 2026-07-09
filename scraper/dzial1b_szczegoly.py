@@ -17,12 +17,15 @@ _STATUS = re.compile(r'(Aukcja nr[^<]*)', re.I)
 # Adres jest pod naglowkiem "Lokalizacja:", a NIE pod "WŁAŚCICIEL:" (ten sam blok).
 _LOKAL = re.compile(r'Lokalizacja:\s*</h2>\s*<div class="mb-3">(.*?)</div>', re.S | re.I)
 _IMG = re.compile(r'sgallery_([0-9a-f-]{36})_\d+\.(?:png|jpe?g|webp)', re.I)
+_CTRL = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')  # znaki sterujace C0 (bez \t \n \r)
 
 
-def _clean(s):
+def _clean(s, maxlen=1000):
     s = _TAG.sub(' ', s)
     s = _html.unescape(s).replace('\xa0', ' ')
-    return re.sub(r'\s+', ' ', s).strip()
+    s = _CTRL.sub('', s)                       # usun znaki sterujace z niezaufanego HTML
+    s = re.sub(r'\s+', ' ', s).strip()
+    return s[:maxlen]                          # twardy limit dlugosci pola
 
 
 def parse_detail(html_text, url):

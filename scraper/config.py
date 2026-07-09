@@ -25,6 +25,9 @@ MAX_PAGES = int(os.environ.get("POLEA_MAX_PAGES", "50"))       # bezpiecznik pag
 MAX_REDIRECTS = int(os.environ.get("POLEA_MAX_REDIRECTS", "3"))  # limit przekierowan (anty-SSRF)
 MAX_RESPONSE_BYTES = int(os.environ.get("POLEA_MAX_BYTES", str(8 * 1024 * 1024)))  # 8 MB (anty-DoS/bomba)
 LOCK_PATH = os.environ.get("POLEA_LOCK", "/tmp/polea_import.lock")  # pojedyncza instancja (cron)
+# Domyslnie ignorujemy proxy/.netrc ze srodowiska (anty-SSRF na wspoldzielonym hoscie).
+TRUST_ENV = os.environ.get("POLEA_TRUST_ENV", "0") == "1"
+MAX_TOTAL_SECONDS = int(os.environ.get("POLEA_MAX_TOTAL", "60"))  # calkowity budzet czasu na 1 odpowiedz (anty slow-loris)
 
 # Baza (osobna MySQL) — Dzial 4. NIGDY nie wpisywac hasla na sztywno.
 DB = {
