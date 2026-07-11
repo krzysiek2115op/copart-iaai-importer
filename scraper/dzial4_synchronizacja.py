@@ -13,8 +13,12 @@ _FIELDS = [
     "data_pierwszej_rej", "vin", "nr_rej", "naped", "skrzynia", "moc_km", "pojemnosc_ccm",
     "paliwo", "przebieg_km", "kolor", "ilosc_kluczykow", "forma_sprzedazy", "cena_pln",
     "cena_netto", "najnizsza_cena_30d", "tryb_licytacji", "lokalizacja", "termin_zakonczenia",
-    "status", "liczba_ofert", "uwagi", "raw_hash",
+    "status", "liczba_ofert", "uwagi", "relist_of", "raw_hash",
 ]
+
+# Prog bezpieczenstwa reconcile: nie zamykaj masowo aukcji, gdy biezacy przebieg
+# "widzi" mniej niz ten ulamek dotychczas aktywnych (prawdopodobnie urwany/pusty crawl).
+RECONCILE_MIN_RATIO = float(os.environ.get("POLEA_RECONCILE_MIN_RATIO", "0.5"))
 
 
 def raw_hash(rec):
@@ -41,8 +45,13 @@ def connect():
     return pymysql.connect(**kw)
 
 
-def sync(records, conn=None):
-    """Upsert lotow + zdjec, potem reconcile (nieobecne aktywne -> zakonczona)."""
+def sync(records, conn=None, present_ids=None, reconcile=True):
+    """Upsert lotow + zdjec, potem reconcile (nieobecne aktywne -> zakonczona).
+
+    present_ids: pelny zbior lot_id ogloszonych na LISCIE zrodla (z crawla). Reconcile
+        zamyka tylko aukcje spoza tego zbioru — lot wciaz ogloszony, ale z chwilowym
+        bledem detalu/audytu NIE zostanie zamkniety. Gdy None -> baza = faktycznie zapisane.
+    reconcile: False wylacza reconcile (np. przebieg czesciowy z --limit)."""
     close = conn is None
     if conn is None:
         conn = connect()
@@ -62,13 +71,24 @@ def sync(records, conn=None):
                 cur.execute(sql_lot, [rec.get(c) for c in _FIELDS])
                 for img in rec.get("images", []):
                     cur.execute(sql_img, (rec["lot_id"], img["image_key"], img["url"], img["sort_order"]))
+
+            # Podstawa reconcile: pelna lista z crawla, jesli podana; inaczej faktycznie zapisane.
+            present = list(present_ids) if present_ids is not None else seen
             reconciled = 0
-            if seen:
-                fmt = ",".join(["%s"] * len(seen))
-                cur.execute(
-                    f"UPDATE polea_motocykle SET status='zakonczona' "
-                    f"WHERE status='aktywna' AND lot_id NOT IN ({fmt})", seen)
-                reconciled = cur.rowcount
+            if reconcile and present:
+                cur.execute("SELECT COUNT(*) FROM polea_motocykle WHERE status='aktywna'")
+                active_now = int((cur.fetchone() or [0])[0] or 0)
+                if active_now == 0 or len(set(present)) >= RECONCILE_MIN_RATIO * active_now:
+                    uniq = list(set(present))
+                    fmt = ",".join(["%s"] * len(uniq))
+                    cur.execute(
+                        f"UPDATE polea_motocykle SET status='zakonczona' "
+                        f"WHERE status='aktywna' AND lot_id NOT IN ({fmt})", uniq)
+                    reconciled = cur.rowcount
+                else:
+                    log.warning("Reconcile POMINIETY: widziano %s lotow < %.0f%% aktywnych=%s "
+                                "(mozliwy urwany crawl).", len(set(present)),
+                                RECONCILE_MIN_RATIO * 100, active_now)
         conn.commit()
         log.info("Zapis: %s lotow; reconcile: %s zamknietych.", len(records), reconciled)
     except Exception:

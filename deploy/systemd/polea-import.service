@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+[Unit]
+Description=Import motocykli poleasingowe.pl -> baza polea_*
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=polea
+Group=polea
+WorkingDirectory=/opt/polea
+EnvironmentFile=/etc/polea.env
+# Lock w katalogu objętym ReadWritePaths (ProtectSystem=strict blokuje zapis poza nim):
+Environment=POLEA_LOCK=/opt/polea/run/polea_import.lock
+ExecStart=/opt/polea/venv/bin/python3 -m scraper.main
+# Twardy limit czasu całego przebiegu (bezpiecznik):
+TimeoutStartSec=1800
+Nice=10
+
+# Hardening (least privilege) — scraper potrzebuje tylko sieci i zapisu logu/locka:
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/log/polea /opt/polea/run
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

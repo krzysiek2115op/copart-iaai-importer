@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+[Unit]
+Description=Harmonogram importu motocykli poleasingowe.pl (co ~4 h)
+
+[Timer]
+OnCalendar=*-*-* 00/4:17:00
+RandomizedDelaySec=600
+Persistent=true
+Unit=polea-import.service
+
+[Install]
+WantedBy=timers.target

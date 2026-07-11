@@ -17,29 +17,37 @@ log = logging.getLogger("polea.main")
 def run(limit=None, dry_run=False):
     from .dzial7_zgodnosc import Fetcher, BlockedError  # leniwy (wymaga requests)
     fetcher = Fetcher()
-    stubs = crawl_list(fetcher)
-    if limit:
-        stubs = stubs[:limit]
+    stubs_all = crawl_list(fetcher)
+    stubs = stubs_all[:limit] if limit else stubs_all
     log.info("Do pobrania: %s lotow.", len(stubs))
 
     records = []
+    rejected = 0
     for i, stub in enumerate(stubs, 1):
         try:
             raw = fetch_detail(fetcher, stub)
+            rec = normalize(raw)         # normalize/audit W try — wadliwy rekord nie wywala calego importu
+            ok, errs = audit(rec)
         except BlockedError as e:
             log.error("Blokada przy %s: %s — przerywam.", stub["url"], e)
             break
         except Exception as e:
             log.warning("Pominieto %s: %s", stub["url"], e)
             continue
-        rec = normalize(raw)
-        ok, errs = audit(rec)
         if not ok:
+            rejected += 1
             log.warning("Audyt odrzucil %s: %s", rec.get("lot_id"),
                         [m for s, m in errs if s == "hard"])
             continue
         records.append(rec)
         log.info("[%s/%s] OK %s %s", i, len(stubs), rec.get("marka"), rec.get("model"))
+
+    # Wykrywanie regresji zrodla: masowe odrzucenie = prawdopodobna zmiana formatu strony.
+    # Wstrzymujemy zapis (i reconcile), by nie wyczyscic/pozamykac oferty po cichu.
+    if not dry_run and limit is None and len(stubs) >= 5 and rejected / len(stubs) > 0.6:
+        log.error("Odrzucono %s/%s rekordow (>60%%) — mozliwa zmiana formatu zrodla. "
+                  "Wstrzymuje zapis do bazy.", rejected, len(stubs))
+        raise SystemExit(2)          # niezerowy kod -> cron/monitoring wykryje problem
 
     records = deduplicate(records)
     log.info("Po deduplikacji: %s rekordow.", len(records))
@@ -49,13 +57,20 @@ def run(limit=None, dry_run=False):
         return records
 
     from . import dzial4_synchronizacja as sync_mod  # leniwy (wymaga PyMySQL)
-    sync_mod.sync(records)
+    # Reconcile opieramy o PELNA liste z crawla (nie o rekordy po audycie): lot wciaz
+    # ogloszony, ale z chwilowym bledem detalu/audytu NIE zostanie zamkniety (anty-migotanie).
+    # Przy --limit (przebieg czesciowy/testowy) reconcile jest wylaczony.
+    present_ids = None if limit else {s["lot_id"] for s in stubs_all}
+    sync_mod.sync(records, present_ids=present_ids, reconcile=(limit is None))
     return records
 
 
 def _acquire_lock():
     """Blokada pojedynczej instancji (cron) — flock nieblokujacy. None gdy juz dziala inny import."""
     import fcntl
+    d = os.path.dirname(config.LOCK_PATH)
+    if d and not os.path.isdir(d):
+        os.makedirs(d, mode=0o700, exist_ok=True)  # katalog prywatny (nie /tmp) — patrz config
     f = open(config.LOCK_PATH, "w")
     try:
         fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)

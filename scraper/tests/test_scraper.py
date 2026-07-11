@@ -113,6 +113,27 @@ class TestAudyt(unittest.TestCase):
         self.assertTrue(any(m == "cena_pln <= 0" for _, m in errs))
 
 
+class TestNormOdpornosc(unittest.TestCase):
+    """Regresja audytu: niezaufane wejscie nie moze rzucac wyjatku w normalize (pkt 1)."""
+
+    def test_zla_data_nie_wywala(self):
+        rec = normalize({"lot_id": "x", "Marka": "BMW",
+                         "Data pierwszej rejestracji": "2022-02-31"})  # dzien poza zakresem
+        self.assertIsNone(rec["data_pierwszej_rej"])
+
+    def test_pusta_cena_nie_wywala(self):
+        rec = normalize({"lot_id": "x", "Marka": "BMW",
+                         "_og_description": "Numer aukcji: 1/A, cena:  PLN netto"})
+        self.assertIsNone(rec["cena_pln"])
+
+    def test_dlugosc_pol_zgodna_ze_schematem(self):
+        rec = normalize({"lot_id": "x", "Marka": "A" * 300, "Model": "B" * 300,
+                         "VIN": "Z" * 40})
+        self.assertLessEqual(len(rec["marka"]), 64)     # kolumna VARCHAR(64)
+        self.assertLessEqual(len(rec["model"]), 128)    # kolumna VARCHAR(128)
+        self.assertLessEqual(len(rec["vin"]), 20)       # kolumna VARCHAR(20)
+
+
 class TestSSRF(unittest.TestCase):
     """Bramka anty-SSRF (Dzial 7): tylko host z allowlisty i schemat http/https."""
 

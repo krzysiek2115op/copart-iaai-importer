@@ -24,7 +24,19 @@ TIMEOUT = int(os.environ.get("POLEA_TIMEOUT", "30"))
 MAX_PAGES = int(os.environ.get("POLEA_MAX_PAGES", "50"))       # bezpiecznik paginacji
 MAX_REDIRECTS = int(os.environ.get("POLEA_MAX_REDIRECTS", "3"))  # limit przekierowan (anty-SSRF)
 MAX_RESPONSE_BYTES = int(os.environ.get("POLEA_MAX_BYTES", str(8 * 1024 * 1024)))  # 8 MB (anty-DoS/bomba)
-LOCK_PATH = os.environ.get("POLEA_LOCK", "/tmp/polea_import.lock")  # pojedyncza instancja (cron)
+def _default_lock_path():
+    """Lock w katalogu prywatnym uzytkownika (nie w globalnie zapisywalnym /tmp -> anty-DoS/symlink)."""
+    base = os.environ.get("XDG_STATE_HOME")
+    if not base:
+        home = os.path.expanduser("~")
+        base = os.path.join(home, ".local", "state") if home and home != "~" else None
+    if not base:
+        import tempfile
+        base = os.path.join(tempfile.gettempdir(), "polea-%d" % os.getuid())
+    return os.path.join(base, "polea", "polea_import.lock")
+
+
+LOCK_PATH = os.environ.get("POLEA_LOCK", _default_lock_path())  # pojedyncza instancja (cron)
 # Domyslnie ignorujemy proxy/.netrc ze srodowiska (anty-SSRF na wspoldzielonym hoscie).
 TRUST_ENV = os.environ.get("POLEA_TRUST_ENV", "0") == "1"
 MAX_TOTAL_SECONDS = int(os.environ.get("POLEA_MAX_TOTAL", "60"))  # calkowity budzet czasu na 1 odpowiedz (anty slow-loris)

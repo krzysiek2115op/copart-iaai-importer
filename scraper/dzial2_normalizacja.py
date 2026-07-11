@@ -52,7 +52,12 @@ def _capint(v, hi):
 
 def _date(s):
     m = re.search(r'(\d{4})-(\d{2})-(\d{2})', s or "")
-    return date(int(m[1]), int(m[2]), int(m[3])).isoformat() if m else None
+    if not m:
+        return None
+    try:
+        return date(int(m[1]), int(m[2]), int(m[3])).isoformat()
+    except ValueError:      # np. 2022-02-31 w niezaufanym HTML — nie wywalaj importu
+        return None
 
 
 def normalize(raw):
@@ -61,10 +66,12 @@ def normalize(raw):
     vin = (g("VIN") or "").strip().upper() or None
 
     og = raw.get("_og_description", "")
+    cena = None
     cm = re.search(r'cena:\s*([\d\s\xa0]+)\s*PLN', og)
-    cena = float(re.sub(r'[\s\xa0]', '', cm.group(1))) if cm else None
-    if cena is not None:
-        cena = min(cena, 1_000_000_000.0)  # gorny limit ceny (anty-absurd/overflow)
+    if cm:
+        digits = re.sub(r'[\s\xa0]', '', cm.group(1))
+        if digits.isdigit():                          # obrona przed float("") gdy "cena:  PLN"
+            cena = min(float(digits), 1_000_000_000.0)  # gorny limit ceny (anty-absurd/overflow)
     netto = 1 if 'netto' in og.lower() else 0
 
     st = raw.get("_status_text", "")
@@ -82,31 +89,36 @@ def normalize(raw):
         "numer_aukcji": _txt(g("Numer aukcji"), 64),
         "slug": _txt(raw.get("slug"), 191),
         "url": _txt(raw.get("url"), 512),
-        "marka": _txt(g("Marka")),
-        "model": _txt(g("Model")),
-        "typ": _txt(g("Typ")),
+        # Limity dlugosci ZGODNE ze schematem (db/schema.sql) — inaczej za dlugie pole
+        # ze zrodla wywala cala transakcje zapisu (STRICT sql_mode -> "Data too long").
+        "marka": _txt(g("Marka"), 64),
+        "model": _txt(g("Model"), 128),
+        "typ": _txt(g("Typ"), 64),
         "rok_produkcji": _int(g("Rok produkcji")),
         "data_pierwszej_rej": _date(g("Data pierwszej rejestracji")),
-        "vin": _txt(vin, 32),
+        "vin": _txt(vin, 20),
         "vin_valid": vin_valid(vin) if vin else False,
         "nr_rej": _txt(g("Nr rejestracyjny"), 32),
-        "naped": _txt(g("Rodzaj napędu")),
-        "skrzynia": _txt(g("Skrzynia biegów")),
+        "naped": _txt(g("Rodzaj napędu"), 64),
+        "skrzynia": _txt(g("Skrzynia biegów"), 64),
         "moc_km": _capint(_int(g("Moc silnika")), 100000),
         "pojemnosc_ccm": _capint(_int(g("Pojemność silnika")), 1000000),
-        "paliwo": _txt(g("Paliwo")),
+        "paliwo": _txt(g("Paliwo"), 32),
         "przebieg_km": _capint(_int(g("Przebieg")), 100000000),
-        "kolor": _txt(g("Kolor")),
+        "kolor": _txt(g("Kolor"), 64),
         "ilosc_kluczykow": _capint(_int(g("Ilość kluczyków")), 100),
-        "forma_sprzedazy": _txt(g("Forma sprzedaży")),
+        "forma_sprzedazy": _txt(g("Forma sprzedaży"), 64),
         "cena_pln": cena,
         "cena_netto": netto,
+        # UWAGA: ponizsze pola wymagaja probki zywego HTML detalu, by ustalic etykiety
+        # (Dzial 1B). Do czasu potwierdzenia pozostaja puste — patrz raport audytu, pkt 7.
         "najnizsza_cena_30d": None,
         "tryb_licytacji": None,
-        "lokalizacja": _txt(raw.get("_lokalizacja")),
+        "lokalizacja": _txt(raw.get("_lokalizacja"), 255),
         "termin_zakonczenia": term,
         "status": status,
         "liczba_ofert": 0,
         "uwagi": None,
+        "relist_of": None,          # ustawiane przez Dzial 3 (dedup po VIN); zapisywane przez Dzial 4
         "images": raw.get("_images", []),
     }

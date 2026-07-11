@@ -33,6 +33,8 @@ function polea_render_list($atts) {
     $data = get_transient($key);
     if ($data === false) {
         $data = Polea_DB::query_list($args);
+        $ids  = array_map(static function ($m) { return $m['lot_id']; }, $data['items']);
+        $data['thumbs'] = Polea_DB::first_images_map($ids); // miniatury w cache -> brak dodatkowego zapytania przy trafieniu
         set_transient($key, $data, POLEA_CACHE_TTL);
     }
 
@@ -42,8 +44,7 @@ function polea_render_list($atts) {
     if (empty($data['items'])) {
         echo '<p class="polea-empty">Brak motocykli spełniających kryteria.</p>';
     } else {
-        $ids    = array_map(static function ($m) { return $m['lot_id']; }, $data['items']);
-        $thumbs = Polea_DB::first_images_map($ids); // 1 zapytanie zamiast N
+        $thumbs = isset($data['thumbs']) ? $data['thumbs'] : array();
         echo '<div class="polea-grid">';
         foreach ($data['items'] as $m) {
             $thumb = isset($thumbs[$m['lot_id']]) ? $thumbs[$m['lot_id']] : '';
@@ -141,11 +142,24 @@ function polea_render_pager($data) {
             $keep[$k] = sanitize_text_field(wp_unslash($_GET[$k]));
         }
     }
+    $pages = (int) $data['pages'];
+    $cur   = (int) $data['paged'];
+    $win   = 2; // okno stron wokol biezacej — pager nie puchnie przy setkach stron
     ob_start();
     echo '<nav class="polea-pager">';
-    for ($i = 1; $i <= $data['pages']; $i++) {
+    $gap = false;
+    for ($i = 1; $i <= $pages; $i++) {
+        // Pokazuj: skrajne strony, oraz okno +/- $win wokol biezacej; reszta -> wielokropek.
+        if ($i !== 1 && $i !== $pages && abs($i - $cur) > $win) {
+            if (!$gap) {
+                echo '<span class="polea-pager__gap">…</span>';
+                $gap = true;
+            }
+            continue;
+        }
+        $gap = false;
         $url = esc_url(add_query_arg(array_merge($keep, array('polea_str' => $i)), $base));
-        if ($i === (int) $data['paged']) {
+        if ($i === $cur) {
             echo '<span class="polea-pager__cur">' . (int) $i . '</span>';
         } else {
             echo '<a href="' . $url . '">' . (int) $i . '</a>';

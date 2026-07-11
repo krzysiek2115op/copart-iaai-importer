@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS polea_motocykle (
 
     -- Meta pipeline (dedup / diff / reconcile)
     raw_hash            CHAR(32)        DEFAULT NULL,           -- MD5 znormalizowanego rekordu -> new/changed/unchanged
+    relist_of           VARCHAR(32)     DEFAULT NULL,           -- lot_id nowszej aukcji tego samego VIN (relist); NULL = najnowszy
     first_seen          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_seen           TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- odświeżane przy każdym imporcie
     updated_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -59,9 +60,14 @@ CREATE TABLE IF NOT EXISTS polea_motocykle (
     KEY idx_marka (marka),
     KEY idx_status (status),
     KEY idx_termin (termin_zakonczenia),
+    KEY idx_status_termin (status, termin_zakonczenia),  -- pod zapytanie listy (WHERE status + ORDER BY termin)
     KEY idx_vin (vin),
     KEY idx_last_seen (last_seen)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Migracja istniejacej bazy (gdy tabela juz istnieje bez powyzszych) — uruchom raz, ignoruj bledy "duplicate":
+--   ALTER TABLE polea_motocykle ADD COLUMN relist_of VARCHAR(32) DEFAULT NULL AFTER raw_hash;
+--   ALTER TABLE polea_motocykle ADD KEY idx_status_termin (status, termin_zakonczenia);
 
 -- ---------------------------------------------------------------------------
 -- Zdjęcia (hotlink) — wiele na lot; kolejność zachowana przez sort_order
