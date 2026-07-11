@@ -209,3 +209,62 @@ Cel: z ~9/10 „tak wysoko, jak się da". Poniżej **nowe** utwardzenia (ponad F
 | **ŚREDNIA** | ≈ 8.7 | **≈ 9.3/10** | **maksimum sensownego hardeningu w tym modelu** |
 
 **Wniosek:** dalsze podnoszenie oceny wymagałoby zmian **poza kodem** (nagłówki HTTP na serwerze, konto MySQL tylko-`SELECT`, TLS do bazy, monitoring) — opisane w pkt 5. W obrębie kodu projektu osiągnięto punkt zbieżności.
+
+---
+
+## Iteracja 3 (v0.11.x → hardening całości, po rozbudowie SEO/frontu)
+
+Pełny ponowny przegląd całego brancha `plugin-2` (PHP, Python, SQL, HTML/CSS, cron/systemd, deploy, konfiguracje). **Bez zmian funkcjonalności** — wyłącznie utwardzenia i dokumentacja ryzyk resztkowych.
+
+### A. Poprawki w kodzie (ta iteracja)
+
+| # | Ryzyko | Podatność / CWE | Wpływ | Pliki | Zmiana | Dok.? |
+|---|---|---|---|---|---|---|
+| 1 | Niskie | Brak walidacji `Content-Type` odpowiedzi HTTP (CWE-20 / CWE-436) | Wrogi/zmanipulowany serwer źródła mógłby serwować binaria/nietypowe typy do parsera HTML (limit rozmiaru/czasu już chronił, brak twardej walidacji typu) | `scraper/dzial7_zgodnosc.py` | W `get()` po `raise_for_status()`: odrzuć odpowiedź, gdy `Content-Type` jest obecny i nie jest `text/*`/`*html*` | Nie |
+| 2 | Niskie | Niejawna weryfikacja certyfikatu TLS (CWE-295) | `requests` domyślnie weryfikuje, ale poleganie na domyślnej wartości jest kruche | `scraper/dzial7_zgodnosc.py` | Jawne `self.s.verify = True` na sesji | Nie |
+| 3 | Średnie | Realny plik `*.env` z hasłami mógł trafić do repo — `.gitignore` łapał tylko `.env`/`.env.*`, nie `polea.env` (CWE-312 / CWE-538) | Wyciek poświadczeń bazy przy przypadkowym `git add` | `.gitignore` | Dodano `*.env` + wyjątek `!*.env.example` (szablon nadal commitowalny) | Nie |
+
+**Regresje:** scraper 19/19 testów OK; front — bez zmian ścieżek danych/API.
+
+### B. Weryfikacja pentestowa nowego kodu (SEO/front, v0.8–v0.11) — bez nowych podatności
+
+| Wektor (OWASP/CWE) | Miejsce | Status |
+|---|---|---|
+| XSS / HTML Injection (CWE-79) | `shortcode.php`, `seo.php` (breadcrumbs, chips, tabela, FAQ, opis, meta/OG/Twitter) | ✅ `esc_html`/`esc_attr`/`esc_url` na każdym wyjściu; `<title>`/H1 przez `wp_strip_all_tags` |
+| JSON/Schema Injection (CWE-116) | JSON-LD `@graph` | ✅ `wp_json_encode(JSON_HEX_TAG\|JSON_HEX_AMP)` — brak wyjścia z `<script>` |
+| SQL Injection (CWE-89) | `Polea_DB::related`, `active_lot_ids`, `query_list`, `distinct` | ✅ prepared statements; interpolowana tylko nazwa kolumny z allowlisty |
+| Open Redirect (CWE-601) | generowanie URL (`polea_single_url`, pager, canonical) | ✅ brak `wp_redirect`; wszystkie URL przez `esc_url`; `get_permalink`/`home_url` zamiast danych żądania |
+| Cache poisoning/stampede (CWE-524) | transient listy + `polea_rel_*` | ✅ klucz z allowlisty (skończona przestrzeń); flush obejmuje `polea_rel_*`; stampede = ryzyko resztkowe (pkt C) |
+| CSRF (CWE-352) | panel admina (flush cache) | ✅ `check_admin_referer` + `current_user_can('manage_options')` |
+| Rekurencja filtra `the_title` | breadcrumbs | ✅ `get_post_field` zamiast `get_the_title` |
+| Ekspozycja błędów (CWE-209) | `Polea_DB` | ✅ `mysqli_report(OFF)`, błędy → `[]`/`null`, komunikaty ogólne |
+| SSRF/redirecty (CWE-918) | rewrite/sitemap (tylko wewnętrzne URL) | ✅ wejście `lot_id` = regex `^[A-Za-z0-9]{1,32}$` |
+
+**Potwierdzono brak:** REST/AJAX, uploadu, `eval/exec/system/shell_exec/proc_open/unserialize/extract`, deserializacji niezaufanych danych, `$_REQUEST/$_COOKIE`, dynamicznego `include/require`. `md5` **wyłącznie** jako klucz cache (nie kryptografia — CWE-328 nie dotyczy).
+
+### C. Ryzyka resztkowe (poza kodem — konfiguracja środowiska)
+
+1. **Nagłówki HTTP** — plugin celowo **nie** ustawia nagłówków globalnych (należą do serwera/motywu). Zalecane dla całej witryny:
+   - `Strict-Transport-Security: max-age=31536000; includeSubDomains` (po pełnym HTTPS)
+   - `X-Content-Type-Options: nosniff`
+   - `Referrer-Policy: strict-origin-when-cross-origin`
+   - `Content-Security-Policy` — dostosować do motywu; w `img-src` **musi** być `https://poleasingowe.pl` (hotlink zdjęć)
+   - `Permissions-Policy`, `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy`
+   - `X-Frame-Options: SAMEORIGIN` (WP-admin już wysyła)
+2. **MySQL — least privilege (CWE-250/CWE-269):** dwa konta do bazy `polea`:
+   - **scraper** (VPS): `SELECT, INSERT, UPDATE` (bez `DELETE/DROP/GRANT/FILE`)
+   - **wtyczka WP**: **tylko `SELECT`** (wtyczka wyłącznie czyta) → ogranicza skutki ewentualnego SQLi/przejęcia WP
+   ```sql
+   CREATE USER 'polea_ro'@'10.0.0.%' IDENTIFIED BY '...';
+   GRANT SELECT ON polea.* TO 'polea_ro'@'10.0.0.%';
+   ```
+   W `wp-config.php`: `define('POLEA_DB_USER','polea_ro');`
+3. **TLS do bazy** (połączenie zdalne): scraper honoruje `POLEA_DB_SSL_CA`; po stronie MySQL `require_secure_transport=ON`.
+4. **DNS rebinding / TOCTOU (CWE-367):** host/IP walidowane przy sprawdzeniu, `requests` rozwiązuje DNS ponownie przy połączeniu (okno rebinding). Pełna ochrona = przypięcie IP (custom adapter) — świadomie niewprowadzone (ryzyko regresji). Mitygacja: firewall egress na VPS, blok `169.254.169.254`/sieci wewnętrznych.
+5. **Cache stampede:** przy wygaśnięciu transientu równoległe żądania odbudują cache naraz — przy tej skali nieistotne; przy dużym ruchu obiektowy cache + blokada odbudowy.
+6. **Sekrety:** wyłącznie env / stałe `wp-config.php`; `deploy/polea.env` (0600, poza repo, `.gitignore` utwardzony).
+7. **PDF (`docs/klient/*.py`, `docs/*.gen.py`):** narzędzia **build-time**, nie działają na produkcji, nie przyjmują niezaufanego wejścia — poza powierzchnią ataku.
+
+### D. Zgodność
+
+OWASP Top 10 (A01–A10), ASVS L1/część L2, CWE Top 25 (79/89/352/22/78/918/434/502/601/295/312/367), WordPress/PHP/Python/MySQL Secure Coding. **W obrębie kodu: brak znanych podatności usuwalnych bez zmiany funkcjonalności.** Ocena ~9.3/10; pełne ~9.7–10 po wdrożeniu pkt C (serwer).

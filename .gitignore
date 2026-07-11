@@ -3,6 +3,8 @@
 *.pem
 .env
 .env.*
+*.env
+!*.env.example
 secrets*
 credentials*
 

@@ -46,3 +46,18 @@ sudo cp deploy/logrotate/polea /etc/logrotate.d/polea
 | 2 | >60% rekordów odrzuconych — prawdopodobna zmiana formatu źródła; zapis wstrzymany |
 
 Blokada pojedynczej instancji (`flock`) jest wbudowana — bezpiecznie nakładające się terminy.
+
+## Bezpieczeństwo serwera (zalecane, poza kodem)
+
+Pełny opis: `docs/SECURITY-AUDIT.md` (Iteracja 3, pkt C). Skrót:
+
+- **MySQL least privilege — dwa konta.** Scraper: `SELECT, INSERT, UPDATE` na `polea.*` (bez `DELETE/DROP/GRANT/FILE`). Wtyczka WP: **tylko `SELECT`** (czyta wyłącznie):
+  ```sql
+  CREATE USER 'polea_ro'@'10.0.0.%' IDENTIFIED BY '...';
+  GRANT SELECT ON polea.* TO 'polea_ro'@'10.0.0.%';
+  ```
+  W `wp-config.php`: `define('POLEA_DB_USER','polea_ro');`
+- **TLS do bazy** przy połączeniu zdalnym: scraper → `POLEA_DB_SSL_CA`; MySQL → `require_secure_transport=ON`.
+- **Firewall egress na VPS** (mitygacja DNS-rebinding/SSRF): blok ruchu do sieci wewnętrznych i `169.254.169.254`.
+- **Nagłówki HTTP na serwerze WWW** (dla całej witryny): `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: SAMEORIGIN`, oraz `Content-Security-Policy` z **dozwolonym `img-src https://poleasingowe.pl`** (hotlink zdjęć).
+- **Sekrety:** `/etc/polea.env` z `chmod 600`, poza repo (`.gitignore` blokuje `*.env`).

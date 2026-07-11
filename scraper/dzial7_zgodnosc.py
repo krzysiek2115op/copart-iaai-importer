@@ -58,6 +58,7 @@ class Fetcher:
         self.s = requests.Session()
         # Ignoruj proxy/.netrc ze srodowiska (anty-SSRF: zlosliwy HTTP(S)_PROXY nie przekieruje ruchu).
         self.s.trust_env = config.TRUST_ENV
+        self.s.verify = True   # jawna weryfikacja certyfikatu TLS (CWE-295) — nie polegaj na domyslnej
         self.s.max_redirects = config.MAX_REDIRECTS
         self.s.headers.update({
             "User-Agent": config.USER_AGENT,
@@ -152,6 +153,11 @@ class Fetcher:
                 if code == 403:
                     raise BlockedError(f"HTTP 403 (mozliwa blokada): {current}")
                 r.raise_for_status()
+                # Walidacja Content-Type: parsujemy TYLKO HTML/tekst (CWE-20/CWE-436).
+                # Odrzucamy nieoczekiwane typy (obraz/pdf/zip/binaria) z wrogiego/zmanipulowanego serwera.
+                ctype = (r.headers.get("Content-Type") or "").lower()
+                if ctype and "html" not in ctype and not ctype.startswith("text/"):
+                    raise BlockedError(f"Nieoczekiwany Content-Type ({ctype}): {current}")
                 return self._read_capped(r)
             finally:
                 r.close()
