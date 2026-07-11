@@ -80,8 +80,11 @@ function polea_flush_cache() {
         delete_transient('polea_distinct_' . $col);
     }
     global $wpdb;
+    // Czyści cache listy (polea_list_*) ORAZ podobnych ofert (polea_rel_*).
     $wpdb->query(
         "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_polea\\_list\\_%' " .
-        "OR option_name LIKE '\\_transient\\_timeout\\_polea\\_list\\_%'"
+        "OR option_name LIKE '\\_transient\\_timeout\\_polea\\_list\\_%' " .
+        "OR option_name LIKE '\\_transient\\_polea\\_rel\\_%' " .
+        "OR option_name LIKE '\\_transient\\_timeout\\_polea\\_rel\\_%'"
     );
 }

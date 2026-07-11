@@ -199,6 +199,27 @@ class Polea_DB {
         return $vals;
     }
 
+    /** Podobne aktywne oferty (internal linking): najpierw ta sama marka, potem dowolne. */
+    public static function related($lot_id, $marka, $limit = 6) {
+        $limit = max(1, min(24, (int) $limit));
+        $cols  = "lot_id, marka, model, rok_produkcji, cena_pln, cena_netto, przebieg_km, pojemnosc_ccm, paliwo, termin_zakonczenia";
+        if (!empty($marka)) {
+            $rows = self::q(
+                "SELECT {$cols} FROM polea_motocykle WHERE status='aktywna' AND marka = ? AND lot_id <> ? " .
+                "ORDER BY (termin_zakonczenia IS NULL), termin_zakonczenia ASC LIMIT ?",
+                'ssi', array($marka, $lot_id, $limit)
+            );
+            if ($rows) {
+                return $rows;
+            }
+        }
+        return self::q(
+            "SELECT {$cols} FROM polea_motocykle WHERE status='aktywna' AND lot_id <> ? " .
+            "ORDER BY (termin_zakonczenia IS NULL), termin_zakonczenia ASC LIMIT ?",
+            'si', array($lot_id, $limit)
+        );
+    }
+
     /** Status połączenia dla panelu admina. */
     public static function status() {
         if (!self::is_configured()) {

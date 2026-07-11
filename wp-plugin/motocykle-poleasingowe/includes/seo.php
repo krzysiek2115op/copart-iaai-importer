@@ -129,6 +129,12 @@ function polea_seo_head() {
     if (!polea_is_our_page()) {
         return;
     }
+    // theme-color: domyślnie WYŁĄCZONY (by nie nadpisywać motywu). Klient włącza jedną linią:
+    //   add_filter('polea_theme_color', fn() => '#0b5cad');
+    $tc = apply_filters('polea_theme_color', '');
+    if ($tc !== '') {
+        echo '<meta name="theme-color" content="' . esc_attr($tc) . '">' . "\n";
+    }
     $seo_plugin = polea_seo_plugin_active();
     $lot = polea_current_lot_id();
     if ($lot !== '') {
@@ -152,9 +158,8 @@ function polea_seo_single($m, $seo_plugin) {
     if (!$active) {
         echo '<meta name="robots" content="noindex,follow">' . "\n";
     }
-    // JSON-LD wypuszczamy ZAWSZE (dane strukturalne są addytywne i bezpieczne, nawet z wtyczką SEO).
-    polea_seo_jsonld_single($m, $url);
-
+    // JSON-LD (@graph: Product/Motorcycle + BreadcrumbList + FAQPage) emitujemy w treści
+    // shortcode’u, gdzie dane są już wczytane — patrz polea_jsonld_single().
     if ($seo_plugin) {
         return; // <title>/meta/canonical/OG zostawiamy aktywnej wtyczce SEO — bez dublowania
     }
@@ -176,6 +181,12 @@ function polea_seo_single($m, $seo_plugin) {
     if ($m['cena_pln'] !== null && $m['cena_pln'] !== '') {
         echo '<meta property="product:price:amount" content="' . esc_attr(number_format((float) $m['cena_pln'], 2, '.', '')) . '">' . "\n";
         echo '<meta property="product:price:currency" content="PLN">' . "\n";
+    }
+    echo '<meta name="twitter:card" content="' . ($imgs ? 'summary_large_image' : 'summary') . '">' . "\n";
+    echo '<meta name="twitter:title" content="' . esc_attr($title) . '">' . "\n";
+    echo '<meta name="twitter:description" content="' . esc_attr($desc) . '">' . "\n";
+    if ($imgs) {
+        echo '<meta name="twitter:image" content="' . esc_url($imgs[0]) . '">' . "\n";
     }
 }
 
@@ -202,6 +213,9 @@ function polea_seo_list($seo_plugin) {
     echo '<meta property="og:url" content="' . esc_url($base) . '">' . "\n";
     echo '<meta property="og:site_name" content="' . esc_attr(get_bloginfo('name')) . '">' . "\n";
     echo '<meta property="og:locale" content="pl_PL">' . "\n";
+    echo '<meta name="twitter:card" content="summary">' . "\n";
+    echo '<meta name="twitter:title" content="' . esc_attr(wp_get_document_title()) . '">' . "\n";
+    echo '<meta name="twitter:description" content="' . esc_attr($desc) . '">' . "\n";
 }
 
 function polea_seo_is_filtered() {
@@ -213,34 +227,208 @@ function polea_seo_is_filtered() {
     return isset($_GET['polea_str']) && (int) $_GET['polea_str'] > 1;
 }
 
-/** JSON-LD schema.org: Product+Motorcycle z Offer. Bezpieczne wstawienie do <script>. */
-function polea_seo_jsonld_single($m, $url) {
-    $imgs = Polea_DB::get_images($m['lot_id']);
-    $data = array(
-        '@context' => 'https://schema.org',
-        '@type'    => array('Product', 'Motorcycle'),
-        'name'     => trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? '')),
-        'sku'      => $m['lot_id'],
-        'url'      => $url,
-        'category' => 'Motocykl',
+/* ------------------------------------------------------ H1 = nazwa pojazdu (single) */
+
+add_filter('the_title', 'polea_seo_the_title', 10, 2);
+
+/** Na widoku pojedynczego motocykla podmienia tytuł strony (H1 motywu) na nazwę pojazdu.
+ *  Ściśle ograniczone: tylko nasza strona, główne zapytanie, w pętli treści. */
+function polea_seo_the_title($title, $post_id = 0) {
+    if (is_admin() || !is_main_query() || !in_the_loop()) {
+        return $title;
+    }
+    $pid = (int) get_option(POLEA_PAGE_OPTION);
+    if (!$pid || (int) $post_id !== $pid) {
+        return $title;
+    }
+    $lot = polea_current_lot_id();
+    if ($lot === '') {
+        return $title;
+    }
+    $m = Polea_DB::get_one($lot);
+    if (!$m) {
+        return $title;
+    }
+    $name = trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? ''));
+    $rok  = !empty($m['rok_produkcji']) ? ' ' . (int) $m['rok_produkcji'] : '';
+    return $name !== '' ? wp_strip_all_tags(trim($name . $rok)) : $title;
+}
+
+/* --------------------------------------------------- helpery treści (współdzielone HTML + JSON-LD) */
+
+/** Okruszki: Strona główna → Nasze motory → [pojazd]. Zwraca [ [name,url], ... ]. */
+function polea_breadcrumb_items($m = null) {
+    $pid = (int) get_option(POLEA_PAGE_OPTION);
+    // get_post_field (NIE get_the_title) — inaczej filtr the_title zwróciłby tu nazwę pojazdu.
+    $list_name = $pid ? (string) get_post_field('post_title', $pid) : '';
+    if ($list_name === '') {
+        $list_name = 'Nasze motory';
+    }
+    $items = array(
+        array('name' => 'Strona główna', 'url' => home_url('/')),
+        array('name' => ($list_name !== '' ? $list_name : 'Nasze motory'), 'url' => polea_page_url()),
     );
-    if ($imgs)                        { $data['image'] = array_values($imgs); }
-    if (!empty($m['marka']))          { $data['brand'] = array('@type' => 'Brand', 'name' => $m['marka']); }
-    if (!empty($m['model']))          { $data['model'] = $m['model']; }
-    if (!empty($m['rok_produkcji']))  { $data['vehicleModelDate'] = (string) (int) $m['rok_produkcji']; }
-    if (!empty($m['vin']))            { $data['vehicleIdentificationNumber'] = $m['vin']; }
-    if (!empty($m['kolor']))          { $data['color'] = $m['kolor']; }
-    if (!empty($m['paliwo']))         { $data['fuelType'] = $m['paliwo']; }
-    if (!empty($m['skrzynia']))       { $data['vehicleTransmission'] = $m['skrzynia']; }
+    if ($m) {
+        $name = trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? ''));
+        if (!empty($m['rok_produkcji'])) {
+            $name = trim($name . ' ' . (int) $m['rok_produkcji']);
+        }
+        $items[] = array('name' => ($name !== '' ? $name : 'Motocykl'), 'url' => polea_single_url($m['lot_id']));
+    }
+    return $items;
+}
+
+/** Unikalny, syntetyzowany opis pojazdu z posiadanych pól (naturalny język, bez kopiowania). */
+function polea_vehicle_description($m) {
+    $name = trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? ''));
+    if ($name === '') {
+        $name = 'Ten motocykl';
+    }
+    $lead = $name;
+    if (!empty($m['rok_produkcji'])) {
+        $lead .= ' z ' . (int) $m['rok_produkcji'] . ' roku';
+    }
+    $eng = array();
+    if (!empty($m['pojemnosc_ccm'])) { $eng[] = (int) $m['pojemnosc_ccm'] . ' ccm'; }
+    if (!empty($m['moc_km']))        { $eng[] = (int) $m['moc_km'] . ' KM'; }
+    $lead .= $eng ? ' to motocykl z silnikiem ' . implode(' / ', $eng) : ' to motocykl z aukcji poleasingowej';
+
+    $parts = array($lead . '.');
+    $s2 = array();
+    if (!empty($m['paliwo']))      { $s2[] = 'paliwo: ' . $m['paliwo']; }
+    if (!empty($m['skrzynia']))    { $s2[] = 'skrzynia: ' . $m['skrzynia']; }
+    if (!empty($m['naped']))       { $s2[] = 'napęd: ' . $m['naped']; }
+    if (!empty($m['przebieg_km'])) { $s2[] = 'przebieg: ' . number_format((int) $m['przebieg_km'], 0, ',', ' ') . ' km'; }
+    if ($s2) {
+        $parts[] = ucfirst(implode(', ', $s2)) . '.';
+    }
+    $s3 = array();
+    if (!empty($m['lokalizacja'])) { $s3[] = 'Pojazd znajduje się w: ' . $m['lokalizacja']; }
+    if ($m['cena_pln'] !== null && $m['cena_pln'] !== '') { $s3[] = 'cena w aukcji: ' . polea_price($m); }
+    if ($s3) {
+        $parts[] = implode('. ', $s3) . '.';
+    }
+    return implode(' ', $parts);
+}
+
+/** Pary FAQ generowane z danych pojazdu (tylko gdy dane istnieją). */
+function polea_faq_pairs($m) {
+    $name = trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? ''));
+    if ($name === '') {
+        $name = 'ten motocykl';
+    }
+    $pairs = array();
+    if (!empty($m['rok_produkcji'])) {
+        $pairs[] = array('q' => 'Z którego roku pochodzi ' . $name . '?',
+                         'a' => $name . ' pochodzi z ' . (int) $m['rok_produkcji'] . ' roku.');
+    }
     if (!empty($m['przebieg_km'])) {
-        $data['mileageFromOdometer'] = array('@type' => 'QuantitativeValue', 'value' => (int) $m['przebieg_km'], 'unitCode' => 'KMT');
+        $pairs[] = array('q' => 'Jaki przebieg ma ' . $name . '?',
+                         'a' => 'Przebieg wynosi ' . number_format((int) $m['przebieg_km'], 0, ',', ' ') . ' km.');
+    }
+    $ep = array();
+    if (!empty($m['pojemnosc_ccm'])) { $ep[] = (int) $m['pojemnosc_ccm'] . ' ccm'; }
+    if (!empty($m['moc_km']))        { $ep[] = (int) $m['moc_km'] . ' KM'; }
+    if ($ep) {
+        $pairs[] = array('q' => 'Jaka jest pojemność i moc silnika?',
+                         'a' => 'Silnik ma ' . implode(' i ', $ep) . '.');
+    }
+    if (!empty($m['paliwo'])) {
+        $pairs[] = array('q' => 'Jakim paliwem jeździ ' . $name . '?',
+                         'a' => 'Rodzaj paliwa: ' . $m['paliwo'] . '.');
+    }
+    if (!empty($m['skrzynia'])) {
+        $pairs[] = array('q' => 'Jaka skrzynia biegów?',
+                         'a' => 'Skrzynia biegów: ' . $m['skrzynia'] . '.');
+    }
+    if (!empty($m['lokalizacja'])) {
+        $pairs[] = array('q' => 'Gdzie znajduje się ' . $name . '?',
+                         'a' => 'Pojazd zlokalizowany jest w: ' . $m['lokalizacja'] . '.');
+    }
+    if ($m['cena_pln'] !== null && $m['cena_pln'] !== '') {
+        $pairs[] = array('q' => 'Ile kosztuje ' . $name . '?',
+                         'a' => 'Cena w aukcji: ' . polea_price($m) . '.');
+    }
+    return $pairs;
+}
+
+/* ---------------------------------------------------------------- JSON-LD (@graph) */
+
+/** Kolejkuje skrypt JSON-LD do wydruku w stopce — poza treścią, więc wpautop go nie rusza. */
+function polea_jsonld_enqueue($script) {
+    if ($script === '') {
+        return;
+    }
+    if (empty($GLOBALS['polea_jsonld'])) {
+        $GLOBALS['polea_jsonld'] = array();
+        add_action('wp_footer', 'polea_jsonld_print', 20);
+    }
+    $GLOBALS['polea_jsonld'][] = $script;
+}
+
+function polea_jsonld_print() {
+    if (empty($GLOBALS['polea_jsonld'])) {
+        return;
+    }
+    foreach ($GLOBALS['polea_jsonld'] as $s) {
+        echo $s; // już bezpiecznie zakodowane (wp_json_encode + JSON_HEX_TAG|JSON_HEX_AMP)
+    }
+}
+
+function polea_jsonld_wrap($graph) {
+    $data = array('@context' => 'https://schema.org', '@graph' => $graph);
+    // JSON_HEX_TAG|JSON_HEX_AMP -> nie da się wyjść z <script> danymi ze źródła.
+    $json = wp_json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP);
+    return '<script type="application/ld+json">' . $json . '</script>' . "\n";
+}
+
+function polea_jsonld_breadcrumb($m = null) {
+    $items = array();
+    $pos = 1;
+    foreach (polea_breadcrumb_items($m) as $c) {
+        $items[] = array('@type' => 'ListItem', 'position' => $pos++, 'name' => $c['name'], 'item' => $c['url']);
+    }
+    return array('@type' => 'BreadcrumbList', 'itemListElement' => $items);
+}
+
+function polea_jsonld_faq($pairs) {
+    $q = array();
+    foreach ($pairs as $p) {
+        $q[] = array('@type' => 'Question', 'name' => $p['q'],
+                     'acceptedAnswer' => array('@type' => 'Answer', 'text' => $p['a']));
+    }
+    return array('@type' => 'FAQPage', 'mainEntity' => $q);
+}
+
+/** Graf dla pojedynczego motocykla: Product/Motorcycle + Offer + BreadcrumbList + FAQPage. */
+function polea_jsonld_single($m) {
+    $url  = polea_single_url($m['lot_id']);
+    $imgs = Polea_DB::get_images($m['lot_id']);
+    $product = array(
+        '@type'       => array('Product', 'Motorcycle'),
+        'name'        => trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? '')),
+        'sku'         => $m['lot_id'],
+        'url'         => $url,
+        'category'    => 'Motocykl',
+        'description' => polea_vehicle_description($m),
+    );
+    if ($imgs)                       { $product['image'] = array_values($imgs); }
+    if (!empty($m['marka']))         { $product['brand'] = array('@type' => 'Brand', 'name' => $m['marka']); }
+    if (!empty($m['model']))         { $product['model'] = $m['model']; }
+    if (!empty($m['rok_produkcji'])) { $product['vehicleModelDate'] = (string) (int) $m['rok_produkcji']; }
+    if (!empty($m['vin']))           { $product['vehicleIdentificationNumber'] = $m['vin']; }
+    if (!empty($m['kolor']))         { $product['color'] = $m['kolor']; }
+    if (!empty($m['paliwo']))        { $product['fuelType'] = $m['paliwo']; }
+    if (!empty($m['skrzynia']))      { $product['vehicleTransmission'] = $m['skrzynia']; }
+    if (!empty($m['przebieg_km'])) {
+        $product['mileageFromOdometer'] = array('@type' => 'QuantitativeValue', 'value' => (int) $m['przebieg_km'], 'unitCode' => 'KMT');
     }
     if (!empty($m['moc_km'])) {
-        $data['vehicleEngine'] = array('@type' => 'EngineSpecification',
+        $product['vehicleEngine'] = array('@type' => 'EngineSpecification',
             'enginePower' => array('@type' => 'QuantitativeValue', 'value' => (int) $m['moc_km'], 'unitText' => 'KM'));
     }
     if ($m['cena_pln'] !== null && $m['cena_pln'] !== '') {
-        $data['offers'] = array(
+        $product['offers'] = array(
             '@type'         => 'Offer',
             'price'         => number_format((float) $m['cena_pln'], 2, '.', ''),
             'priceCurrency' => 'PLN',
@@ -248,9 +436,39 @@ function polea_seo_jsonld_single($m, $url) {
             'url'           => $url,
         );
     }
-    // JSON_HEX_TAG|JSON_HEX_AMP: escapuje < > & na < > & -> nie da się wyjść z <script>.
-    $json = wp_json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP);
-    echo '<script type="application/ld+json">' . $json . '</script>' . "\n";
+    $graph = array($product, polea_jsonld_breadcrumb($m));
+    $faq = polea_faq_pairs($m);
+    if ($faq) {
+        $graph[] = polea_jsonld_faq($faq);
+    }
+    return polea_jsonld_wrap($graph);
+}
+
+/** Graf dla listy: WebSite + Organization + CollectionPage + BreadcrumbList + ItemList. */
+function polea_jsonld_list($data) {
+    $base  = polea_page_url();
+    $graph = array(
+        array('@type' => 'WebSite', 'url' => home_url('/'), 'name' => get_bloginfo('name')),
+    );
+    $org  = array('@type' => 'Organization', 'name' => get_bloginfo('name'), 'url' => home_url('/'));
+    $icon = function_exists('get_site_icon_url') ? get_site_icon_url() : '';
+    if ($icon) {
+        $org['logo'] = $icon;
+    }
+    $graph[] = $org;
+    $graph[] = array('@type' => 'CollectionPage', 'url' => $base, 'name' => wp_get_document_title());
+    $graph[] = polea_jsonld_breadcrumb(null);
+    if (!empty($data['items'])) {
+        $li = array();
+        $pos = 1;
+        foreach ($data['items'] as $it) {
+            $li[] = array('@type' => 'ListItem', 'position' => $pos++,
+                          'url' => polea_single_url($it['lot_id']),
+                          'name' => trim(($it['marka'] ?? '') . ' ' . ($it['model'] ?? '')));
+        }
+        $graph[] = array('@type' => 'ItemList', 'itemListElement' => $li);
+    }
+    return polea_jsonld_wrap($graph);
 }
 
 /* ------------------------------------------------------------ sitemap (WP core) */
