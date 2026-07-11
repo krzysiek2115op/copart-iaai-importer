@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# CI plugin-2: statyczny lint PHP wtyczki + testy jednostkowe scrapera (stdlib, bez sieci/bazy).
+# Uwaga: pełny smoke test na żywym WordPressie pozostaje poza CI (wymaga środowiska WP).
+name: CI plugin-2
+
+on:
+  push:
+    branches: [plugin-2]
+    paths:
+      - 'wp-plugin/motocykle-poleasingowe/**'
+      - 'scraper/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - 'wp-plugin/motocykle-poleasingowe/**'
+      - 'scraper/**'
+      - '.github/workflows/ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  php-lint:
+    name: php -l (wtyczka)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.1', '8.3']   # 7.4 = minimum z nagłówka wtyczki
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - name: Lint wszystkich plików PHP wtyczki
+        run: |
+          find wp-plugin/motocykle-poleasingowe -name '*.php' -print0 \
+            | xargs -0 -n1 -P4 php -l
+
+  python-tests:
+    name: Testy scrapera (stdlib)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Kompilacja + testy (bez sieci i bazy)
+        run: |
+          python -m py_compile scraper/*.py scraper/tests/*.py
+          python -m unittest scraper.tests.test_scraper -v

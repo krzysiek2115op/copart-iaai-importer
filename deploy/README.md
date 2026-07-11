@@ -61,3 +61,23 @@ Pełny opis: `docs/SECURITY-AUDIT.md` (Iteracja 3, pkt C). Skrót:
 - **Firewall egress na VPS** (mitygacja DNS-rebinding/SSRF): blok ruchu do sieci wewnętrznych i `169.254.169.254`.
 - **Nagłówki HTTP na serwerze WWW** (dla całej witryny): `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: SAMEORIGIN`, oraz `Content-Security-Policy` z **dozwolonym `img-src https://poleasingowe.pl`** (hotlink zdjęć).
 - **Sekrety:** `/etc/polea.env` z `chmod 600`, poza repo (`.gitignore` blokuje `*.env`).
+
+## Kopia zapasowa i odzyskiwanie
+
+Skrypt `deploy/backup/polea-backup.sh` robi `mysqldump` (spójny snapshot InnoDB, bez blokad) + rotację.
+Hasło idzie przez `MYSQL_PWD` (niewidoczne w `ps`). Wystarczy konto z prawem `SELECT` (np. `polea_ro`).
+
+```bash
+sudo install -m 700 deploy/backup/polea-backup.sh /opt/polea/polea-backup.sh
+# codziennie 03:30, log do dziennika crona:
+echo '30 3 * * *  polea  POLEA_BACKUP_DIR=/var/backups/polea /opt/polea/polea-backup.sh >> /var/log/polea/backup.log 2>&1' \
+  | sudo tee /etc/cron.d/polea-backup
+```
+Zmienne: `POLEA_BACKUP_DIR` (domyślnie `/var/backups/polea`), `POLEA_BACKUP_KEEP` (domyślnie 14 kopii).
+**Odtworzenie:** `gunzip -c /var/backups/polea/polea_<ts>.sql.gz | mysql -u <user> -p polea`.
+
+## Monitoring importu
+
+- **systemd:** stan ostatniego przebiegu `systemctl is-failed polea-import.service`; alert przez `OnFailure=` (własna jednostka powiadamiająca) lub `systemctl --failed` w monitoringu.
+- **cron:** dodaj `MAILTO=ops@twojadomena.pl` na górze `/etc/cron.d/polea-import` — niezerowy kod wyjścia (2 = zmiana formatu źródła, 1 = już działa) trafi mailem.
+- Kod wyjścia importu jest znaczący (patrz tabela wyżej) — nadaje się do dowolnego zewnętrznego monitoringu (Healthchecks.io, Zabbix, itp.).

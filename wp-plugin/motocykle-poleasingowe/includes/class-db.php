@@ -21,6 +21,13 @@ class Polea_DB {
             && defined('POLEA_DB_USER') && defined('POLEA_DB_PASSWORD');
     }
 
+    /** Log diagnostyczny TYLKO przy WP_DEBUG. Nigdy nie loguje poświadczeń ani danych zapytań. */
+    private static function dbg($msg) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[motocykle-poleasingowe] ' . $msg);
+        }
+    }
+
     /** Zwraca połączenie mysqli albo null (nigdy nie przerywa działania strony). */
     public static function conn() {
         if (self::$m !== null) {
@@ -49,6 +56,7 @@ class Polea_DB {
             @mysqli_options($m, MYSQLI_OPT_LOCAL_INFILE, false);
         }
         if (!@mysqli_real_connect($m, POLEA_DB_HOST, POLEA_DB_USER, POLEA_DB_PASSWORD, POLEA_DB_NAME, $port)) {
+            self::dbg('Połączenie z bazą polea nieudane (errno ' . mysqli_connect_errno() . ').'); // bez poświadczeń
             @mysqli_close($m);
             self::$m = false;
             return null;
@@ -66,12 +74,14 @@ class Polea_DB {
         }
         $stmt = @mysqli_prepare($m, $sql);
         if (!$stmt) {
+            self::dbg('Prepare nieudany (errno ' . mysqli_errno($m) . ').'); // bez treści zapytania
             return array();
         }
         if ($params) {
             mysqli_stmt_bind_param($stmt, $types, ...$params);
         }
         if (!mysqli_stmt_execute($stmt)) {
+            self::dbg('Execute nieudany (errno ' . mysqli_stmt_errno($stmt) . ').');
             mysqli_stmt_close($stmt);
             return array();
         }

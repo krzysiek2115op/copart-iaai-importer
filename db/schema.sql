@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS polea_motocykle (
     najnizsza_cena_30d  DECIMAL(12,2)   DEFAULT NULL,           -- najniższa cena z 30 dni
     tryb_licytacji      VARCHAR(64)     DEFAULT NULL,           -- np. "sprzedaż ofertowa"
     lokalizacja         VARCHAR(255)    DEFAULT NULL,           -- np. "Tarczyn, Żytnia 2"
-    termin_zakonczenia  DATETIME        DEFAULT NULL,           -- data/godzina końca aukcji
+    termin_zakonczenia  DATETIME        DEFAULT NULL,           -- data/godzina końca aukcji (czas lokalny źródła, Europe/Warsaw; używane do sortowania, nie do odliczeń)
     status              VARCHAR(32)     NOT NULL DEFAULT 'aktywna',  -- aktywna | zakonczona | usunieta
     liczba_ofert        INT UNSIGNED    NOT NULL DEFAULT 0,
     uwagi               TEXT            DEFAULT NULL,           -- np. "BRAK WAŻNEGO BADANIA TECHNICZNEGO"
