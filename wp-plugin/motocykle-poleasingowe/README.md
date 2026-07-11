@@ -8,6 +8,7 @@ Wyświetla motocykle z aukcji poleasingowe.pl na podstronie **„Nasze motory"**
 - **8 Repo** — `Polea_DB` (odczyt `polea_motocykle` / `polea_zdjecia`). *Świadoma rewizja: brak CPT/postów WP — aukcje są czasowe, scraper jest właścicielem danych.*
 - **9 Front i media** — shortcode `[motocykle]`: siatka + szczegóły + filtry (marka/paliwo/rok/cena) + paginacja + cache (5 min); zdjęcia **hotlink**.
 - **10 Podstrona i motyw** — auto-tworzenie „Nasze motory" + wpięcie w menu (block: `wp_navigation`, classic: menu location); styl dziedziczy fonty/kolory motywu (`currentColor`, `color-mix`).
+- **10 SEO** (`includes/seo.php`) — ładne URL-e pojedynczego motocykla `/<podstrona>/<lot_id>/`; per motocykl unikalny `<title>`, meta description, canonical, Open Graph i dane strukturalne JSON-LD (schema.org `Motorcycle`+`Offer`); `noindex` dla widoków filtrowanych/paginowanych i aukcji zakończonych; sitemap XML aktywnych ofert (WP core). Gdy aktywna jest wtyczka SEO (Yoast/Rank Math/SEOPress/AIOSEO), moduł **ustępuje** jej miejsca (nie dubluje metatagów), zostawiając tylko JSON-LD.
 
 ## Instalacja
 1. Wgraj katalog `motocykle-poleasingowe/` do `wp-content/plugins/` i aktywuj.
@@ -21,4 +22,6 @@ Wyświetla motocykle z aukcji poleasingowe.pl na podstronie **„Nasze motory"**
    ```
 3. Status połączenia sprawdzisz w **Ustawienia → Motocykle**.
 
-Podstrona „Nasze motory" tworzy się sama przy aktywacji. Pojedynczy motocykl: `?motocykl=<lot_id>` w obrębie tej samej (motywowanej) strony.
+Podstrona „Nasze motory" tworzy się sama przy aktywacji. Pojedynczy motocykl: ładny adres `/<podstrona>/<lot_id>/` (przy włączonych przyjaznych odnośnikach; w innym razie `?motocykl=<lot_id>`) — w obrębie tej samej (motywowanej) strony.
+
+> Po aktualizacji do wersji z ładnymi URL-ami odśwież raz przyjazne odnośniki: **Ustawienia → Bezpośrednie odnośniki → Zapisz** (albo dezaktywuj/aktywuj wtyczkę) — przebudowuje reguły przepisań.

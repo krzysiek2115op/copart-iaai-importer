@@ -59,12 +59,13 @@ function polea_constrain_filters($f) {
     return $f;
 }
 
-/** Bezpieczny lot_id z $_GET['motocykl'] (alfanumeryczny) lub '' gdy brak/niepoprawny. */
+/** Bezpieczny lot_id (alfanumeryczny) z query var motocykl (ładny URL) lub $_GET; '' gdy brak/niepoprawny. */
 function polea_current_lot_id() {
-    if (empty($_GET['motocykl'])) {
-        return '';
+    $v = get_query_var('motocykl');           // ustawiane przez rewrite /<podstrona>/<lot_id>/
+    if ($v === '' || $v === null) {
+        $v = isset($_GET['motocykl']) ? wp_unslash($_GET['motocykl']) : '';
     }
-    $v = sanitize_text_field(wp_unslash($_GET['motocykl']));
+    $v = sanitize_text_field((string) $v);
     return preg_match('/^[A-Za-z0-9]{1,32}$/', $v) ? $v : '';
 }
 

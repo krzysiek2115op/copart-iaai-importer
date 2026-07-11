@@ -11,6 +11,11 @@ if (!defined('ABSPATH')) {
 function polea_activate() {
     polea_create_page();
     polea_add_to_menu();
+    // Rejestrujemy regułę ładnych URL-i PRZED flush (na tym żądaniu 'init' odpalił się,
+    // gdy opcja strony była jeszcze pusta), aby trafiła do przepisanych reguł.
+    if (function_exists('polea_register_rewrites')) {
+        polea_register_rewrites();
+    }
     flush_rewrite_rules();
 }
 

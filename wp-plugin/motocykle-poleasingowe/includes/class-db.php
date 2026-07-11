@@ -126,16 +126,35 @@ class Polea_DB {
     }
 
     public static function get_one($lot_id) {
+        static $cache = array();  // memoizacja per żądanie — SEO w <head> i render dzielą 1 zapytanie
+        if (array_key_exists($lot_id, $cache)) {
+            return $cache[$lot_id];
+        }
         $rows = self::q('SELECT * FROM polea_motocykle WHERE lot_id = ? LIMIT 1', 's', array($lot_id));
-        return $rows ? $rows[0] : null;
+        return $cache[$lot_id] = ($rows ? $rows[0] : null);
     }
 
     public static function get_images($lot_id) {
+        static $cache = array();  // memoizacja per żądanie (og:image + galeria)
+        if (isset($cache[$lot_id])) {
+            return $cache[$lot_id];
+        }
         $rows = self::q(
             'SELECT url FROM polea_zdjecia WHERE lot_id = ? ORDER BY sort_order ASC',
             's', array($lot_id)
         );
-        return array_map(static function ($r) { return $r['url']; }, $rows);
+        return $cache[$lot_id] = array_map(static function ($r) { return $r['url']; }, $rows);
+    }
+
+    /** Lot_id aktywnych aukcji (do sitemap XML). Zwraca max $limit, posortowane po terminie. */
+    public static function active_lot_ids($limit = 2000) {
+        $limit = max(1, min(50000, (int) $limit));
+        $rows  = self::q(
+            "SELECT lot_id FROM polea_motocykle WHERE status = 'aktywna' " .
+            "ORDER BY (termin_zakonczenia IS NULL), termin_zakonczenia ASC LIMIT ?",
+            'i', array($limit)
+        );
+        return array_map(static function ($r) { return $r['lot_id']; }, $rows);
     }
 
     /** Pierwsze zdjęcie (miniatura) dla wielu lotów naraz — unika N+1 na liście. */

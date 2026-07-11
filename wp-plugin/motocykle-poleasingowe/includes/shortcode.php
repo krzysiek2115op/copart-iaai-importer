@@ -60,7 +60,7 @@ function polea_render_list($atts) {
 function polea_render_card($m, $thumb = '') {
     $lot    = $m['lot_id'];
     $title  = trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? ''));
-    $url    = add_query_arg('motocykl', rawurlencode($lot), polea_page_url());
+    $url    = polea_single_url($lot);   // ładny URL /<podstrona>/<lot_id>/ (SEO), z fallbackiem na ?motocykl=
 
     ob_start(); ?>
     <article class="polea-card">
