@@ -74,6 +74,12 @@ def normalize(raw):
             cena = min(float(digits), 1_000_000_000.0)  # gorny limit ceny (anty-absurd/overflow)
     netto = 1 if 'netto' in og.lower() else 0
 
+    # Najnizsza cena z 30 dni (Omnibus) — wyciagana przez Dzial 1B z bloku sidebar-data.
+    cena_30d = None
+    d30 = re.sub(r'[\s\xa0]', '', raw.get("_cena_30d") or "")
+    if d30.isdigit():
+        cena_30d = min(float(d30), 1_000_000_000.0)
+
     st = raw.get("_status_text", "")
     term, status = None, "aktywna"
     m = re.search(r'zako[nń]czy[łl]a si[eę]\s*(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})', st)
@@ -110,9 +116,8 @@ def normalize(raw):
         "forma_sprzedazy": _txt(g("Forma sprzedaży"), 64),
         "cena_pln": cena,
         "cena_netto": netto,
-        # UWAGA: ponizsze pola wymagaja probki zywego HTML detalu, by ustalic etykiety
-        # (Dzial 1B). Do czasu potwierdzenia pozostaja puste — patrz raport audytu, pkt 7.
-        "najnizsza_cena_30d": None,
+        "najnizsza_cena_30d": cena_30d,   # Omnibus — z bloku sidebar-data (potwierdzone na zywym HTML)
+        # tryb_licytacji/liczba_ofert: brak jako statyczne pole (dane sa w JS) -> pozostaja puste.
         "tryb_licytacji": None,
         "lokalizacja": _txt(raw.get("_lokalizacja"), 255),
         "termin_zakonczenia": term,

@@ -16,6 +16,11 @@ _OG = re.compile(r'og:description"[^>]*content="([^"]*)"', re.I)
 _STATUS = re.compile(r'(Aukcja nr[^<]*)', re.I)
 # Adres jest pod naglowkiem "Lokalizacja:", a NIE pod "WŁAŚCICIEL:" (ten sam blok).
 _LOKAL = re.compile(r'Lokalizacja:\s*</h2>\s*<div class="mb-3">(.*?)</div>', re.S | re.I)
+# Najnizsza cena z 30 dni (Omnibus) — blok "sidebar-data" na stronie szczegolu.
+_CENA30 = re.compile(
+    r'Najni[żz]sza cena z 30 dni:\s*</div>\s*<div>\s*<strong>\s*([\d\s\xa0]+?)\s*PLN',
+    re.S | re.I,
+)
 _IMG = re.compile(r'sgallery_([0-9a-f-]{36})_\d+\.(?:png|jpe?g|webp)', re.I)
 _CTRL = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')  # znaki sterujace C0 (bez \t \n \r)
 
@@ -45,6 +50,9 @@ def parse_detail(html_text, url):
 
     loc = _LOKAL.search(html_text)
     raw["_lokalizacja"] = _clean(loc.group(1)).strip(", ") if loc else ""
+
+    c30 = _CENA30.search(html_text)
+    raw["_cena_30d"] = c30.group(1) if c30 else ""
 
     keys = []
     for m in _IMG.finditer(html_text):
