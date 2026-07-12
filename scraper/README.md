@@ -16,7 +16,7 @@ python3 -m scraper.main                        # pelny import do bazy
 
 ## Testy (bez sieci i bazy, stdlib)
 ```bash
-python3 -m unittest scraper.tests.test_scraper -v
+python3 -m unittest discover -s scraper/tests -t . -v   # 43 testy: rdzeń + integracja (atrapy, bez sieci/bazy)
 ```
 
 ## Zmienne środowiskowe
