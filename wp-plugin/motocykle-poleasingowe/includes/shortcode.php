@@ -66,7 +66,7 @@ function polea_render_list($atts) {
 
 function polea_render_card($m, $thumb = '', $eager = false) {
     $lot   = $m['lot_id'];
-    $name  = trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? ''));
+    $name  = polea_vehicle_name($m);
     $rok   = !empty($m['rok_produkcji']) ? ' ' . (int) $m['rok_produkcji'] : '';
     $alt   = trim($name . $rok) . ' — ' . polea_price($m);       // alt generowany automatycznie z danych
     $url   = polea_single_url($lot);                              // ładny URL, fallback ?motocykl=
@@ -188,7 +188,7 @@ function polea_render_single($lot) {
         return polea_notice('Nie znaleziono tego motocykla.');
     }
     $imgs = Polea_DB::get_images($lot);
-    $name = trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? ''));
+    $name = polea_vehicle_name($m);
     $status_map = array('aktywna' => 'Aktywna', 'zakonczona' => 'Zakończona', 'usunieta' => 'Usunięta');
     $status = isset($status_map[$m['status']]) ? $status_map[$m['status']] : $m['status'];
 
@@ -297,6 +297,11 @@ function polea_render_single($lot) {
 }
 
 /* ---------------------------------------------------------------- pomocnicy */
+
+/** Nazwa pojazdu = „Marka Model" (wspólna dla frontu i SEO). Puste pola pomijane. */
+function polea_vehicle_name($m) {
+    return trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? ''));
+}
 
 function polea_price($m) {
     if ($m['cena_pln'] === null || $m['cena_pln'] === '') {

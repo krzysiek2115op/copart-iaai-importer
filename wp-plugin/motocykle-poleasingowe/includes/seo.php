@@ -88,7 +88,7 @@ function polea_seo_trim($s, $len) {
 
 function polea_seo_desc_single($m) {
     $bits = array();
-    $name = trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? ''));
+    $name = polea_vehicle_name($m);
     if ($name !== '')                 { $bits[] = $name; }
     if (!empty($m['rok_produkcji']))  { $bits[] = 'rok ' . (int) $m['rok_produkcji']; }
     if (!empty($m['przebieg_km']))    { $bits[] = number_format((int) $m['przebieg_km'], 0, ',', ' ') . ' km'; }
@@ -115,7 +115,7 @@ function polea_seo_title($title) {
     if (!$m) {
         return $title;
     }
-    $name = trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? ''));
+    $name = polea_vehicle_name($m);
     $rok  = !empty($m['rok_produkcji']) ? ' ' . (int) $m['rok_produkcji'] : '';
     // Rdzeń WP nie escapuje treści <title> — czyścimy z ewentualnych tagów z danych źródła.
     return wp_strip_all_tags(trim($name . $rok) . ' — ' . polea_price($m) . ' | ' . get_bloginfo('name'));
@@ -249,7 +249,7 @@ function polea_seo_the_title($title, $post_id = 0) {
     if (!$m) {
         return $title;
     }
-    $name = trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? ''));
+    $name = polea_vehicle_name($m);
     $rok  = !empty($m['rok_produkcji']) ? ' ' . (int) $m['rok_produkcji'] : '';
     return $name !== '' ? wp_strip_all_tags(trim($name . $rok)) : $title;
 }
@@ -269,7 +269,7 @@ function polea_breadcrumb_items($m = null) {
         array('name' => ($list_name !== '' ? $list_name : 'Nasze motory'), 'url' => polea_page_url()),
     );
     if ($m) {
-        $name = trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? ''));
+        $name = polea_vehicle_name($m);
         if (!empty($m['rok_produkcji'])) {
             $name = trim($name . ' ' . (int) $m['rok_produkcji']);
         }
@@ -280,7 +280,7 @@ function polea_breadcrumb_items($m = null) {
 
 /** Unikalny, syntetyzowany opis pojazdu z posiadanych pól (naturalny język, bez kopiowania). */
 function polea_vehicle_description($m) {
-    $name = trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? ''));
+    $name = polea_vehicle_name($m);
     if ($name === '') {
         $name = 'Ten motocykl';
     }
@@ -313,7 +313,7 @@ function polea_vehicle_description($m) {
 
 /** Pary FAQ generowane z danych pojazdu (tylko gdy dane istnieją). */
 function polea_faq_pairs($m) {
-    $name = trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? ''));
+    $name = polea_vehicle_name($m);
     if ($name === '') {
         $name = 'ten motocykl';
     }
@@ -406,7 +406,7 @@ function polea_jsonld_single($m) {
     $imgs = Polea_DB::get_images($m['lot_id']);
     $product = array(
         '@type'       => array('Product', 'Motorcycle'),
-        'name'        => trim(($m['marka'] ?? '') . ' ' . ($m['model'] ?? '')),
+        'name'        => polea_vehicle_name($m),
         'sku'         => $m['lot_id'],
         'url'         => $url,
         'category'    => 'Motocykl',
@@ -464,7 +464,7 @@ function polea_jsonld_list($data) {
         foreach ($data['items'] as $it) {
             $li[] = array('@type' => 'ListItem', 'position' => $pos++,
                           'url' => polea_single_url($it['lot_id']),
-                          'name' => trim(($it['marka'] ?? '') . ' ' . ($it['model'] ?? '')));
+                          'name' => polea_vehicle_name($it));
         }
         $graph[] = array('@type' => 'ItemList', 'itemListElement' => $li);
     }
