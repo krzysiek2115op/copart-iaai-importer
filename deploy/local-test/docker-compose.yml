@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Lokalne srodowisko testowe plugin-2 (styl VPS): MySQL + WordPress.
+# Topologia jak na produkcji: scraper (host) -> MySQL polea_* -> WordPress (read-only).
+#
+#   Uruchomienie (z katalogu repo):
+#     docker compose -f deploy/local-test/docker-compose.yml up -d
+#   WordPress:  http://localhost:8080      (instalator przy pierwszym wejsciu)
+#   MySQL:      127.0.0.1:3306             (scraper na hoscie laczy sie tu jako uzytkownik 'polea')
+#
+# UWAGA: hasla ponizej sa DEWELOPERSKIE (tylko lokalnie). Nie uzywaj ich na VPS.
+services:
+  db:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root_dev
+      MYSQL_DATABASE: wordpress          # baza samego WordPressa
+      MYSQL_USER: wp
+      MYSQL_PASSWORD: wp_dev
+    ports:
+      - "3306:3306"                       # publikacja portu -> scraper z hosta pisze przez 127.0.0.1
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./initdb:/docker-entrypoint-initdb.d:ro   # tworzy baze 'polea' + konta polea / polea_ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-uroot", "-proot_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  wordpress:
+    image: wordpress:php8.2-apache
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wp
+      WORDPRESS_DB_PASSWORD: wp_dev
+      WORDPRESS_DB_NAME: wordpress
+      # Stale polea_* wstrzykiwane wprost do wp-config.php (bez recznej edycji).
+      # WordPress czyta baze ofert jako polea_ro (least privilege: tylko SELECT).
+      WORDPRESS_CONFIG_EXTRA: |
+        define('POLEA_DB_HOST', 'db');
+        define('POLEA_DB_PORT', 3306);
+        define('POLEA_DB_NAME', 'polea');
+        define('POLEA_DB_USER', 'polea_ro');
+        define('POLEA_DB_PASSWORD', 'polea_ro_dev_pass');
+        define('WP_DEBUG', true);
+        define('WP_DEBUG_LOG', true);      // bledy leca do wp-content/debug.log (klient ich nie widzi)
+        define('WP_DEBUG_DISPLAY', false);
+    volumes:
+      - wpdata:/var/www/html
+      # Wtyczka montowana wprost z repo (read-only) -> testujesz zawsze biezacy kod brancha.
+      - ../../wp-plugin/motocykle-poleasingowe:/var/www/html/wp-content/plugins/motocykle-poleasingowe:ro
+
+volumes:
+  dbdata:
+  wpdata:
