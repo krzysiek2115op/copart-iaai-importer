@@ -7,7 +7,16 @@
     --polea-radius: 10px;
     --polea-line: color-mix(in srgb, currentColor 15%, transparent);
     --polea-fill: color-mix(in srgb, currentColor 6%, transparent);
+    /* Własny kontener: wyśrodkowany, responsywny — nie polegamy na tym, że motyw
+       owinie treść w swój container (part motywów tego nie robi -> treść uciekała w lewo). */
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1180px;
+    margin-inline: auto;
+    padding-inline: clamp(16px, 4vw, 28px);
+    padding-block: clamp(1.25rem, 3vw, 2.5rem);
 }
+.polea-wrap *, .polea-wrap *::before, .polea-wrap *::after { box-sizing: border-box; }
 
 .polea-grid {
     display: grid;
@@ -67,7 +76,7 @@
 .polea-empty { opacity: .75; padding: 2rem 0; }
 
 /* --- widok pojedynczy (mobile-first) --- */
-.polea-single { max-width: 60rem; }
+.polea-single { max-width: 72rem; }
 .polea-single__price { font-size: 1.35em; font-weight: 700; margin: .2rem 0 1rem; }
 
 .polea-gallery { margin: 0 0 1.5rem; display: grid; grid-template-columns: 1fr; gap: .5rem; align-content: start; }
