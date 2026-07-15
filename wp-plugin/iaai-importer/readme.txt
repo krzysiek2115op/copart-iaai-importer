@@ -4,7 +4,7 @@ Tags: iaai, copart, vehicles, auctions, import, cpt
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 0.30.1
+Stable tag: 0.30.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -55,6 +55,19 @@ dane strukturalne pojazdu.
 Sama wtyczka działa na zwykłym WordPressie. Automatyzacja pobierania aut wymaga VPS z SSH.
 
 == Changelog ==
+
+= 0.30.2 =
+* Re-audyt (2. przejście, subagent-audytor) — naprawy: zdjęcia strony pojazdu w SEO
+  (Open Graph/Twitter/JSON-LD) czytane z WŁAŚCIWEGO źródła (Copart nie dostawał już
+  zdjęć IAAI); `sale_date` przestaje ginąć w sanitacji (meta `iaai_sale_date` zapisywane);
+  `branch_id` eksponowany jako meta; wykrywanie zamaskowanego VIN tylko po gwiazdce
+  (litera X jest legalna — koniec fałszywego maskowania w SEO i deduplikacji); reguła
+  reconcile liczy obecność lotu w feedzie niezależnie od wyniku audytu (koniec fałszywego
+  „removed"); górny limit rocznika w schemacie odsztywniony (koniec bomby zegarowej 2027).
+* Deploy: usługi systemd dostają zapisywalny katalog stanu (StateDirectory) + absolutny
+  --workdir — automatyzacja nie pada już przez CWD=/ jako www-data; instalator dokłada
+  biblioteki systemowe chromium (playwright install-deps). Copart: pętle etapów odporne
+  na pojedynczy błędny lot.
 
 = 0.30.1 =
 * Audyt P1 (spójność dual-source): agent `diff` porównuje raw_hash w obrębie właściwego

@@ -110,7 +110,8 @@ function iaai_seo_head() : void {
 	$d       = iaai_seo_vehicle_data( $post_id );
 	$url     = get_permalink( $post_id );
 	$sid     = (int) get_post_meta( $post_id, 'iaai_salvage_id', true );
-	$imgs    = ( $sid && function_exists( 'iaai_get_image_urls' ) ) ? iaai_get_image_urls( $sid, 10 ) : array();
+	$src     = (string) ( get_post_meta( $post_id, 'iaai_source', true ) ?: 'iaai' );   // P1: zdjęcia z właściwego źródła (IAAI/Copart)
+	$imgs    = ( $sid && function_exists( 'iaai_get_image_urls' ) ) ? iaai_get_image_urls( $sid, 10, $src ) : array();
 	$desc    = iaai_seo_description( $d );
 
 	// --- meta description + Open Graph + Twitter (tylko gdy brak wtyczki SEO) ---
@@ -161,7 +162,8 @@ function iaai_seo_head() : void {
 		$schema['vehicleTransmission'] = $d['trans'];
 	}
 	// VIN tylko gdy PEŁNY (17 znaków, bez maski) — nie publikujemy zamaskowanego.
-	if ( 17 === strlen( $d['vin'] ) && ! preg_match( '/[*x]/i', $d['vin'] ) ) {
+	// P3: maskowanie to WYŁĄCZNIE gwiazdka; litera X jest legalnym znakiem VIN (nie maska).
+	if ( 17 === strlen( $d['vin'] ) && false === strpos( $d['vin'], '*' ) ) {
 		$schema['vehicleIdentificationNumber'] = $d['vin'];
 	}
 	if ( $d['odo_km'] > 0 ) {
@@ -200,7 +202,7 @@ function iaai_krytyk_seo( int $post_id ) : array {
 	if ( $d['title'] === '' ) {
 		$issues[] = 'indeksacja: brak roku/marki/modelu — słaby tytuł SEO';
 	}
-	if ( 17 === strlen( $d['vin'] ) && preg_match( '/[*x]/i', $d['vin'] ) ) {
+	if ( 17 === strlen( $d['vin'] ) && false !== strpos( $d['vin'], '*' ) ) {
 		$issues[] = 'indeksacja: VIN wygląda na zamaskowany — pominięty w schemacie (OK)';
 	}
 	return $issues;

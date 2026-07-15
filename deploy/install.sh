@@ -44,6 +44,10 @@ for r in "$REPO_DIR"/scraper/dzialy/*/requirements.txt; do
 	"$REPO_DIR/.venv/bin/pip" -q install -r "$r"
 done
 "$REPO_DIR/.venv/bin/playwright" install chromium
+# G2: biblioteki systemowe headless chromium (libnss3/libatk...). Na czystym VPS bez nich
+# przeglądarka nie startuje. Na dystrybucjach nie-apt polecenie może nie zadziałać -> nie przerywaj.
+"$REPO_DIR/.venv/bin/playwright" install-deps chromium || \
+	echo "   (uwaga: install-deps pominięte — jeśli chromium nie startuje, doinstaluj biblioteki systemowe ręcznie)"
 ok "Zależności i przeglądarka zainstalowane"
 
 say "2/5  Wtyczka WordPress (kopiuję i włączam)"

@@ -10,6 +10,8 @@ After=network-online.target mysql.service mariadb.service
 Type=oneshot
 User=www-data
 Group=www-data
+# G1: zapisywalny katalog stanu (patrz iaai-importer-live.service).
+StateDirectory=iaai-importer
 EnvironmentFile=-/etc/iaai-importer.env
 Environment=IAAI_MODE=full
 ExecStart=/opt/iaai-importer/deploy/iaai-live-cycle.sh

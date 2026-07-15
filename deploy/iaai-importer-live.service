@@ -10,6 +10,9 @@ Type=oneshot
 # Użytkownik strony (dostęp do WP-CLI i bazy). Dostosuj do hostingu klienta.
 User=www-data
 Group=www-data
+# G1: katalog stanu tworzony przez systemd i ZAPISYWALNY jako www-data (/var/lib/iaai-importer).
+# Bez tego pipeline próbował pisać pipeline_out w CWD=/ (brak praw) i automatyzacja padała.
+StateDirectory=iaai-importer
 # Wartości środowiska (ścieżki) — patrz deploy/iaai-importer.env.example
 EnvironmentFile=-/etc/iaai-importer.env
 Environment=IAAI_MODE=live

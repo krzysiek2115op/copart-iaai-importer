@@ -25,7 +25,8 @@ function iaai_sanitize_vehicle( array $v ) : array {
 	$text   = array( 'stock_number', 'vin', 'make', 'model', 'series', 'vehicle_type',
 		'body_style', 'engine', 'fuel_type', 'transmission', 'drive_line', 'color',
 		'odometer_uom', 'odometer_brand', 'primary_damage', 'secondary_damage', 'loss',
-		'title', 'run_and_drive', 'key_available', 'selling_branch', 'lane', 'aisle' );
+		'title', 'run_and_drive', 'key_available', 'selling_branch', 'lane', 'aisle',
+		'sale_date' );   // D1: sale_date był gubiony przez sanitację -> meta iaai_sale_date nigdy nie zapisane
 	$float  = array( 'buy_now', 'current_bid' );
 	$out    = array();
 
@@ -189,9 +190,11 @@ function iaai_verify_admin_action( string $action = 'iaai_action', string $cap =
  * 1. Każde echo danych pojazdu MUSI przejść przez iaai_escape_vehicle_for_output()
  *    albo esc_html()/esc_attr()/esc_url() (XSS).
  * 2. Każda akcja admina MUSI wołać iaai_verify_admin_action() (CSRF/uprawnienia).
- * 3. Każde zapytanie SQL MUSI używać $wpdb->prepare() z placeholderami (SQLi):
+ * 3. Każde zapytanie SQL MUSI używać $wpdb->prepare() z placeholderami (SQLi).
+ *    Baza jest DWUŹRÓDŁOWA — filtruj po parze (source, salvage_id), nie po samym id:
  *       $wpdb->get_results( $wpdb->prepare(
- *           "SELECT * FROM {$wpdb->prefix}iaai_vehicles WHERE salvage_id = %d", $id ) );
+ *           "SELECT * FROM {$wpdb->prefix}iaai_vehicles WHERE salvage_id = %d AND source = %s",
+ *           $id, $source ) );
  * 4. Wejście do bazy zawsze przez iaai_sanitize_vehicle().
  * 5. URL-e zdjęć WYŁĄCZNIE przez iaai_safe_image_url() (SSRF / host-allowlist IAAI).
  * 6. Import/publikacja pod MUTEX-em (iaai_db_lock) — brak równoległych przebiegów.

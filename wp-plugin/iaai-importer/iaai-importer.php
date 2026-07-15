@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Importer Aukcji (IAAI + Copart)
  * Description:        Import danych i zdjęć pojazdów z aukcji IAAI oraz Copart do WordPressa (CPT „Pojazd").
- * Version:           0.30.1
+ * Version:           0.30.2
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            (projekt importer IAAI + Copart)
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // brak bezpośredniego dostępu
 }
 
-define( 'IAAI_IMPORTER_VERSION', '0.30.1' );
+define( 'IAAI_IMPORTER_VERSION', '0.30.2' );
 define( 'IAAI_IMPORTER_DIR', plugin_dir_path( __FILE__ ) );
 define( 'IAAI_IMPORTER_URL', plugin_dir_url( __FILE__ ) );
 

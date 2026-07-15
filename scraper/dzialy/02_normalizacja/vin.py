@@ -34,7 +34,9 @@ def clean_vin(vin: str) -> str:
 
 
 def is_masked(vin: str) -> bool:
-    return "*" in vin or "X" in vin[11:]      # IAAI maskuje gwiazdką (poz. 12-17)
+    # P3: maskowanie to WYŁĄCZNIE gwiazdka. Litera X jest LEGALNYM znakiem VIN
+    # (także w numerze seryjnym poz. 12-17), więc "X in vin[11:]" dawało fałszywe maskowanie.
+    return "*" in vin
 
 
 def format_ok(vin: str) -> bool:

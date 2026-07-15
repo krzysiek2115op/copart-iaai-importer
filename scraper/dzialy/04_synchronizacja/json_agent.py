@@ -127,8 +127,10 @@ def main():
         # M3: reconcile — loty active nieobecne w bieżącym (pełnym) feedzie -> removed
         removed = None
         if args.reconcile:
-            current = [r["salvage_id"] for r in records
-                       if r.get("_audit_ok") is not False and r.get("salvage_id")]
+            # P2: "widziany" = OBECNY w feedzie (lot nadal wystawiony), niezależnie od wyniku
+            # audytu. Rekord, który obleje audyt tego przebiegu, NIE jest zniknięty — wykluczenie
+            # go z `current` powodowało fałszywe status='removed' i zdejmowanie wpisu ze strony.
+            current = [r["salvage_id"] for r in records if r.get("salvage_id")]
             if not current:
                 print("[json] reconcile POMINIĘTY — puste wejście (zabezpieczenie)")
             else:

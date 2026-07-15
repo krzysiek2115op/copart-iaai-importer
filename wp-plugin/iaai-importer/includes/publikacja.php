@@ -19,7 +19,7 @@ function iaai_meta_keys() : array {
 		'vehicle_type', 'body_style', 'engine', 'cylinders', 'fuel_type', 'transmission',
 		'drive_line', 'color', 'odometer', 'odometer_uom', 'odometer_brand', 'primary_damage',
 		'secondary_damage', 'loss', 'title', 'run_and_drive', 'key_available',
-		'selling_branch', 'sale_date', 'lane', 'aisle', 'buy_now', 'current_bid', 'detail_url' );
+		'selling_branch', 'branch_id', 'sale_date', 'lane', 'aisle', 'buy_now', 'current_bid', 'detail_url' );
 }
 
 /* ---------- 🔵 AGENT `CPT` — rejestracja typu treści --------------------- */
@@ -42,7 +42,7 @@ function iaai_register_pojazd_cpt() : void {
 /* ---------- 🔵 AGENT `meta` — rejestracja pól meta ----------------------- */
 add_action( 'init', 'iaai_register_pojazd_meta' );
 function iaai_register_pojazd_meta() : void {
-	$num = array( 'salvage_id', 'item_id', 'year', 'odometer', 'cylinders' );
+	$num = array( 'salvage_id', 'item_id', 'year', 'odometer', 'cylinders', 'branch_id' );
 	foreach ( iaai_meta_keys() as $key ) {
 		register_post_meta( IAAI_CPT, 'iaai_' . $key, array(
 			'type'              => in_array( $key, $num, true ) ? 'integer'

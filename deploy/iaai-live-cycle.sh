@@ -30,7 +30,10 @@ source "$HERE/iaai-env.sh"
 echo "[cykl] start $(date -Is)  mode=$IAAI_MODE base=$IAAI_BASE"
 
 # 2) pipeline (zapis do bazy WP). reconcile włącza się sam tylko dla full bez limitu.
-"$PYTHON" "$SCRAPER_DIR/run_pipeline.py" --mode "$IAAI_MODE" --base "$IAAI_BASE"
+# G1: workdir ABSOLUTNY. Pod systemd = $STATE_DIRECTORY (/var/lib/iaai-importer, zapisywalny
+# jako www-data); ręcznie = pipeline_out obok scrapera. Bez tego CWD=/ i zapis padał.
+WORKDIR="${STATE_DIRECTORY:-$SCRAPER_DIR/pipeline_out}"
+"$PYTHON" "$SCRAPER_DIR/run_pipeline.py" --mode "$IAAI_MODE" --base "$IAAI_BASE" --workdir "$WORKDIR"
 
 # 3) most do WP — publikacja aktywnych pojazdów do CPT „pojazd"
 "${WP_CLI:-wp}" eval 'iaai_publish_all_active();' --path="${WP_PATH:-/var/www/html}"

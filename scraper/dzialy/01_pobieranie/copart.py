@@ -122,13 +122,16 @@ def stage_listingi(args):
         data = r.json() if r.status_code == 200 else {}
         rows = (data.get("data", {}) or {}).get("results", {}).get("content", []) or []
         for it in rows:
-            lot = it.get("lotNumberStr") or it.get("ln")
-            if not lot:
+            try:                                    # P4: jeden nietypowy wiersz nie ubija etapu
+                lot = it.get("lotNumberStr") or it.get("ln")
+                if not lot:
+                    continue
+                out.append({"salvage_id": int(str(lot).replace("*", "") or 0), "source": "copart",
+                            "make": it.get("mkn"), "model": it.get("lmg"), "year": it.get("lcy"),
+                            "buy_now": it.get("bnp"), "current_bid": it.get("hb"),
+                            "detail_url": f"{BASE}/lot/{lot}"})
+            except (ValueError, TypeError):
                 continue
-            out.append({"salvage_id": int(str(lot).replace("*", "") or 0), "source": "copart",
-                        "make": it.get("mkn"), "model": it.get("lmg"), "year": it.get("lcy"),
-                        "buy_now": it.get("bnp"), "current_bid": it.get("hb"),
-                        "detail_url": f"{BASE}/lot/{lot}"})
     except Exception as e:
         print(f"[copart:listingi] ⚠ {e}", file=sys.stderr)
     args.out.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in out))
@@ -137,7 +140,14 @@ def stage_listingi(args):
 
 def stage_szczegoly(args):
     sess = _session()
-    lots = [json.loads(l)["salvage_id"] for l in args.infile.read_text().splitlines() if l.strip()]
+    lots = []
+    for _l in args.infile.read_text().splitlines():
+        if not _l.strip():
+            continue
+        try:                                    # P4: zły wiersz nie ubija całego etapu
+            lots.append(json.loads(_l)["salvage_id"])
+        except (ValueError, KeyError):
+            continue
     out = []
     for lot in lots:
         try:
@@ -154,7 +164,14 @@ def stage_szczegoly(args):
 
 def stage_zdjecia(args):
     sess = _session()
-    lots = [json.loads(l)["salvage_id"] for l in args.infile.read_text().splitlines() if l.strip()]
+    lots = []
+    for _l in args.infile.read_text().splitlines():
+        if not _l.strip():
+            continue
+        try:                                    # P4: zły wiersz nie ubija całego etapu
+            lots.append(json.loads(_l)["salvage_id"])
+        except (ValueError, KeyError):
+            continue
     out = []
     for lot in lots:
         try:

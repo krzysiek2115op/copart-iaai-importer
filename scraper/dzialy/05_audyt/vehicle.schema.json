@@ -10,7 +10,7 @@
     "salvage_id": {"type": "integer", "minimum": 1},
     "stock_number": {"type": ["string", "null"]},
     "vin": {"type": ["string", "null"], "pattern": "^[A-HJ-NPR-Z0-9*]{11,17}$"},
-    "year": {"type": ["integer", "null"], "minimum": 1900, "maximum": 2027},
+    "year": {"type": ["integer", "null"], "minimum": 1900, "maximum": 2100},
     "make": {"type": ["string", "null"], "maxLength": 60},
     "model": {"type": ["string", "null"], "maxLength": 80},
     "odometer": {"type": ["integer", "null"], "minimum": 0, "maximum": 2000000},
