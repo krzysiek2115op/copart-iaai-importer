@@ -26,13 +26,20 @@ chmod 700 "$DEST"
 
 ts="$(date +%F_%H%M%S)"
 out="$DEST/polea_${ts}.sql.gz"
+tmp="$out.part"
+
+# R-2: dump do pliku .part i publikacja przez mv dopiero po sukcesie — przy awarii
+# mysqldump/gzip nie zostaje CZĘŚCIOWA kopia udająca dobrą (trap sprząta .part).
+trap 'rm -f "$tmp"' EXIT
 
 # --single-transaction: spójny snapshot InnoDB bez blokad; --no-tablespaces: bez prawa PROCESS.
 export MYSQL_PWD="$POLEA_DB_PASSWORD"
 mysqldump --single-transaction --quick --no-tablespaces --default-character-set=utf8mb4 \
     -h "$POLEA_DB_HOST" -P "$POLEA_DB_PORT" -u "$POLEA_DB_USER" "$POLEA_DB_NAME" \
-    | gzip -c > "$out"
+    | gzip -c > "$tmp"
 unset MYSQL_PWD
+mv -f "$tmp" "$out"          # publikuj dopiero kompletny plik
+trap - EXIT
 
 # Rotacja: usuń kopie starsze niż $KEEP najnowszych.
 ls -1t "$DEST"/polea_*.sql.gz 2>/dev/null | tail -n +"$((KEEP + 1))" | xargs -r rm -f

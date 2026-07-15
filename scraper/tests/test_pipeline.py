@@ -69,8 +69,13 @@ class TestSync(unittest.TestCase):
         conn = FakeConn(cur)
         sync_mod.sync([_rec("a", imgs=2), _rec("b", imgs=0)], conn=conn, reconcile=False)
         self.assertEqual(len(cur.upserts()), 2)                 # 2 loty
-        imgs = [c for c in cur.calls if "polea_zdjecia" in c[0]]
+        imgs = [c for c in cur.calls if "INSERT INTO polea_zdjecia" in c[0]]
         self.assertEqual(len(imgs), 2)                          # tylko lot 'a' ma 2 zdjecia
+        # P-2: lot 'a' (ma zdjecia) dostaje DELETE prune usunietych ze zrodla; lot 'b'
+        # (0 zdjec) NIE czysci galerii (pusty zestaw = mozliwy chwilowy blad detalu).
+        dels = [c for c in cur.calls if c[0].strip().upper().startswith("DELETE") and "polea_zdjecia" in c[0]]
+        self.assertEqual(len(dels), 1)
+        self.assertEqual(dels[0][1][0], "a")
         self.assertTrue(conn.committed)
         self.assertFalse(cur.updates())                         # reconcile=False -> brak UPDATE
 

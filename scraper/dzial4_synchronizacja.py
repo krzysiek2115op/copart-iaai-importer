@@ -69,8 +69,19 @@ def sync(records, conn=None, present_ids=None, reconcile=True):
                 rec["raw_hash"] = raw_hash(rec)
                 seen.append(rec["lot_id"])
                 cur.execute(sql_lot, [rec.get(c) for c in _FIELDS])
-                for img in rec.get("images", []):
+                imgs = rec.get("images", [])
+                for img in imgs:
                     cur.execute(sql_img, (rec["lot_id"], img["image_key"], img["url"], img["sort_order"]))
+                # P-2: skasuj zdjecia usuniete ze zrodla (inaczej martwe/nieaktualne hotlinki
+                # zostaja w galerii). Tylko gdy mamy AKTUALNY zestaw — pusty moze oznaczac
+                # chwilowy blad detalu, wiec nie czyscimy wtedy calej galerii (samonaprawa
+                # w kolejnym przebiegu). Wszystko w tej samej transakcji (rollback przy bledzie).
+                keys = [img["image_key"] for img in imgs]
+                if keys:
+                    fmtk = ",".join(["%s"] * len(keys))
+                    cur.execute(
+                        f"DELETE FROM polea_zdjecia WHERE lot_id=%s AND image_key NOT IN ({fmtk})",
+                        [rec["lot_id"], *keys])
 
             # Podstawa reconcile: pelna lista z crawla, jesli podana; inaczej faktycznie zapisane.
             present = list(present_ids) if present_ids is not None else seen

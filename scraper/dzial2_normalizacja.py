@@ -107,7 +107,7 @@ def normalize(raw):
         "nr_rej": _txt(g("Nr rejestracyjny"), 32),
         "naped": _txt(g("Rodzaj napędu"), 64),
         "skrzynia": _txt(g("Skrzynia biegów"), 64),
-        "moc_km": _capint(_int(g("Moc silnika")), 100000),
+        "moc_km": _capint(_int(g("Moc silnika")), 65535),   # P-1: cap = max SMALLINT UNSIGNED (kolumna moc_km); 100000 wywalało transakcję
         "pojemnosc_ccm": _capint(_int(g("Pojemność silnika")), 1000000),
         "paliwo": _txt(g("Paliwo"), 32),
         "przebieg_km": _capint(_int(g("Przebieg")), 100000000),
