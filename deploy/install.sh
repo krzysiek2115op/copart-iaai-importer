@@ -50,7 +50,7 @@ say "2/5  Wtyczka WordPress (kopiuję i włączam)"
 PLUG_DST="$WP_PATH/wp-content/plugins/iaai-importer"
 mkdir -p "$PLUG_DST"
 cp -a "$REPO_DIR/wp-plugin/iaai-importer/." "$PLUG_DST/"
-"$WP_CLI" plugin activate iaai-importer --path="$WP_PATH" || \
+"$WP_CLI" plugin activate iaai-importer --path="$WP_PATH" --allow-root || \
 	die "Nie udało się włączyć wtyczki — włącz ją ręcznie w panelu WordPress (Wtyczki)."
 ok "Wtyczka włączona (tabele wp_iaai_* założone przez dbDelta)"
 

@@ -138,7 +138,8 @@ def main():
 
     # 4a. DIFF -> 5. AUDYT -> 4b. JSON (kolejność po naprawie H2)
     d4 = ROOT / "04_synchronizacja"
-    step("4a diff", d4, ["diff.py", "--in", str(W / "dedup.jsonl"), "--out", str(W / "diff.jsonl")], kg)
+    step("4a diff", d4, ["diff.py", "--in", str(W / "dedup.jsonl"), "--out", str(W / "diff.jsonl"),
+                         "--source", args.source], kg)
     step("5 audyt", ROOT / "05_audyt",
          ["walidacja.py", "--in", str(W / "diff.jsonl"), "--out", str(W / "audyt.jsonl")], kg)
     json_cmd = ["json_agent.py", "--in", str(W / "audyt.jsonl"), "--images", str(W / "zdjecia.jsonl"),

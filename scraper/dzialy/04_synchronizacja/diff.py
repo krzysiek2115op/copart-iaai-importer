@@ -22,13 +22,16 @@ from common import connect, compute_hash, tbl
 _T_VEH = tbl("iaai_vehicles")  # prefiks WP na VPS (wp_iaai_vehicles); dev: iaai_vehicles
 
 
-def diff_records(records: list[dict], conn) -> list[dict]:
+def diff_records(records: list[dict], conn, source: str = "iaai") -> list[dict]:
     out = []
     with conn.cursor() as cur:
         for rec in records:
             h = compute_hash(rec)
-            cur.execute(f"SELECT raw_hash FROM {_T_VEH} WHERE salvage_id=%s",
-                        (rec.get("salvage_id"),))
+            # Baza jest wspólna dla obu źródeł, a numery lotów IAAI/Copart mogą się pokrywać
+            # (klucz to para source+salvage_id). Porównujemy hash TYLKO w obrębie tego źródła,
+            # inaczej rekord jednego źródła mógłby przeczytać hash cudzego wiersza (błędny status).
+            cur.execute(f"SELECT raw_hash FROM {_T_VEH} WHERE salvage_id=%s AND source=%s",
+                        (rec.get("salvage_id"), source))
             row = cur.fetchone()
             if row is None:
                 status = "new"
@@ -60,11 +63,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--in", dest="infile", type=Path, required=True)
     ap.add_argument("--out", type=Path, default=Path("out/diff.jsonl"))
+    ap.add_argument("--source", choices=["iaai", "copart"], default="iaai",
+                    help="źródło rekordów — porównanie hash-a ograniczone do tego źródła "
+                         "(baza wspólna dla obu; numery lotów mogą się pokrywać)")
     args = ap.parse_args()
 
     records = [json.loads(l) for l in args.infile.read_text().splitlines() if l.strip()]
     conn = connect()
-    annotated = diff_records(records, conn)
+    annotated = diff_records(records, conn, args.source)
     conn.close()
 
     args.out.parent.mkdir(parents=True, exist_ok=True)

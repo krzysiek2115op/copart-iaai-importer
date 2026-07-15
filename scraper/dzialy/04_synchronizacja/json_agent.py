@@ -87,7 +87,7 @@ def main():
 
     records = [json.loads(l) for l in args.infile.read_text().splitlines() if l.strip()]
     conn = connect()
-    inserted = updated = skipped = rejected = 0
+    inserted = updated = skipped = rejected = failed = 0
     all_issues = []
     with conn.cursor() as cur:
         for rec in records:
@@ -98,12 +98,20 @@ def main():
             if rec.get("_sync_status") == "unchanged" and not args.all:
                 skipped += 1
                 continue
-            n = upsert(rec, cur, source)
-            if n == 1:
-                inserted += 1
-            elif n == 2:
-                updated += 1
-            all_issues += krytyk_poprawnosc_json(rec, cur, source)
+            # Odporność: pojedynczy zły rekord (np. wartość za długa dla kolumny, brak
+            # salvage_id) NIE może wywrócić całego importu — pomijamy go i liczymy.
+            try:
+                n = upsert(rec, cur, source)
+                if n == 1:
+                    inserted += 1
+                elif n == 2:
+                    updated += 1
+                all_issues += krytyk_poprawnosc_json(rec, cur, source)
+            except Exception as e:
+                failed += 1
+                print(f"[json] POMINIĘTO rekord salvage_id={rec.get('salvage_id')}: {e}",
+                      file=sys.stderr)
+                continue
 
         # H1: zdjęcia -> iaai_vehicle_images (po pojazdach, bo FK)
         img_ins = img_fail = 0
@@ -136,7 +144,7 @@ def main():
     conn.close()
 
     print(f"[json] wstawiono={inserted} zaktualizowano={updated} "
-          f"pominięto(unchanged)={skipped} odrzucono(audyt)={rejected}")
+          f"pominięto(unchanged)={skipped} odrzucono(audyt)={rejected} błędy={failed}")
     if removed is not None:
         print(f"[json] reconcile: oznaczono removed={removed}")
     if args.images:

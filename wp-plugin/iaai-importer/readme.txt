@@ -4,7 +4,7 @@ Tags: iaai, copart, vehicles, auctions, import, cpt
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 0.30.0
+Stable tag: 0.30.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -55,6 +55,13 @@ dane strukturalne pojazdu.
 Sama wtyczka działa na zwykłym WordPressie. Automatyzacja pobierania aut wymaga VPS z SSH.
 
 == Changelog ==
+
+= 0.30.1 =
+* Audyt P1 (spójność dual-source): agent `diff` porównuje raw_hash w obrębie właściwego
+  `source` (koniec ryzyka odczytu cudzego wiersza, gdy ten sam numer lotu jest w IAAI i
+  Copart); zapis do bazy odporny na pojedynczy błędny rekord (pomija i liczy `błędy=`,
+  nie przerywa całego importu); instalator włącza wtyczkę także spod sudo (WP-CLI
+  --allow-root). Bez zmian w danych i wyglądzie strony.
 
 = 0.30.0 =
 * DRUGIE ŹRÓDŁO — Copart. Baza: kolumna `source` (iaai/copart), klucz (source, salvage_id) w pojazdach i zdjęciach (dbDelta 1.1.0). Wtyczka: publikacja/wyszukiwanie/zdjęcia po parze (source, salvage_id), plakietka źródła (IAAI/Copart) i filtr źródła na liście, allowlist zdjęć Copart. Scraper: moduł 01_pobieranie/copart.py (listingi/szczegoly/zdjecia) + run_pipeline `--source iaai|copart` + json_agent zapis `source` i reconcile per źródło. Neutralna nazwa wtyczki „Importer Aukcji (IAAI + Copart)".
