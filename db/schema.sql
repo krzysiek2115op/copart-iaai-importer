@@ -84,7 +84,8 @@ CREATE TABLE IF NOT EXISTS `iaai_vehicles` (
   KEY `idx_make_model` (`make`, `model`),
   KEY `idx_sale_date` (`sale_date`),
   KEY `idx_status` (`status`),
-  KEY `idx_captured` (`captured_at`)
+  KEY `idx_captured` (`captured_at`),
+  KEY `idx_updated` (`updated_at`)                 -- W1: publikacja tylko delty (updated_at >= watermark)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------

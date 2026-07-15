@@ -4,7 +4,7 @@ Tags: iaai, copart, vehicles, auctions, import, cpt
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 0.30.2
+Stable tag: 0.30.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -55,6 +55,16 @@ dane strukturalne pojazdu.
 Sama wtyczka działa na zwykłym WordPressie. Automatyzacja pobierania aut wymaga VPS z SSH.
 
 == Changelog ==
+
+= 0.30.3 =
+* Utwardzenie na skalę (po re-audycie): publikacja przetwarza tylko loty ZMIENIONE od
+  ostatniego przebiegu (watermark po updated_at + nowy indeks idx_updated, schemat 1.2.0) —
+  koszt cyklu zależy od rozmiaru zmian, nie od rozmiaru całej oferty; `iaai_publish_all_active(200,true)`
+  wymusza pełną publikację (np. po zmianie szablonu). Cache listy: filtry przycinane do realnych
+  wartości z bazy (koniec zapychania transientów przez dowolne ?iaai_make), klucz zawiera kontekst
+  strony (poprawne linki pagera, gdy shortcode jest na wielu stronach), rozkłady filtrów cache'owane.
+* Deploy: skrypt cyklu bierze mutex (flock) na czas przebiegu Pythona — live i backfill nie nałożą
+  się na zapis do bazy.
 
 = 0.30.2 =
 * Re-audyt (2. przejście, subagent-audytor) — naprawy: zdjęcia strony pojazdu w SEO

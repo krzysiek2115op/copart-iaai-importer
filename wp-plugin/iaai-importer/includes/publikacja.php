@@ -119,12 +119,16 @@ function iaai_publish_vehicle( int $salvage_id, string $source = 'iaai' ) : int 
  * Wołane po imporcie (WP-CLI/cron): `wp eval 'iaai_publish_all_active();'`.
  *
  * Utwardzenie: MUTEX (GET_LOCK) — dwa przebiegi nie ruszą równolegle (race/double-run);
- * BATCH — przetwarza partiami (pamięć przy całym IAAI); LOG — czas/liczba/pamięć (nie do usera).
+ * BATCH — przetwarza partiami (pamięć przy całym IAAI); LOG — czas/liczba/pamięć (nie do usera);
+ * W1 DELTA — domyślnie publikuje tylko loty zmienione od ostatniego przebiegu (watermark
+ * updated_at), więc koszt cyklu zależy od rozmiaru zmian, nie od rozmiaru całej oferty.
  *
- * @param int $batch rozmiar partii.
+ * @param int  $batch      rozmiar partii.
+ * @param bool $force_full true = pełna publikacja (ignoruj watermark), np. po zmianie szablonu:
+ *                         `wp eval 'iaai_publish_all_active(200, true);'`.
  * @return int liczba opublikowanych (lub -1 gdy lock zajęty).
  */
-function iaai_publish_all_active( int $batch = 200 ) : int {
+function iaai_publish_all_active( int $batch = 200, bool $force_full = false ) : int {
 	if ( ! iaai_db_lock( 'publish', 0 ) ) {
 		iaai_log( 'publish: pominięto — trwa już inny import (lock zajęty)', 'warn' );
 		return -1;
@@ -136,12 +140,20 @@ function iaai_publish_all_active( int $batch = 200 ) : int {
 	$n      = 0;
 	$offset = 0;
 
+	// W1: publikuj tylko loty ZMIENIONE od ostatniego przebiegu (watermark po updated_at),
+	// zamiast przelatywać cały aktywny zbiór co cykl (przy pełnym IAAI to byłyby setki tys.
+	// zapytań meta co 15 min). Pierwszy przebieg (brak opcji) albo $force_full = pełna publikacja.
+	$since   = $force_full ? '1970-01-01 00:00:00'
+		: (string) get_option( 'iaai_publish_watermark', '1970-01-01 00:00:00' );
+	$now_ref = (string) $wpdb->get_var( 'SELECT NOW()' );   // zegar DB = ten sam, który pisze updated_at
+
 	wp_suspend_cache_addition( true );           // ogranicz narastanie cache (pamięć)
 	try {
 		do {
 			$rows = $wpdb->get_results( $wpdb->prepare(
-				"SELECT salvage_id, source FROM {$table} WHERE status = %s ORDER BY source, salvage_id ASC LIMIT %d OFFSET %d",
+				"SELECT salvage_id, source FROM {$table} WHERE status = %s AND updated_at >= %s ORDER BY source, salvage_id ASC LIMIT %d OFFSET %d",
 				'active',
+				$since,
 				$batch,
 				$offset
 			), ARRAY_A );
@@ -153,7 +165,10 @@ function iaai_publish_all_active( int $batch = 200 ) : int {
 			$offset += $batch;
 		} while ( count( $rows ) === $batch );
 
-		iaai_unpublish_inactive();               // F1: zdejmij ze strony auta, których już nie ma
+		iaai_unpublish_inactive( $batch, $since );   // F1+W1: zdejmij tylko te, które zniknęły od watermark
+		if ( '' !== $now_ref ) {
+			update_option( 'iaai_publish_watermark', $now_ref );  // następny cykl bierze deltę od teraz
+		}
 	} catch ( \Throwable $e ) {
 		iaai_log( 'publish: wyjątek — ' . $e->getMessage(), 'error' );
 	} finally {
@@ -179,7 +194,7 @@ function iaai_publish_all_active( int $batch = 200 ) : int {
  * `iaai_status`, by szablon mógł np. pokazać „sprzedane” zamiast ukrywać.
  * @return int liczba zdjętych wpisów.
  */
-function iaai_unpublish_inactive( int $batch = 200 ) : int {
+function iaai_unpublish_inactive( int $batch = 200, string $since = '1970-01-01 00:00:00' ) : int {
 	global $wpdb;
 	$table  = $wpdb->prefix . 'iaai_vehicles';
 	$batch  = max( 20, min( 1000, $batch ) );
@@ -188,8 +203,9 @@ function iaai_unpublish_inactive( int $batch = 200 ) : int {
 	do {
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT salvage_id, source, status FROM {$table} WHERE status <> %s ORDER BY source, salvage_id ASC LIMIT %d OFFSET %d",
+				"SELECT salvage_id, source, status FROM {$table} WHERE status <> %s AND updated_at >= %s ORDER BY source, salvage_id ASC LIMIT %d OFFSET %d",
 				'active',
+				$since,
 				$batch,
 				$offset
 			),

@@ -231,10 +231,25 @@ function iaai_render_list( $atts ) : string {
 		'sort' => isset( $_GET['iaai_sort'] ) ? sanitize_key( wp_unslash( $_GET['iaai_sort'] ) ) : '',
 	);
 	// Numer strony — własny parametr, by nie kolidować z paginacją treści strony WP.
-	$paged = isset( $_GET['iaai_str'] ) ? max( 1, absint( wp_unslash( $_GET['iaai_str'] ) ) ) : 1;
+	// Sanity-cap 1..1000: bez tego dowolny ?iaai_str=<duże> mnożyłby klucze cache.
+	$paged = isset( $_GET['iaai_str'] ) ? max( 1, min( 1000, absint( wp_unslash( $_GET['iaai_str'] ) ) ) ) : 1;
 
-	// Cache 5 min; klucz = wersja + liczba + strona + odcisk filtrów.
-	$cache_key = 'iaai_list_' . iaai_list_cache_version() . '_' . $ile . '_' . $paged
+	// S1: przytnij filtry do REALNYCH wartości z bazy — dowolny ?iaai_make=<losowe> z GET
+	// nie tworzy wtedy nowego klucza cache (ochrona przed zapychaniem transientów w wp_options).
+	// Rozkłady są CACHE'owane (iaai_filter_options) i przekazane do iaai_render_filters — ścieżka
+	// cache-hit nie robi ciężkich DISTINCT.
+	$opts  = iaai_filter_options();
+	$makes = $opts['make'];
+	$years = $opts['year'];
+	$dmgs  = $opts['dmg'];
+	if ( '' !== $sel['make'] && ! in_array( $sel['make'], $makes, true ) ) { $sel['make'] = ''; }
+	if ( '' !== $sel['dmg'] && ! in_array( $sel['dmg'], $dmgs, true ) ) { $sel['dmg'] = ''; }
+	if ( $sel['year'] > 0 && ! in_array( (string) $sel['year'], array_map( 'strval', $years ), true ) ) { $sel['year'] = 0; }
+
+	// #13: kontekst strony w kluczu — ten sam shortcode na 2 stronach ma inne linki pagera/„Wyczyść".
+	$ctx = (int) get_queried_object_id();
+	// Cache 5 min; klucz = wersja + kontekst + liczba + strona + odcisk (przyciętych) filtrów.
+	$cache_key = 'iaai_list_' . iaai_list_cache_version() . '_' . $ctx . '_' . $ile . '_' . $paged
 		. '_' . substr( md5( maybe_serialize( $sel ) ), 0, 8 );
 	$cached = get_transient( $cache_key );
 	if ( false !== $cached ) {
@@ -266,7 +281,7 @@ function iaai_render_list( $atts ) : string {
 	}
 
 	$q       = new WP_Query( $args );
-	$filters = iaai_render_filters( $sel );
+	$filters = iaai_render_filters( $sel, $makes, $years, $dmgs );
 
 	if ( ! $q->have_posts() ) {
 		$out = '<div class="iaai-pojazdy" id="iaai">' . $filters
@@ -321,11 +336,29 @@ function iaai_distinct_meta( string $col, int $limit = 300 ) : array {
 	) );
 }
 
+/** Rozkłady filtrów (make/year/primary_damage) — CACHE'owane wg wersji list, by walidacja
+ * filtrów (S1) i pasek filtrów nie robiły ciężkich DISTINCT na każde żądanie. Unieważnia je
+ * bump wersji po publikacji (iaai_flush_list_cache). */
+function iaai_filter_options() : array {
+	$key  = 'iaai_filter_opts_' . iaai_list_cache_version();
+	$opts = get_transient( $key );
+	if ( is_array( $opts ) ) {
+		return $opts;
+	}
+	$opts = array(
+		'make' => iaai_distinct_meta( 'make' ),
+		'year' => iaai_distinct_meta( 'year' ),
+		'dmg'  => iaai_distinct_meta( 'primary_damage' ),
+	);
+	set_transient( $key, $opts, 5 * MINUTE_IN_SECONDS );
+	return $opts;
+}
+
 /** Pasek filtrów nad siatką (marka / rok / uszkodzenie / sortowanie). GET, działa bez JS. */
-function iaai_render_filters( array $sel ) : string {
-	$makes = iaai_distinct_meta( 'make' );
-	$years = iaai_distinct_meta( 'year' );
-	$dmgs  = iaai_distinct_meta( 'primary_damage' );
+function iaai_render_filters( array $sel, ?array $makes = null, ?array $years = null, ?array $dmgs = null ) : string {
+	$makes = $makes ?? iaai_distinct_meta( 'make' );          // przekazane z iaai_render_list (bez podwójnych zapytań)
+	$years = $years ?? iaai_distinct_meta( 'year' );
+	$dmgs  = $dmgs ?? iaai_distinct_meta( 'primary_damage' );
 	if ( ! $makes && ! $years && ! $dmgs ) {
 		return '';
 	}

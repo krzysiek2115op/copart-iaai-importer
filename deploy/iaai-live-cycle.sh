@@ -23,6 +23,15 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 : "${IAAI_MODE:=live}"                 # live (domyślnie) albo full (backfill)
 : "${PYTHON:=python3}"
 
+# G4: tylko JEDEN przebieg naraz (live vs backfill). Chroni zapis Pythona do bazy przed
+# nałożeniem się (reconcile z full na insert z live). Zajęty lock = pomijamy ten cykl.
+LOCKFILE="${STATE_DIRECTORY:-/tmp}/iaai-importer.lock"
+exec 9>"$LOCKFILE"
+if command -v flock >/dev/null 2>&1 && ! flock -n 9; then
+	echo "[cykl] inny przebieg trwa (lock $LOCKFILE) — pomijam."
+	exit 0
+fi
+
 # 1) konfiguracja bazy = baza WordPressa klienta
 # shellcheck source=/dev/null
 source "$HERE/iaai-env.sh"

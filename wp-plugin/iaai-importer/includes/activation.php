@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Wersja schematu — podbij przy zmianie struktury tabel (wymusza ponowne dbDelta). */
-const IAAI_DB_VERSION = '1.1.0';
+const IAAI_DB_VERSION = '1.2.0';   // 1.2.0: KEY idx_updated (W1 — publikacja tylko delty)
 
 /**
  * Buduje instrukcje CREATE TABLE (dbDelta-friendly) z prefiksem WP i collation.
@@ -77,7 +77,8 @@ function iaai_schema_statements() : array {
   KEY idx_make_model (make,model),
   KEY idx_sale_date (sale_date),
   KEY idx_status (status),
-  KEY idx_captured (captured_at)
+  KEY idx_captured (captured_at),
+  KEY idx_updated (updated_at)
 ) {$charset_collate};";
 
 	$sql_img = "CREATE TABLE {$img} (
