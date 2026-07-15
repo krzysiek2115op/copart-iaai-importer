@@ -476,19 +476,19 @@ function polea_jsonld_list($data) {
 add_action('init', 'polea_register_sitemap', 20);
 
 function polea_register_sitemap() {
-    if (!function_exists('wp_sitemaps_register_provider') || !class_exists('Polea_Sitemap_Provider')) {
+    if (!function_exists('wp_register_sitemap_provider') || !class_exists('Polea_Sitemap_Provider')) {
         return;
     }
     if (!get_option('permalink_structure') || !(int) get_option(POLEA_PAGE_OPTION)) {
         return; // sitemap ofert ma sens tylko przy ładnych URL-ach
     }
-    wp_sitemaps_register_provider('polea_motocykle', new Polea_Sitemap_Provider());
+    wp_register_sitemap_provider('poleamotocykle', new Polea_Sitemap_Provider());
 }
 
 if (class_exists('WP_Sitemaps_Provider')) {
     class Polea_Sitemap_Provider extends WP_Sitemaps_Provider {
         public function __construct() {
-            $this->name        = 'polea_motocykle';
+            $this->name        = 'poleamotocykle';
             $this->object_type = 'polea_motocykl';
         }
         public function get_url_list($page_num, $object_subtype = '') {
