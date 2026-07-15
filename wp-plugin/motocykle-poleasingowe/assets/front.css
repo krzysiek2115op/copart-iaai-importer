@@ -15,6 +15,7 @@
     margin-inline: auto;
     padding-inline: clamp(16px, 4vw, 28px);
     padding-block: clamp(1.25rem, 3vw, 2.5rem);
+    overflow-wrap: break-word;      /* długie słowa/URL-e nie rozpychają layoutu (anty poziomy scroll) */
 }
 .polea-wrap *, .polea-wrap *::before, .polea-wrap *::after { box-sizing: border-box; }
 
@@ -57,6 +58,12 @@
 .polea-filters input {
     padding: .4rem .5rem; border: 1px solid var(--polea-line);
     border-radius: 6px; background: transparent; color: inherit; font: inherit;
+    max-width: 100%; min-width: 0;
+}
+/* Telefon: filtry w pełnej szerokości (stack), bez ściskania. */
+@media (max-width: 480px) {
+    .polea-filters label { flex: 1 1 100%; }
+    .polea-filters select, .polea-filters input, .polea-filters__btn { width: 100%; }
 }
 .polea-filters__btn, .polea-source {
     cursor: pointer; padding: .5rem 1rem; border: 1px solid currentColor;
@@ -89,7 +96,7 @@
 .polea-specs { width: 100%; border-collapse: collapse; }
 .polea-specs caption { text-align: left; }
 .polea-specs th { text-align: left; opacity: .7; font-weight: 500; padding: .35rem .75rem .35rem 0; vertical-align: top; white-space: nowrap; }
-.polea-specs td { padding: .35rem 0; }
+.polea-specs td { padding: .35rem 0; overflow-wrap: anywhere; }   /* VIN/nr aukcji łamią się zamiast rozpychać tabelę */
 .polea-back { display: inline-block; color: inherit; opacity: .8; text-decoration: none; }
 
 /* --- sekcje / nagłówki --- */
