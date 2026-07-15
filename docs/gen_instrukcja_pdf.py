@@ -77,6 +77,7 @@ class Doc:
         self.pages = []
         self.cur = []
         self.y = MT
+        self.footer = "Importer Motocykli (poleasingowe.pl) — instrukcja testów"
 
     def _newpage(self):
         self.pages.append(self.cur)
@@ -225,13 +226,15 @@ class Doc:
         self.gap(6)
 
     def svg_pages(self):
-        total = len(self.pages)
+        # Dolacz ostatnia (niezflushowana) strone — inaczej koncowka dokumentu ginie.
+        pages = self.pages + ([self.cur] if self.cur else [])
+        total = len(pages)
         out = []
-        for idx, page in enumerate(self.pages, 1):
+        for idx, page in enumerate(pages, 1):
             body = "".join(page)
             foot = (f'<text x="{W-MR:.1f}" y="{H-28:.1f}" text-anchor="end" '
                     f'font-family="{MONO}" font-size="8" fill="{C_MUTED}">'
-                    f'Importer Motocykli (poleasingowe.pl) — instrukcja testów   '
+                    f'{esc(self.footer)}   '
                     f'str. {idx}/{total}</text>')
             out.append(
                 f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
@@ -240,8 +243,10 @@ class Doc:
         return out
 
 
-def parse_md(text):
+def parse_md(text, footer=None):
     doc = Doc()
+    if footer:
+        doc.footer = footer
     lines = text.split("\n")
     i, n = 0, len(lines)
     in_code, code_buf = False, []
@@ -322,8 +327,9 @@ def main():
     here = os.path.dirname(os.path.abspath(__file__))
     src = sys.argv[1] if len(sys.argv) > 1 else os.path.join(here, "TESTY-RECZNE.md")
     out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(here, "INSTRUKCJA-TESTOW-RECZNYCH.pdf")
+    footer = sys.argv[3] if len(sys.argv) > 3 else None
     with open(src, encoding="utf-8") as f:
-        doc = parse_md(f.read())
+        doc = parse_md(f.read(), footer=footer)
     pages = render(doc, out)
     print(f"OK: {out} ({pages} stron)")
 
