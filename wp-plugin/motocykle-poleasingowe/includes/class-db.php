@@ -102,7 +102,10 @@ class Polea_DB {
 
     /** Lista motocykli z filtrami + paginacją. */
     public static function query_list($a) {
-        $where  = 'status = ?';
+        // relist_of IS NULL: pokaż tylko NAJNOWSZY lot danego VIN-u (dedup po VIN robi scraper —
+        // starsze wpisy wskazują nowszy). Bez tego relist i stary lot (zanim reconcile go zamknie)
+        // pojawiłyby się na liście podwójnie. Obejmuje też COUNT (wspólne {$where}).
+        $where  = "status = ? AND relist_of IS NULL";
         $types  = 's';
         $params = array('aktywna');
 
@@ -156,15 +159,24 @@ class Polea_DB {
         return $cache[$lot_id] = array_map(static function ($r) { return $r['url']; }, $rows);
     }
 
-    /** Lot_id aktywnych aukcji (do sitemap XML). Zwraca max $limit, posortowane po terminie. */
-    public static function active_lot_ids($limit = 2000) {
-        $limit = max(1, min(50000, (int) $limit));
-        $rows  = self::q(
-            "SELECT lot_id FROM polea_motocykle WHERE status = 'aktywna' " .
-            "ORDER BY (termin_zakonczenia IS NULL), termin_zakonczenia ASC LIMIT ?",
-            'i', array($limit)
+    /** Lot_id aktywnych aukcji (do sitemap XML) — z paginacją. relist_of IS NULL: bez
+     *  przedawnionych duplikatów VIN. Posortowane po terminie zakończenia. */
+    public static function active_lot_ids($limit = 2000, $offset = 0) {
+        $limit  = max(1, min(50000, (int) $limit));
+        $offset = max(0, (int) $offset);
+        $rows   = self::q(
+            "SELECT lot_id FROM polea_motocykle WHERE status = 'aktywna' AND relist_of IS NULL " .
+            "ORDER BY (termin_zakonczenia IS NULL), termin_zakonczenia ASC LIMIT ? OFFSET ?",
+            'ii', array($limit, $offset)
         );
         return array_map(static function ($r) { return $r['lot_id']; }, $rows);
+    }
+
+    /** Liczba aktywnych ofert do sitemapy (zgodnie z filtrem active_lot_ids). */
+    public static function count_active() {
+        return (int) self::scalar(
+            "SELECT COUNT(*) FROM polea_motocykle WHERE status = 'aktywna' AND relist_of IS NULL"
+        );
     }
 
     /** Pierwsze zdjęcie (miniatura) dla wielu lotów naraz — unika N+1 na liście. */
@@ -215,7 +227,7 @@ class Polea_DB {
         $cols  = "lot_id, marka, model, rok_produkcji, cena_pln, cena_netto, przebieg_km, pojemnosc_ccm, paliwo, termin_zakonczenia";
         if (!empty($marka)) {
             $rows = self::q(
-                "SELECT {$cols} FROM polea_motocykle WHERE status='aktywna' AND marka = ? AND lot_id <> ? " .
+                "SELECT {$cols} FROM polea_motocykle WHERE status='aktywna' AND relist_of IS NULL AND marka = ? AND lot_id <> ? " .
                 "ORDER BY (termin_zakonczenia IS NULL), termin_zakonczenia ASC LIMIT ?",
                 'ssi', array($marka, $lot_id, $limit)
             );
@@ -224,7 +236,7 @@ class Polea_DB {
             }
         }
         return self::q(
-            "SELECT {$cols} FROM polea_motocykle WHERE status='aktywna' AND lot_id <> ? " .
+            "SELECT {$cols} FROM polea_motocykle WHERE status='aktywna' AND relist_of IS NULL AND lot_id <> ? " .
             "ORDER BY (termin_zakonczenia IS NULL), termin_zakonczenia ASC LIMIT ?",
             'si', array($lot_id, $limit)
         );

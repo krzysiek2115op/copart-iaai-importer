@@ -491,15 +491,23 @@ if (class_exists('WP_Sitemaps_Provider')) {
             $this->name        = 'poleamotocykle';
             $this->object_type = 'polea_motocykl';
         }
+        private function per_page() {
+            $per = function_exists('wp_sitemaps_get_max_urls')
+                ? (int) wp_sitemaps_get_max_urls($this->object_type) : 2000;
+            return $per > 0 ? $per : 2000;
+        }
         public function get_url_list($page_num, $object_subtype = '') {
+            $per  = $this->per_page();
+            $off  = (max(1, (int) $page_num) - 1) * $per;
             $list = array();
-            foreach (Polea_DB::active_lot_ids(2000) as $lot) {
+            foreach (Polea_DB::active_lot_ids($per, $off) as $lot) {
                 $list[] = array('loc' => polea_single_url($lot));
             }
             return $list;
         }
         public function get_max_num_pages($object_subtype = '') {
-            return 1;
+            // Paginacja: >per_page ofert trafia na kolejne strony sitemapy (dotąd urywane na 2000).
+            return max(1, (int) ceil(Polea_DB::count_active() / $this->per_page()));
         }
     }
 }

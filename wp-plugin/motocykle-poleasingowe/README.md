@@ -25,4 +25,4 @@ Wyświetla motocykle z aukcji poleasingowe.pl na podstronie **„Nasze motory"**
 
 Podstrona „Nasze motory" tworzy się sama przy aktywacji. Pojedynczy motocykl: ładny adres `/<podstrona>/<lot_id>/` (przy włączonych przyjaznych odnośnikach; w innym razie `?motocykl=<lot_id>`) — w obrębie tej samej (motywowanej) strony.
 
-> Po aktualizacji do wersji z ładnymi URL-ami odśwież raz przyjazne odnośniki: **Ustawienia → Bezpośrednie odnośniki → Zapisz** (albo dezaktywuj/aktywuj wtyczkę) — przebudowuje reguły przepisań.
+> Po aktualizacji do wersji z ładnymi URL-ami **oraz po każdej zmianie sluga/adresu podstrony „Nasze motory"** odśwież raz przyjazne odnośniki: **Ustawienia → Bezpośrednie odnośniki → Zapisz** (albo dezaktywuj/aktywuj wtyczkę) — przebudowuje reguły przepisań (inaczej adresy pojedynczych ofert `/…/<lot_id>/` mogą dawać 404 do czasu zapisu).

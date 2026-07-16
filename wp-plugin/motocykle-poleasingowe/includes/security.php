@@ -69,18 +69,31 @@ function polea_current_lot_id() {
     return preg_match('/^[A-Za-z0-9]{1,32}$/', $v) ? $v : '';
 }
 
-/** Klucz cache dla danego zestawu filtrów. */
-function polea_cache_key($args) {
-    return 'polea_list_' . md5(wp_json_encode($args));
+/**
+ * Generacja cache — wpięta w klucze list/related. Flush = jej INKREMENTACJA, dzięki czemu
+ * unieważnienie działa też pod ZEWNĘTRZNYM object cache (Redis/Memcached), gdzie transienty
+ * nie są w tabeli options i bezpośredni DELETE by ich nie ruszył. Stare klucze wygasają po TTL.
+ */
+function polea_cache_gen() {
+    return (int) get_option('polea_cache_gen', 1);
 }
 
-/** Czyści cache list + listy wartości filtrów (transienty). Po ręcznym odświeżeniu / dezaktywacji. */
+/** Klucz cache dla danego zestawu filtrów (z generacją). */
+function polea_cache_key($args) {
+    return 'polea_list_' . polea_cache_gen() . '_' . md5(wp_json_encode($args));
+}
+
+/** Czyści cache list + related + listy wartości filtrów. Po ręcznym odświeżeniu / dezaktywacji. */
 function polea_flush_cache() {
+    // Podstawowe unieważnienie (działa pod KAŻDYM backendem cache): podbij generację —
+    // wszystkie klucze polea_list_<gen>_* / polea_rel_<gen>_* stają się nieosiągalne.
+    update_option('polea_cache_gen', polea_cache_gen() + 1);
     foreach (array('marka', 'paliwo', 'rok_produkcji') as $col) {
-        delete_transient('polea_distinct_' . $col);
+        delete_transient('polea_distinct_' . $col);   // delete_transient działa też pod object cache
     }
     global $wpdb;
-    // Czyści cache listy (polea_list_*) ORAZ podobnych ofert (polea_rel_*).
+    // Dodatkowo: sprzątnij stare wiersze transientów z tabeli options (gdy cache jest w DB),
+    // by nie zalegały do wygaśnięcia TTL. Pod object cache ten DELETE nic nie znajdzie — i dobrze.
     $wpdb->query(
         "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_polea\\_list\\_%' " .
         "OR option_name LIKE '\\_transient\\_timeout\\_polea\\_list\\_%' " .

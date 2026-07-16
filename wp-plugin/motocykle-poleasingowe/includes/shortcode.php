@@ -388,7 +388,7 @@ function polea_info_row($label, $val) {
 /** Sekcja „Podobne motocykle" (internal linking). Cache per lot (transient) chroni TTFB. */
 function polea_render_related($m) {
     $lot  = $m['lot_id'];
-    $tkey = 'polea_rel_' . $lot;
+    $tkey = 'polea_rel_' . polea_cache_gen() . '_' . $lot;   // generacja: flush działa też pod object cache
     $html = get_transient($tkey);
     if ($html !== false) {
         return $html;
