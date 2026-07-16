@@ -4,7 +4,7 @@ Tags: iaai, copart, vehicles, auctions, import, cpt
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 0.30.3
+Stable tag: 0.30.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -55,6 +55,12 @@ dane strukturalne pojazdu.
 Sama wtyczka działa na zwykłym WordPressie. Automatyzacja pobierania aut wymaga VPS z SSH.
 
 == Changelog ==
+
+= 0.30.4 =
+* Motywy z menu „na sztywno" (bez menu WP / page-list, np. „Kredyt Kompas" przez
+  filtr `kk_menu_items`): podstrona „Nasze auta" wpina się teraz automatycznie —
+  wcześniej takie motywy trzeba było uzupełniać ręcznie. Na pozostałych motywach hak
+  jest bezczynny (fallback: menu klasyczne / blok Nawigacja bez duplikatu z page-list).
 
 = 0.30.3 =
 * Utwardzenie na skalę (po re-audycie): publikacja przetwarza tylko loty ZMIENIONE od

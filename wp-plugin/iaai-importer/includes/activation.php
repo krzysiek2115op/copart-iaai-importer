@@ -311,3 +311,26 @@ function iaai_check_source_pk() : void {
 	}
 	update_option( 'iaai_pk_checked', IAAI_DB_VERSION );
 }
+
+/**
+ * Wpięcie w motywy z menu „na sztywno" (np. „Kredyt Kompas" przez kk_menu_items()).
+ * Takie motywy nie używają menu WP ani page-list — jeśli motyw wystawia filtr,
+ * dokładamy podstronę „Nasze auta" RAZ (po slugu), dziedzicząc styl menu klienta.
+ * Na innych motywach filtr nie istnieje → hak bezczynny (fallback: menu WP / blok Nawigacja).
+ */
+add_filter( 'kk_menu_items', 'iaai_theme_menu_item' );
+function iaai_theme_menu_item( $items ) {
+	if ( ! is_array( $items ) ) {
+		return $items;
+	}
+	$page_id = (int) get_option( 'iaai_page_id' );
+	if ( ! $page_id ) {
+		return $items;
+	}
+	$slug = get_post_field( 'post_name', $page_id );
+	if ( $slug && ! isset( $items[ $slug ] ) ) {   // raz — bez duplikatu
+		$title          = get_the_title( $page_id );
+		$items[ $slug ] = ( $title !== '' ) ? $title : __( 'Nasze auta', 'iaai-importer' );
+	}
+	return $items;
+}
