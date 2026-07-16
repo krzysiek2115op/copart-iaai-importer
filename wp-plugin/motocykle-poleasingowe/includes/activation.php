@@ -103,6 +103,11 @@ function polea_add_to_block_nav($page_id) {
         return;
     }
     $nav = $navs[0];
+    // Gdy nawigacja używa bloku „Lista stron" (page-list), WSZYSTKIE opublikowane
+    // strony (w tym nasza) renderują się automatycznie — jawny link zrobiłby DUPLIKAT.
+    if (strpos($nav->post_content, 'wp:page-list') !== false) {
+        return; // page-list pokazuje stronę sam z siebie
+    }
     if (strpos($nav->post_content, '"id":' . $page_id . ',') !== false
         || strpos($nav->post_content, '"id":' . $page_id . '}') !== false) {
         return; // już jest
@@ -114,4 +119,27 @@ function polea_add_to_block_nav($page_id) {
         'ID'           => $nav->ID,
         'post_content' => $nav->post_content . $block,
     ));
+}
+
+/**
+ * Wpięcie w motywy z menu „na sztywno" (np. „Kredyt Kompas" przez kk_menu_items()).
+ * Takie motywy nie używają menu WP ani page-list, więc standardowe dopięcie ich nie
+ * dotyczy — ale jeśli motyw wystawia filtr, dokładamy podstronę RAZ (po slugu),
+ * dziedzicząc styl menu klienta. Na innych motywach filtr nie istnieje → hak bezczynny.
+ */
+add_filter('kk_menu_items', 'polea_theme_menu_item');
+function polea_theme_menu_item($items) {
+    if (!is_array($items)) {
+        return $items;
+    }
+    $page_id = (int) get_option(POLEA_PAGE_OPTION);
+    if (!$page_id) {
+        return $items;
+    }
+    $slug = get_post_field('post_name', $page_id);
+    if ($slug && !isset($items[$slug])) {           // raz — bez duplikatu
+        $title = get_the_title($page_id);
+        $items[$slug] = ($title !== '') ? $title : 'Nasze motory';
+    }
+    return $items;
 }
