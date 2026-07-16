@@ -112,14 +112,19 @@ function iaai_schema_statements() : array {
  * (salvage_id) i wymaga jednorazowej MIGRACJI ręcznej — wykrywa to iaai_check_source_pk()
  * i loguje ostrzeżenie (patrz docs/klient/05 „Aktualizuję istniejącą instalację").
  */
-function iaai_activate() : void {
+function iaai_activate( bool $flush = true ) : void {
 	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 	foreach ( iaai_schema_statements() as $sql ) {
 		dbDelta( $sql );
 	}
 	update_option( 'iaai_db_version', IAAI_DB_VERSION );
 	iaai_create_landing_page();   // auto-podstrona „Nasze auta" + wpięcie do menu
-	flush_rewrite_rules();        // by archiwum CPT /pojazdy działało od razu
+	// P3: flush tylko na PRAWDZIWEJ aktywacji (register_activation_hook — init już był,
+	// CPT zarejestrowany). Na ścieżce upgrade przez podmianę plików ($flush=false) flush
+	// odpala się później na 'init', bo CPT „pojazd" rejestruje się dopiero na init.
+	if ( $flush ) {
+		flush_rewrite_rules();    // by archiwum CPT /pojazdy działało od razu
+	}
 }
 
 /* =====================================================================
@@ -273,7 +278,11 @@ function iaai_maybe_create_landing() : void {
 add_action( 'plugins_loaded', 'iaai_maybe_upgrade_db' );
 function iaai_maybe_upgrade_db() : void {
 	if ( get_option( 'iaai_db_version' ) !== IAAI_DB_VERSION ) {
-		iaai_activate();
+		// P3: nie flushuj na plugins_loaded — CPT „pojazd" rejestruje się dopiero na init,
+		// więc natychmiastowy flush pominąłby reguły archiwum /pojazdy. Flush raz na init
+		// (po rejestracji CPT@10); przy kolejnym żądaniu wersja już się zgadza -> bez powtórki.
+		iaai_activate( false );
+		add_action( 'init', 'flush_rewrite_rules', 20 );
 	}
 }
 

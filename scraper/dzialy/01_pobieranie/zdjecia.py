@@ -63,8 +63,11 @@ def download_images(records: list[dict], out_dir: Path, session: requests.Sessio
     for rec in records:
         r = session.get(rec["url"], timeout=60)
         if r.ok and r.headers.get("content-type", "").startswith("image"):
-            (d / f"{rec['seq']}.jpg").write_bytes(r.content)
-            rec["local_path"] = str(d / f"{rec['seq']}.jpg")
+            # P3: nazwa pliku wyłącznie z int(seq) — twardo odcina path traversal, gdyby
+            # seq zawierał '../' czy separatory (dotyczy tylko trybu dev --download).
+            fname = d / f"{int(rec['seq'])}.jpg"
+            fname.write_bytes(r.content)
+            rec["local_path"] = str(fname)
         time.sleep(delay)
 
 

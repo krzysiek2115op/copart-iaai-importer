@@ -41,8 +41,12 @@ echo "[cykl] start $(date -Is)  mode=$IAAI_MODE base=$IAAI_BASE"
 # 2) pipeline (zapis do bazy WP). reconcile włącza się sam tylko dla full bez limitu.
 # G1: workdir ABSOLUTNY. Pod systemd = $STATE_DIRECTORY (/var/lib/iaai-importer, zapisywalny
 # jako www-data); ręcznie = pipeline_out obok scrapera. Bez tego CWD=/ i zapis padał.
+# P2: --keep-going — pojedynczy „miękki" krytyk per-rekord (np. lot bez zdjęć, odometr bez
+# jednostki) NIE zatrzymuje całego cyklu always-on przed importem i publikacją. Reconcile
+# pozostaje bezpieczny mimo pominięcia krytyka kompletności: json_agent ma własny twardy próg
+# pokrycia (IAAI_RECONCILE_MIN_RATIO) i nie zdejmie oferty przy urwanym/zawężonym feedzie.
 WORKDIR="${STATE_DIRECTORY:-$SCRAPER_DIR/pipeline_out}"
-"$PYTHON" "$SCRAPER_DIR/run_pipeline.py" --mode "$IAAI_MODE" --base "$IAAI_BASE" --workdir "$WORKDIR"
+"$PYTHON" "$SCRAPER_DIR/run_pipeline.py" --mode "$IAAI_MODE" --base "$IAAI_BASE" --workdir "$WORKDIR" --keep-going
 
 # 3) most do WP — publikacja aktywnych pojazdów do CPT „pojazd"
 "${WP_CLI:-wp}" eval 'iaai_publish_all_active();' --path="${WP_PATH:-/var/www/html}"

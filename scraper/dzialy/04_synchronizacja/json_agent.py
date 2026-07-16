@@ -12,8 +12,13 @@ Wymagania: pip install pymysql
 Użycie:   python json_agent.py --in out/diff.jsonl
 """
 from __future__ import annotations
-import argparse, json, sys
+import argparse, json, os, sys
 from pathlib import Path
+
+# P1: prog bezpieczenstwa reconcile — nie oznaczaj masowo lotow jako 'removed', gdy biezacy
+# feed pokrywa mniej niz ten ulamek dotychczas AKTYWNYCH lotow danego zrodla (prawdopodobnie
+# zawezony --base albo urwany crawl). Konfigurowalny; 0.9 = wymagaj niemal pelnego pokrycia.
+RECONCILE_MIN_RATIO = float(os.environ.get("IAAI_RECONCILE_MIN_RATIO", "0.9"))
 
 from common import connect, DATA_COLS, to_db_row, compute_hash, tbl
 
@@ -113,17 +118,38 @@ def main():
                       file=sys.stderr)
                 continue
 
-        # H1: zdjęcia -> iaai_vehicle_images (po pojazdach, bo FK)
-        img_ins = img_fail = 0
+        # H1: zdjęcia -> iaai_vehicle_images (po pojazdach). Grupujemy po locie, by po
+        # upsercie PRZYCIĄĆ nieaktualne zdjęcia (zestaw się skurczył — inaczej stare
+        # image_key/wysokie seq zostają w galerii). Prune tylko gdy mamy klucze (pusty
+        # zestaw = możliwy chwilowy błąd; nie czyścimy wtedy całej galerii).
+        img_ins = img_fail = img_pruned = 0
         if args.images and args.images.exists():
+            by_lot: dict = {}
             for line in args.images.read_text().splitlines():
                 if not line.strip():
                     continue
                 try:
-                    upsert_image(json.loads(line), cur, source)
-                    img_ins += 1
+                    r = json.loads(line)
                 except Exception:
-                    img_fail += 1      # np. brak pojazdu (FK) — pojazd odrzucony/niezapisany
+                    img_fail += 1
+                    continue
+                by_lot.setdefault(r.get("salvage_id"), []).append(r)
+            for sid, imgs in by_lot.items():
+                keys = []
+                for r in imgs:
+                    try:
+                        upsert_image(r, cur, source)
+                        img_ins += 1
+                        if r.get("image_key") is not None:
+                            keys.append(r["image_key"])
+                    except Exception:
+                        img_fail += 1      # np. brak pojazdu — pojazd odrzucony/niezapisany
+                if keys:
+                    fmt = ",".join(["%s"] * len(keys))
+                    cur.execute(
+                        f"DELETE FROM {_T_IMG} WHERE salvage_id=%s AND source=%s "
+                        f"AND image_key NOT IN ({fmt})", [sid, source, *keys])
+                    img_pruned += cur.rowcount
         # M3: reconcile — loty active nieobecne w bieżącym (pełnym) feedzie -> removed
         removed = None
         if args.reconcile:
@@ -131,8 +157,19 @@ def main():
             # audytu. Rekord, który obleje audyt tego przebiegu, NIE jest zniknięty — wykluczenie
             # go z `current` powodowało fałszywe status='removed' i zdejmowanie wpisu ze strony.
             current = [r["salvage_id"] for r in records if r.get("salvage_id")]
+            seen = len(set(current))
+            # P1: policz aktualnie aktywne loty TEGO źródła i wymagaj, by feed pokrywał
+            # co najmniej RECONCILE_MIN_RATIO z nich. Zawężony --base (np. ?Keyword=BMW)
+            # albo urwany crawl (Copart 1 strona) → seen << active → reconcile POMINIĘTY,
+            # zamiast błędnie zdejmować całą resztę oferty. Pusta baza (pierwszy backfill) → przepuść.
+            cur.execute(f"SELECT COUNT(*) FROM {_T_VEH} WHERE status='active' AND source=%s", (source,))
+            active_now = int((cur.fetchone() or [0])[0] or 0)
             if not current:
                 print("[json] reconcile POMINIĘTY — puste wejście (zabezpieczenie)")
+            elif active_now > 0 and seen < RECONCILE_MIN_RATIO * active_now:
+                print(f"[json] reconcile POMINIĘTY — feed pokrywa {seen} lotów < "
+                      f"{RECONCILE_MIN_RATIO:.0%} aktywnych={active_now} (source={source}); "
+                      f"możliwy zawężony --base lub urwany crawl.", file=sys.stderr)
             else:
                 cur.execute("CREATE TEMPORARY TABLE _iaai_seen (salvage_id BIGINT UNSIGNED PRIMARY KEY)")
                 cur.executemany("INSERT IGNORE INTO _iaai_seen (salvage_id) VALUES (%s)",
@@ -150,7 +187,7 @@ def main():
     if removed is not None:
         print(f"[json] reconcile: oznaczono removed={removed}")
     if args.images:
-        print(f"[json] zdjęcia: zapisano={img_ins} pominięto(FK/błąd)={img_fail}")
+        print(f"[json] zdjęcia: zapisano={img_ins} pominięto(FK/błąd)={img_fail} przycięto(nieaktualne)={img_pruned}")
     if all_issues:
         print("[krytyk:poprawność-json] ZASTRZEŻENIA:")
         for i in all_issues[:20]:

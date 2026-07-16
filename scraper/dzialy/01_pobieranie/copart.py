@@ -109,18 +109,33 @@ def _fetch_json(sess, url: str):
     return r.json()
 
 
+_PAGE = 100          # rozmiar strony wyszukiwarki Copart
+
+
 def stage_listingi(args):
-    """Wyszukiwarka -> karty lotów (podstawowe pola). Zwraca JSONL (salvage_id + karta)."""
+    """Wyszukiwarka -> karty lotów. P2b: STRONICUJE po `page` (dotąd 1 strona ≤100 lotów →
+    'full' był strukturalnie niekompletny). mode=live → tylko 1 strona najnowszych; mode=full
+    → do --max-pages stron. Krytyk kompletności zwraca exit≠0 przy urwanym crawlu (0 kart)
+    lub gdy limit stron przyciął zadeklarowany `totalElements` — chroni reconcile (patrz też
+    próg RECONCILE_MIN_RATIO w json_agent)."""
     sess = _session()
     kw = args.base
-    payload = {"query": [kw] if kw else ["*"], "filter": {}, "watchListOnly": False,
-               "freeFormSearch": True, "page": 0, "size": min(100, args.max_pages * 20),
-               "sort": ["auction_date_type desc"]}
-    out = []
-    try:
-        r = sess.post(f"{BASE}/public/lots/search-results", json=payload, timeout=30)
-        data = r.json() if r.status_code == 200 else {}
-        rows = (data.get("data", {}) or {}).get("results", {}).get("content", []) or []
+    max_pages = 1 if args.mode == "live" else max(1, args.max_pages)
+    out, total, page = [], None, 0
+    while page < max_pages:
+        payload = {"query": [kw] if kw else ["*"], "filter": {}, "watchListOnly": False,
+                   "freeFormSearch": True, "page": page, "size": _PAGE,
+                   "sort": ["auction_date_type desc"]}
+        try:
+            r = sess.post(f"{BASE}/public/lots/search-results", json=payload, timeout=30)
+            data = r.json() if r.status_code == 200 else {}
+        except Exception as e:
+            print(f"[copart:listingi] ⚠ strona {page}: {e}", file=sys.stderr)
+            break
+        results = (data.get("data", {}) or {}).get("results", {}) or {}
+        rows = results.get("content", []) or []
+        if total is None:
+            total = results.get("totalElements")
         for it in rows:
             try:                                    # P4: jeden nietypowy wiersz nie ubija etapu
                 lot = it.get("lotNumberStr") or it.get("ln")
@@ -132,10 +147,27 @@ def stage_listingi(args):
                             "detail_url": f"{BASE}/lot/{lot}"})
             except (ValueError, TypeError):
                 continue
-    except Exception as e:
-        print(f"[copart:listingi] ⚠ {e}", file=sys.stderr)
+        page += 1
+        if len(rows) < _PAGE:                       # ostatnia strona
+            break
+        time.sleep(0.4)                             # łagodnie dla serwera między stronami
     args.out.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in out))
-    print(f"[copart:listingi] kart={len(out)} -> {args.out}")
+    suffix = f"/{total}" if total is not None else ""
+    print(f"[copart:listingi] kart={len(out)}{suffix} (stron={page}) -> {args.out}")
+
+    # 🔴 KRYTYK: kompletność-listy (analogicznie do IAAI). Urwany crawl -> exit 1,
+    # by NIE reconcile'ować względem niepełnego feedu.
+    issues = []
+    if not out:
+        issues.append("0 kart — możliwa blokada anty-bot / wymagane logowanie")
+    elif args.mode == "full" and isinstance(total, int) and len(out) < total and page >= max_pages:
+        issues.append(f"limit stron: pobrano {len(out)} < zadeklarowanych {total} "
+                      f"(zwiększ --max-pages)")
+    if issues:
+        print("[krytyk:kompletność-copart] ZASTRZEŻENIA: " + "; ".join(issues), file=sys.stderr)
+        return 1
+    print("[krytyk:kompletność-copart] OK ✅")
+    return 0
 
 
 def stage_szczegoly(args):
@@ -201,7 +233,9 @@ def main():
     ap.add_argument("--in", dest="infile", type=Path)
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
-    {"listingi": stage_listingi, "szczegoly": stage_szczegoly, "zdjecia": stage_zdjecia}[args.stage](args)
+    rc = {"listingi": stage_listingi, "szczegoly": stage_szczegoly,
+          "zdjecia": stage_zdjecia}[args.stage](args)
+    sys.exit(rc or 0)          # listingi zwraca kod krytyka kompletności; reszta None -> 0
 
 
 if __name__ == "__main__":

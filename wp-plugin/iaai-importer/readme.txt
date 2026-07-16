@@ -4,7 +4,7 @@ Tags: iaai, copart, vehicles, auctions, import, cpt
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 0.30.4
+Stable tag: 0.30.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -55,6 +55,21 @@ dane strukturalne pojazdu.
 Sama wtyczka działa na zwykłym WordPressie. Automatyzacja pobierania aut wymaga VPS z SSH.
 
 == Changelog ==
+
+= 0.30.5 =
+* Utwardzenie po finalnym re-audycie (bezpieczeństwo reconcile + odporność cyklu):
+  - reconcile ma teraz TWARDY PRÓG pokrycia (IAAI_RECONCILE_MIN_RATIO, domyślnie 0.9):
+    nie oznaczy masowo lotów jako „removed", gdy bieżący feed pokrywa < progu aktywnych
+    danego źródła (zawężony --base typu ?Keyword=BMW albo urwany crawl) — koniec ryzyka
+    zdjęcia całej reszty oferty ze strony;
+  - Copart „full" STRONICUJE listingi (dotąd 1 strona ≤100 lotów = niekompletnie) + ma
+    własnego krytyka kompletności; live pobiera tylko najnowszą stronę;
+  - cykl always-on działa z --keep-going: pojedynczy „miękki" krytyk per-rekord (lot bez
+    zdjęć, odometr bez jednostki) nie zatrzymuje już całego importu i publikacji;
+  - zdjęcia: przy imporcie usuwane są NIEAKTUALNE kadry lotu (skurczony zestaw), by w
+    galerii nie zostawały martwe adresy;
+  - flush przepisań na ścieżce upgrade (podmiana plików) przeniesiony na „init" (po
+    rejestracji CPT) — archiwum /pojazdy działa od razu; drobny hardening download (int seq).
 
 = 0.30.4 =
 * Motywy z menu „na sztywno" (bez menu WP / page-list, np. „Kredyt Kompas" przez
