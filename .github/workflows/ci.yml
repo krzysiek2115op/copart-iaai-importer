@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# CI: testy jednostkowe obu scraperów (auta + motocykle) oraz lint PHP wtyczek.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  scraper-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [auta-iaai, motocykle-poleasingowe]
+    defaults:
+      run:
+        working-directory: ${{ matrix.project }}/scraper
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalacja zależności
+        run: pip install pytest pymysql jsonschema requests
+      - name: Testy
+        run: pytest -q
+
+  php-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+      - name: Lint PHP (obie wtyczki)
+        run: |
+          err=0
+          find auta-iaai/wp-plugin motocykle-poleasingowe/wp-plugin -name '*.php' -print0 \
+            | xargs -0 -n1 php -l >/dev/null || err=1
+          exit $err

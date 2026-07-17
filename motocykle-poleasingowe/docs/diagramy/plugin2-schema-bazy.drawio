@@ -1,0 +1,25 @@
+<mxfile host="app.diagrams.net" agent="Claude" version="24.7.17">
+  <diagram id="polea-schema" name="Schemat bazy (ERD)">
+    <mxGraphModel dx="1000" dy="760" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Schemat bazy polea_* (MySQL / InnoDB / utf8mb4)" style="text;html=1;align=center;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="230" y="14" width="440" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="moto" value="&lt;b&gt;polea_motocykle&lt;/b&gt;&lt;br&gt;──────────────&lt;br&gt;PK  lot_id VARCHAR(32)&lt;br&gt;numer_aukcji, slug, url&lt;br&gt;marka, model, typ, rok_produkcji&lt;br&gt;data_pierwszej_rej, vin, nr_rej&lt;br&gt;naped, skrzynia, moc_km, pojemnosc_ccm&lt;br&gt;paliwo, przebieg_km, kolor, ilosc_kluczykow&lt;br&gt;forma_sprzedazy&lt;br&gt;cena_pln, cena_netto, najnizsza_cena_30d&lt;br&gt;tryb_licytacji, lokalizacja, termin_zakonczenia&lt;br&gt;status, liczba_ofert, uwagi&lt;br&gt;raw_hash, relist_of&lt;br&gt;first_seen, last_seen, updated_at&lt;br&gt;──────────────&lt;br&gt;INDEX: marka · status · (status, termin) · vin · last_seen" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="80" width="360" height="380" as="geometry" />
+        </mxCell>
+        <mxCell id="zdj" value="&lt;b&gt;polea_zdjecia&lt;/b&gt;&lt;br&gt;──────────────&lt;br&gt;PK  id BIGINT AUTO_INCREMENT&lt;br&gt;FK  lot_id VARCHAR(32)&lt;br&gt;image_key VARCHAR(64)&lt;br&gt;url VARCHAR(512)&lt;br&gt;sort_order SMALLINT&lt;br&gt;──────────────&lt;br&gt;UNIQUE (lot_id, image_key)&lt;br&gt;INDEX  lot_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="540" y="150" width="300" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="rel" value="1 : N  —  FK ON DELETE CASCADE" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERone;endArrow=ERmany;strokeColor=#333333;fontSize=11;" edge="1" parent="1" source="moto" target="zdj">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="Właściciel zapisu: scraper (upsert ON DUPLICATE KEY). WordPress: tylko odczyt (SELECT).&lt;br&gt;Zdjęcia = hotlink (url) — pliki nie są przechowywane w bazie." style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="500" width="780" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

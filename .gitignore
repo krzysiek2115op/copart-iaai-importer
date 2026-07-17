@@ -1,31 +1,14 @@
-# Sekrety — NIGDY nie commitować
-*.token
-*.pem
-.env
-.env.*
-secrets*
-credentials*
-
 # Python
 __pycache__/
 *.py[cod]
 .venv/
 venv/
-*.egg-info/
-
-# Node / WordPress build
-node_modules/
-vendor/
-
-# Pobrane media / dane testowe
-research/scraper/out/
-*.jpg
-*.jpeg
-*.png
-*.webp
-
+.pytest_cache/
+# Scraper — dane robocze
+pipeline_out/
+*.log
+# Paczki / build
+dist/
 # System
 .DS_Store
-Thumbs.db
-*.log
-/dist/
+node_modules/

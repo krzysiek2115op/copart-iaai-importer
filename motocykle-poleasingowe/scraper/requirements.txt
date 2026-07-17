@@ -1,0 +1,9 @@
+# Scraper poleasingowe.pl — zaleznosci runtime.
+# Rdzen (parsowanie/normalizacja/dedup/audyt) dziala na stdlib; ponizsze sa
+# potrzebne tylko do realnego pobierania (requests) i zapisu do bazy (PyMySQL).
+# Minimalne wersje podniesione ze wzgledu na CVE:
+#   requests>=2.32.2 (CVE-2024-35195 — weryfikacja certyfikatu przy Session)
+#   urllib3>=2.2.2   (CVE-2024-37891 — wyciek naglowka Proxy-Authorization przy redirectach)
+requests>=2.32.2
+urllib3>=2.2.2
+PyMySQL>=1.1.1

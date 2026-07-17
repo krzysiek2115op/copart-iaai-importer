@@ -1,37 +1,53 @@
-# Importer aukcji Copart / IAAI → nowa baza (wtyczka WordPress)
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+# Importery aukcji do WordPressa — auta (IAAI/Copart) + motocykle (poleasingowe.pl)
 
-Projekt: import danych i zdjęć pojazdów z **iaai.com** do nowej bazy danych,
-z zasilaniem danymi **live** i prezentacją na stronie klienta przez wtyczkę WordPress.
+Monorepo z **dwiema niezależnymi wtyczkami WordPress**, zbudowanymi na tej samej
+architekturze. Każda pokazuje na stronie klienta ofertę z aukcji i odświeża ją
+automatycznie. Wtyczki są **kompatybilne obok siebie** na jednej stronie (osobne bazy,
+brak kolizji, każda dziedziczy wygląd aktywnego motywu).
 
-> **Zmiana zakresu (v0.2):** Copart **usunięty z planu** — cała domena jest za
-> Imperva Incapsula (brak legalnego, anonimowego dostępu). Skupiamy się na IAAI.
-> Architektura: [docs/architecture.md](docs/architecture.md).
+| Podprojekt | Co robi | Źródło danych | Wersja |
+|---|---|---|---|
+| [`auta-iaai/`](auta-iaai/) | Podstrona **„Nasze auta"** — samochody z aukcji | **IAAI + Copart** (dwa źródła, kolumna `source`) | wtyczka 0.30.6 |
+| [`motocykle-poleasingowe/`](motocykle-poleasingowe/) | Podstrona **„Nasze motory"** — motocykle | **poleasingowe.pl** | wtyczka 0.12.6 |
 
-## 📋 Pełny status projektu: [STATUS.md](STATUS.md)
-Cel, architektura, co gotowe, co do zrobienia, ustalenia — wszystko w jednym miejscu.
+## Jak to działa (obie tak samo)
 
-## 🧑‍💻 Instrukcja dla klienta (od A do Z, nietechniczna): [docs/klient/00-START-TUTAJ.md](docs/klient/00-START-TUTAJ.md)
-Wgranie wtyczki, pokazanie aut na stronie, uruchomienie automatyzacji (instalator
-[deploy/install.sh](deploy/install.sh)), obsługa, FAQ — krok po kroku.
+```
+[ scraper Python na VPS ]  --(cron/systemd)-->  [ baza MySQL ]  <--(read-only)--  [ wtyczka WordPress ]
+      pobiera ofertę,                              dane + zdjęcia                     pokazuje na stronie,
+      normalizuje, audytuje                                                          SEO, filtry, cache
+```
 
-## Status: wszystkie 9 działów zbudowane + audyt/naprawy (v0.20.0)
+- **Wtyczka (PHP)** to część na WordPressie: tworzy podstronę, czyta bazę i renderuje ofertę
+  (SEO/Schema.org, filtry, paginacja, cache). Sama wtyczka nie pobiera danych.
+- **Scraper (Python)** działa na **serwerze VPS** (cron albo systemd timer) — to on „wybudza"
+  pobieranie: crawl → normalizacja → deduplikacja → audyt → zapis do bazy. WP‑cron tego nie robi
+  (nie uruchomi Pythona/Playwrighta).
+- **Zdjęcia** są **hotlinkowane** (0 miejsca na dysku klienta).
 
-Cały pipeline IAAI → WordPress rozpisany i zaimplementowany. Jak działa całość:
-**[docs/PIPELINE.md](docs/PIPELINE.md)**. Działy: [docs/dzialy/](docs/dzialy/) ·
-oryginalne dokumentacje: [docs/refs/](docs/refs/) · wtyczka WP: [wp-plugin/iaai-importer/](wp-plugin/iaai-importer/).
+## Struktura podprojektu (identyczna w obu)
 
-### (historyczne) krok 1 — analiza źródeł danych (v0.1.0)
+```
+<podprojekt>/
+  wp-plugin/<wtyczka>/   # wtyczka WordPress (PHP) — TO wgrywasz do WP
+  scraper/               # program zbierający (Python) — na VPS
+  deploy/                # instalacja + automatyzacja (systemd/cron) + .env.example
+  db/                    # schema.sql (osobna baza ofert)
+  docs/                  # dokumentacja, w tym docs/klient/ (instrukcje krok po kroku, PDF)
+  README.md
+```
 
-Wykonano rozpoznanie API/źródeł danych obu serwisów. Pełne wyniki:
-- [research/report.md](research/report.md) — dokumentacja: endpointy, zabezpieczenia, ocena prawna, szacunki rekordów
-- [research/samples/](research/samples/) — realne próbki odpowiedzi
-- [research/scraper/](research/scraper/) — kod scrapera (IAAI: Playwright; Copart: szkielet + rekomendacje legalne)
+## Szybki start
 
-### Skrót ustaleń
-- **IAAI** — dane pojazdu osadzone server-side w HTML (`#ProductDetailsVM`); zdjęcia przez `vis.iaai.com`; live przez SignalR `/timedauctionhub`.
-- **Copart** — całość za Imperva Incapsula (brak dostępu anonimowego); legalnie: oficjalny CSV "Sales Data" lub licencjonowane API third-party.
+1. **WordPress:** spakuj katalog `wp-plugin/<wtyczka>/` do ZIP i wgraj przez *Wtyczki → Dodaj nową
+   → Wyślij wtyczkę*, włącz. Podstrona utworzy się sama i wepnie w menu.
+2. **Baza:** załóż osobną bazę z `db/schema.sql`, dane dostępu wpisz do `wp-config.php`
+   (stałe `POLEA_DB_*` / `IAAI_DB_*`).
+3. **Automatyzacja:** uruchom scraper na VPS wg `deploy/README.md` i `docs/klient/`.
 
-> ⚠️ Techniczna dostępność ≠ zgoda prawna. Przed produkcją zweryfikować ToS serwisów.
+Instrukcje krok po kroku (dla osoby nietechnicznej, PDF) są w `docs/klient/` każdego podprojektu.
 
-## Wersjonowanie
-Repo prywatne. Każdy większy krok = commit + tag (semver). Bieżący: `v0.1.0`.
+## Licencja
+
+GPL‑2.0‑or‑later — patrz [LICENSE](LICENSE).

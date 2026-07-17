@@ -1,0 +1,148 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Dział 10 — styl frontu: minimalny, dziedziczy typografię i kolory motywu.
+   Bez sztywnych fontów/kolorów; linie i tła liczone z currentColor -> pasuje do dowolnego motywu. */
+
+.polea-wrap {
+    --polea-gap: 1.25rem;
+    --polea-radius: 10px;
+    --polea-line: color-mix(in srgb, currentColor 15%, transparent);
+    --polea-fill: color-mix(in srgb, currentColor 6%, transparent);
+    /* Własny kontener: wyśrodkowany, responsywny — nie polegamy na tym, że motyw
+       owinie treść w swój container (part motywów tego nie robi -> treść uciekała w lewo). */
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1180px;
+    margin-inline: auto;
+    padding-inline: clamp(16px, 4vw, 28px);
+    padding-block: clamp(1.25rem, 3vw, 2.5rem);
+    overflow-wrap: break-word;      /* długie słowa/URL-e nie rozpychają layoutu (anty poziomy scroll) */
+}
+.polea-wrap *, .polea-wrap *::before, .polea-wrap *::after { box-sizing: border-box; }
+
+.polea-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--polea-gap);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.polea-grid > li { margin: 0; }
+
+.polea-card {
+    border: 1px solid var(--polea-line);
+    border-radius: var(--polea-radius);
+    overflow: hidden;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+.polea-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--polea-line); }
+.polea-card__link { display: block; color: inherit; text-decoration: none; }
+.polea-card__media {
+    margin: 0;                      /* reset domyślnego marginesu <figure> */
+    aspect-ratio: 4 / 3;
+    background: var(--polea-fill);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+}
+.polea-card__media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.polea-card__noimg { opacity: .6; font-size: .85em; }
+.polea-card__body { padding: .85rem 1rem 1.1rem; }
+.polea-card__title { margin: .1rem 0 .35rem; font-size: 1.05em; line-height: 1.25; }
+.polea-card__price { margin: .15rem 0 .6rem; font-weight: 700; }
+.polea-card__specs { list-style: none; margin: 0; padding: 0; font-size: .9em; opacity: .85; display: grid; gap: .15rem; }
+.polea-card__specs li span { opacity: .7; }
+
+.polea-filters { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; margin: 0 0 1.5rem; }
+.polea-filters label { display: grid; gap: .25rem; font-size: .85em; }
+.polea-filters select,
+.polea-filters input {
+    padding: .4rem .5rem; border: 1px solid var(--polea-line);
+    border-radius: 6px; background: transparent; color: inherit; font: inherit;
+    max-width: 100%; min-width: 0;
+}
+/* Telefon: filtry w pełnej szerokości (stack), bez ściskania. */
+@media (max-width: 480px) {
+    .polea-filters label { flex: 1 1 100%; }
+    .polea-filters select, .polea-filters input, .polea-filters__btn { width: 100%; }
+}
+.polea-filters__btn, .polea-source {
+    cursor: pointer; padding: .5rem 1rem; border: 1px solid currentColor;
+    border-radius: 6px; background: transparent; color: inherit; font: inherit;
+    text-decoration: none; display: inline-block;
+}
+.polea-filters__btn:hover, .polea-source:hover { background: var(--polea-fill); }
+
+.polea-pager { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: 1.5rem; }
+.polea-pager a, .polea-pager__cur {
+    padding: .35rem .7rem; border: 1px solid var(--polea-line);
+    border-radius: 6px; text-decoration: none; color: inherit;
+}
+.polea-pager__cur { font-weight: 700; border-color: currentColor; }
+.polea-pager__gap { padding: .35rem .3rem; opacity: .6; }
+
+.polea-empty { opacity: .75; padding: 2rem 0; }
+
+/* --- widok pojedynczy (mobile-first) --- */
+.polea-single { max-width: 72rem; }
+.polea-single__price { font-size: 1.35em; font-weight: 700; margin: .2rem 0 1rem; }
+
+.polea-gallery { margin: 0 0 1.5rem; display: grid; grid-template-columns: 1fr; gap: .5rem; align-content: start; }
+.polea-gallery img {
+    width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover;   /* rezerwuje miejsce -> chroni CLS */
+    border-radius: 8px; display: block; background: var(--polea-fill);
+}
+@media (min-width: 560px) { .polea-gallery { grid-template-columns: 1fr 1fr; } }
+
+.polea-specs { width: 100%; border-collapse: collapse; }
+.polea-specs caption { text-align: left; }
+.polea-specs th { text-align: left; opacity: .7; font-weight: 500; padding: .35rem .75rem .35rem 0; vertical-align: top; white-space: nowrap; }
+.polea-specs td { padding: .35rem 0; overflow-wrap: anywhere; }   /* VIN/nr aukcji łamią się zamiast rozpychać tabelę */
+.polea-back { display: inline-block; color: inherit; opacity: .8; text-decoration: none; }
+
+/* --- sekcje / nagłówki --- */
+.polea-intro { opacity: .85; margin: .2rem 0 1.25rem; max-width: 70ch; }
+.polea-sec { margin: 1.75rem 0; }
+.polea-h { font-size: 1.2em; line-height: 1.3; margin: 0 0 .75rem; }
+.polea-desc { margin: 0; max-width: 70ch; opacity: .95; }
+
+/* --- breadcrumbs --- */
+.polea-breadcrumbs ol { list-style: none; display: flex; flex-wrap: wrap; gap: .4rem; padding: 0; margin: 0 0 1rem; font-size: .85em; opacity: .85; }
+.polea-breadcrumbs li { margin: 0; }
+.polea-breadcrumbs li + li::before { content: "\203A"; opacity: .5; margin-right: .4rem; }
+.polea-breadcrumbs a { color: inherit; text-decoration: none; }
+.polea-breadcrumbs a:hover { text-decoration: underline; }
+
+/* --- chips --- */
+.polea-chips { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem; padding: 0; margin: 0; }
+.polea-chip { border: 1px solid var(--polea-line); border-radius: 999px; padding: .3rem .7rem; font-size: .9em; }
+.polea-chip__k { opacity: .6; }
+
+/* --- lista definicji (informacje) --- */
+.polea-info { display: grid; grid-template-columns: auto 1fr; gap: .35rem .9rem; margin: 0; }
+.polea-info dt { opacity: .7; }
+.polea-info dd { margin: 0; }
+.polea-addr { font-style: normal; display: inline; }
+
+/* --- FAQ --- */
+.polea-faq { border: 1px solid var(--polea-line); border-radius: 8px; padding: .25rem .9rem; margin: .5rem 0; }
+.polea-faq summary { cursor: pointer; padding: .5rem 0; font-weight: 600; }
+.polea-faq p { margin: .15rem 0 .75rem; opacity: .9; }
+
+/* --- CTA / powiązane --- */
+.polea-cta { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin: 1.75rem 0 .5rem; }
+.polea-btn { font-weight: 600; }
+.polea-related { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--polea-line); }
+.polea-morelinks { margin-top: 1rem; font-size: .9em; opacity: .85; }
+.polea-morelinks a { color: inherit; }
+
+/* --- dostępność --- */
+.polea-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.polea-wrap a:focus-visible,
+.polea-single a:focus-visible,
+.polea-filters :focus-visible,
+.polea-faq summary:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .polea-card { transition: none; }
+    .polea-card:hover { transform: none; }
+}

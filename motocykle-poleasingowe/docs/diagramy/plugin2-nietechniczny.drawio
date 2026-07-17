@@ -1,0 +1,43 @@
+<mxfile host="app.diagrams.net" agent="Claude" version="24.7.17">
+  <diagram id="polea-nietech" name="Jak to działa (dla klienta)">
+    <mxGraphModel dx="900" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t1" value="Jak działa system „Nasze motory”" style="text;html=1;align=center;fontSize=20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="180" y="30" width="490" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="b1" value="&lt;b&gt;1. Portal poleasingowe.pl&lt;/b&gt;&lt;br&gt;Aukcje motocykli poleasingowych" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="280" y="90" width="290" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="b2" value="&lt;b&gt;2. Nasz system (na serwerze)&lt;/b&gt;&lt;br&gt;Co kilka godzin automatycznie pobiera&lt;br&gt;i porządkuje oferty" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="280" y="215" width="290" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="b3" value="&lt;b&gt;3. Baza danych ofert&lt;/b&gt;&lt;br&gt;Aktualne motocykle w jednym miejscu" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="280" y="350" width="290" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="b4" value="&lt;b&gt;4. Twoja strona WWW&lt;/b&gt;&lt;br&gt;Podstrona „Nasze motory” —&lt;br&gt;gotowa lista z filtrami i zdjęciami" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="280" y="475" width="290" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="Zdjęcia pokazują się wprost&lt;br&gt;z poleasingowe.pl&lt;br&gt;(bez kopiowania na Twój serwer)" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="610" y="475" width="190" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="foot" value="Wszystko dzieje się automatycznie — nie musisz nic robić ręcznie." style="text;html=1;align=center;fontSize=13;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="180" y="600" width="490" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="pobieranie" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#555555;fontSize=11;" edge="1" parent="1" source="b1" target="b2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="zapis" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#555555;fontSize=11;" edge="1" parent="1" source="b2" target="b3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="wyświetlanie" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#555555;fontSize=11;" edge="1" parent="1" source="b3" target="b4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1" source="b4" target="note">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

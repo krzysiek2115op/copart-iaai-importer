@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Import motocykli poleasingowe.pl co 4 h. Instalacja: /etc/cron.d/polea-import
+# Poświadczenia trzymaj w /etc/polea.env (chmod 600); cron ładuje je przez `env`.
+# Kolumny: min godz dzień miesiąc dzień-tyg  użytkownik  polecenie
+SHELL=/bin/sh
+17 */4 * * *  polea  set -a; . /etc/polea.env; set +a; cd /opt/polea && /opt/polea/venv/bin/python3 -m scraper.main >> /var/log/polea/import.log 2>&1

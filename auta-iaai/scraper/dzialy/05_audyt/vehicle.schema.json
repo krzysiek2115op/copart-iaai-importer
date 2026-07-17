@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iaai-importer/vehicle.schema.json",
+  "title": "IAAI Vehicle",
+  "description": "Schemat audytu rekordu pojazdu (dział 5). Źródło prawdy dla walidacji – wczytywany przez walidacja.py. Pola pomocnicze (_prefiks) dozwolone przez additionalProperties.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["salvage_id"],
+  "properties": {
+    "salvage_id": {"type": "integer", "minimum": 1},
+    "stock_number": {"type": ["string", "null"]},
+    "vin": {"type": ["string", "null"], "pattern": "^[A-HJ-NPR-Z0-9*]{11,17}$"},
+    "year": {"type": ["integer", "null"], "minimum": 1900, "maximum": 2100},
+    "make": {"type": ["string", "null"], "maxLength": 60},
+    "model": {"type": ["string", "null"], "maxLength": 80},
+    "odometer": {"type": ["integer", "null"], "minimum": 0, "maximum": 2000000},
+    "odometer_uom": {"type": ["string", "null"], "enum": ["mi", "km", "MI", "KM", null]},
+    "cylinders": {"type": ["integer", "null"], "minimum": 0, "maximum": 16},
+    "buy_now": {"type": ["number", "null"], "minimum": 0},
+    "current_bid": {"type": ["number", "null"], "minimum": 0},
+    "status": {"type": ["string", "null"], "enum": ["active", "sold", "removed", null]}
+  }
+}
