@@ -4,7 +4,7 @@ Tags: iaai, copart, vehicles, auctions, import, cpt
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 0.30.5
+Stable tag: 0.30.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -55,6 +55,16 @@ dane strukturalne pojazdu.
 Sama wtyczka działa na zwykłym WordPressie. Automatyzacja pobierania aut wymaga VPS z SSH.
 
 == Changelog ==
+
+= 0.30.6 =
+* Migracja dual-source PRIMARY KEY jest teraz AUTOMATYCZNA (iaai_migrate_source_pk):
+  baza założona w erze „tylko IAAI" ma PK = salvage_id, przez co lot Copart o tym samym
+  numerze co lot IAAI kolidował i nadpisywał (korupcja). Robimy jednorazowy, idempotentny
+  ALTER na (source, salvage_id) — bezpieczny (source ma DEFAULT 'iaai', brak duplikatów),
+  z logiem; błąd nie wywala strony. Wcześniej było tylko ostrzeżenie w logu (schemat 1.2.1).
+* Dodano uninstall.php: usunięcie wtyczki (Delete) sprząta cały ślad — podstronę „Nasze
+  auta", wpisy CPT „pojazd" (+ meta), tabele iaai_vehicles/iaai_vehicle_images, opcje i
+  transienty. (Dezaktywacja nic nie kasuje — dane zostają.)
 
 = 0.30.5 =
 * Utwardzenie po finalnym re-audycie (bezpieczeństwo reconcile + odporność cyklu):

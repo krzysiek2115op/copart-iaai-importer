@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Wersja schematu — podbij przy zmianie struktury tabel (wymusza ponowne dbDelta). */
-const IAAI_DB_VERSION = '1.2.0';   // 1.2.0: KEY idx_updated (W1 — publikacja tylko delty)
+const IAAI_DB_VERSION = '1.2.1';   // 1.2.1: auto-migracja PK (source,salvage_id) — patrz iaai_migrate_source_pk()
 
 /**
  * Buduje instrukcje CREATE TABLE (dbDelta-friendly) z prefiksem WP i collation.
@@ -109,8 +109,9 @@ function iaai_schema_statements() : array {
  * UWAGA (dual-source, wersja 1.1.0): dbDelta doda brakującą kolumnę `source` i klucze
  * pomocnicze, ale NIE przebudowuje istniejącego PRIMARY KEY. Świeża instalacja dostaje
  * PK (source, salvage_id) od razu; baza założona wcześniej (tylko IAAI) zachowa stary PK
- * (salvage_id) i wymaga jednorazowej MIGRACJI ręcznej — wykrywa to iaai_check_source_pk()
- * i loguje ostrzeżenie (patrz docs/klient/05 „Aktualizuję istniejącą instalację").
+ * (salvage_id) — dlatego migrujemy go AUTOMATYCZNIE (jednorazowy, idempotentny ALTER w
+ * iaai_migrate_source_pk() na admin_init). Tabela zdjęć ma surogatowy PK (id) i złożony
+ * UNIQUE (source, image_key), więc nie wymaga migracji.
  */
 function iaai_activate( bool $flush = true ) : void {
 	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -287,35 +288,47 @@ function iaai_maybe_upgrade_db() : void {
 }
 
 /**
- * Audyt dual-source: sprawdza, czy PRIMARY KEY tabeli pojazdów zawiera kolumnę `source`.
- * dbDelta NIE przebudowuje istniejącego PRIMARY KEY, więc bazy założone przed wersją
- * dwuźródłową (1.1.0) mają stary klucz (sam salvage_id) i wymagają JEDNORAZOWEJ migracji.
+ * MIGRACJA dual-source PRIMARY KEY. dbDelta NIE przebudowuje istniejącego PRIMARY KEY,
+ * więc baza założona przed wersją dwuźródłową ma PK = salvage_id (bez source). Wtedy lot
+ * Copart o tym samym numerze co lot IAAI KOLIDUJE na PK i jeden nadpisuje drugi (korupcja
+ * danych). Naprawiamy to jawnym, JEDNORAZOWYM i IDEMPOTENTNYM ALTER-em.
  *
- * Świadomie NIE robimy automatycznego ALTER na produkcyjnej bazie klienta (ryzyko locka
- * i downtime na dużej tabeli) — tylko wykrywamy i logujemy technicznie (bez komunikatu dla
- * odwiedzającego). Migrację uruchamia administrator wg docs/klient/05. Sprawdzenie jest
- * jednorazowe per wersja schematu (opcja iaai_pk_checked).
+ * Bezpieczeństwo danych: stary PK gwarantował unikalność salvage_id, a kolumna source ma
+ * DEFAULT 'iaai' — więc para (source, salvage_id) także jest unikalna i ALTER nie napotka
+ * duplikatów. Guard po składzie PK czyni to idempotentnym; błąd NIE wywala strony (nie
+ * oznaczamy wtedy jako zrobione → ponów przy następnym wejściu do panelu). Przy skali
+ * klienta (tysiące wierszy) lock jest krótki; ewentualną wcześniejszą kolizję baza „leczy"
+ * przy kolejnym pełnym scrapie (nadpisany wiersz wraca jako osobny).
  */
-add_action( 'admin_init', 'iaai_check_source_pk' );
-function iaai_check_source_pk() : void {
+add_action( 'admin_init', 'iaai_migrate_source_pk' );
+function iaai_migrate_source_pk() : void {
 	if ( get_option( 'iaai_pk_checked' ) === IAAI_DB_VERSION ) {
 		return;
 	}
 	global $wpdb;
-	$veh   = $wpdb->prefix . 'iaai_vehicles';
-	$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $veh ) );
-	if ( $found === $veh ) {
-		$pk   = $wpdb->get_results( "SHOW KEYS FROM {$veh} WHERE Key_name = 'PRIMARY'" );
-		$cols = array();
-		foreach ( (array) $pk as $k ) {
-			$cols[] = $k->Column_name;
-		}
-		if ( $pk && ! in_array( 'source', $cols, true ) && function_exists( 'iaai_log' ) ) {
+	$veh = $wpdb->prefix . 'iaai_vehicles';
+	if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $veh ) ) !== $veh ) {
+		update_option( 'iaai_pk_checked', IAAI_DB_VERSION );   // brak tabeli — nic do migracji
+		return;
+	}
+	$pk   = $wpdb->get_results( "SHOW KEYS FROM {$veh} WHERE Key_name = 'PRIMARY'" );
+	$cols = array();
+	foreach ( (array) $pk as $k ) {
+		$cols[] = $k->Column_name;
+	}
+	if ( $pk && ! in_array( 'source', $cols, true ) ) {
+		// Stary PK (sam salvage_id) -> złożony (source, salvage_id).
+		$ok = $wpdb->query( "ALTER TABLE {$veh} DROP PRIMARY KEY, ADD PRIMARY KEY (source, salvage_id)" );
+		if ( function_exists( 'iaai_log' ) ) {
 			iaai_log(
-				'schema: tabela ' . $veh . ' ma stary PRIMARY KEY bez kolumny source — '
-				. 'wymagana jednorazowa migracja dual-source (patrz docs/klient/05).',
-				'warn'
+				false !== $ok
+					? 'schema: zmigrowano PRIMARY KEY ' . $veh . ' -> (source, salvage_id).'
+					: 'schema: MIGRACJA PK nieudana (' . $wpdb->last_error . ') — patrz docs/klient/05.',
+				false !== $ok ? 'info' : 'error'
 			);
+		}
+		if ( false === $ok ) {
+			return;   // nie zapisuj „sprawdzone" — spróbuj ponownie następnym razem
 		}
 	}
 	update_option( 'iaai_pk_checked', IAAI_DB_VERSION );
