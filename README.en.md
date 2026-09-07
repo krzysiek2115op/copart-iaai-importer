@@ -69,8 +69,8 @@ and its own release cycle. No name collisions, no shared code to coordinate.
 
 ## The part most projects skip
 
-The repository ships a complete set of documentation **for a non-technical client**: seven
-step-by-step documents plus a **PDF manual**. Not a developer README — instructions for the
+The repository ships a complete set of documentation **for a non-technical client**: nine
+step-by-step documents plus **ten PDF files**. Not a developer README — instructions for the
 person who has to operate the thing.
 
 A system the client doesn't understand comes back to the developer for every small question.
