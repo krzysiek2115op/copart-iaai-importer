@@ -38,6 +38,7 @@ ze źródła i to jest sedno rozwiązania.</sub>
 
 - [Stan projektu](#stan-projektu)
 - [Dwie wtyczki, jedna architektura](#dwie-wtyczki-jedna-architektura)
+- [Wtyczka wchodzi w istniejącą stronę](#wtyczka-wchodzi-w-istniejącą-stronę)
 - [Jak to działa (obie tak samo)](#jak-to-działa-obie-tak-samo)
 - [Struktura podprojektu](#struktura-podprojektu-identyczna-w-obu)
 - [Szybki start](#szybki-start)
@@ -70,6 +71,13 @@ kolizji, każda dziedziczy wygląd aktywnego motywu.
 |---|---|---|---|
 | [`auta-iaai/`](auta-iaai/) | Podstrona **„Nasze auta"** — samochody z aukcji | **IAAI + Copart** (dwa źródła, kolumna `source`) | 0.30.6 |
 | [`motocykle-poleasingowe/`](motocykle-poleasingowe/) | Podstrona **„Nasze motory"** — motocykle | **poleasingowe.pl** | 0.12.6 |
+
+## Wtyczka wchodzi w istniejącą stronę
+
+[![Strona firmowa z podstroną „Nasze auta" wpiętą w menu główne](docs/zrzuty/02-strona-glowna.png)](docs/zrzuty/02-strona-glowna.png)
+
+Podstrona tworzy się sama po włączeniu wtyczki i wpina w menu. Dziedziczy motyw,
+więc wygląda jak reszta witryny klienta — nie jak doklejony moduł.
 
 ## Jak to działa (obie tak samo)
 
