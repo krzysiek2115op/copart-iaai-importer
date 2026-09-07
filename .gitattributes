@@ -1,0 +1,22 @@
+# Normalizacja końców linii: w repo zawsze LF, u siebie jak wygodnie.
+# Po co: bez tego commit z Windowsa potrafi pokazać cały plik jako zmieniony.
+* text=auto eol=lf
+
+# Pliki, których git NIE ma prawa tykać — inaczej psuje bajty.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.pdf   binary
+*.zip   binary
+*.woff  binary
+*.woff2 binary
+
+# Wykluczone ze statystyk języków GitHuba i ze zwykłego diffa —
+# inaczej repo statycznej strony wygląda w GitHubie na projekt w CSS-ie.
+*.min.js  linguist-vendored
+*.min.css linguist-vendored
+package-lock.json linguist-generated
+composer.lock     linguist-generated

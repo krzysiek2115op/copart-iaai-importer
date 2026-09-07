@@ -1,0 +1,26 @@
+# Aktualizacje zależności. Sam fakt, że plik istnieje, jest sygnałem:
+# ktoś tu pilnuje bezpieczeństwa, a nie tylko dowozi funkcje.
+version: 2
+updates:
+  # Kazdy scraper ma wlasny requirements.txt — dependabot nie szuka rekurencyjnie.
+  - package-ecosystem: pip
+    directories:
+      - /auta-iaai/scraper/dzialy/01_pobieranie
+      - /auta-iaai/scraper/dzialy/02_normalizacja
+      - /auta-iaai/scraper/dzialy/04_synchronizacja
+      - /auta-iaai/scraper/dzialy/05_audyt
+      - /motocykle-poleasingowe/scraper
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+
+  # Same akcje GitHuba też się starzeją — i to one mają dostęp do repo.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "ci"
