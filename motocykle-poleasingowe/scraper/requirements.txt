@@ -6,4 +6,4 @@
 #   urllib3>=2.2.2   (CVE-2024-37891 — wyciek naglowka Proxy-Authorization przy redirectach)
 requests>=2.32.2
 urllib3>=2.2.2
-PyMySQL>=1.1.1
+PyMySQL>=1.2.0
