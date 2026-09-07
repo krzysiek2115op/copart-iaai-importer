@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 # Importery aukcji do WordPressa — auta (IAAI/Copart) + motocykle (poleasingowe.pl)
 
+*[English version →](README.en.md)*
+
 Monorepo z **dwiema niezależnymi wtyczkami WordPress**, zbudowanymi na tej samej
 architekturze. Każda pokazuje na stronie klienta ofertę z aukcji i odświeża ją
 automatycznie. Wtyczki są **kompatybilne obok siebie** na jednej stronie (osobne bazy,
