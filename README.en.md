@@ -65,7 +65,7 @@ and its own release cycle. No name collisions, no shared code to coordinate.
 `Python 3` · `pytest` · `jsonschema` · `pymysql` · `PHP` · `WordPress` · `MySQL` ·
 `systemd .service` + `.timer` · `GitHub Actions`
 
-Roughly 374 kB of Python and 256 kB of PHP across 130 commits.
+7,958 lines of Python across 47 files and 3,634 lines of PHP across 21 files, in 132 commits.
 
 ## The part most projects skip
 
@@ -76,7 +76,7 @@ person who has to operate the thing.
 A system the client doesn't understand comes back to the developer for every small question.
 Documentation is cheaper than support.
 
-Also included: four audit documents (general, second pass, security, full-system test),
+Also included: five audit documents (general, second pass, security, full-system test, detailed tests),
 a primary-key migration performed when the second data source was added, `uninstall.php`
 so the plugin cleans up after itself, and automatic pruning of images for expired listings.
 
